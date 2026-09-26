@@ -76,7 +76,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 /* The AKIKI logo word, drawn by its own colour font (fonts/akiki-pixel.woff2): typing "akiki" becomes the logo. */
 @font-face {
   font-family: "AKIKI Pixel";
-  src: url("fonts/akiki-pixel.woff2?v=2") format("woff2");
+  src: url("fonts/akiki-pixel.woff2?v=3") format("woff2");
   font-display: block;
 }
 .logo-word {
@@ -279,6 +279,17 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .module img { flex: none; width: 120px; height: 120px; }
 .module h3 { margin: 0 4px 0 0; font-size: 1.25em; font-weight: 600; line-height: 1.25; }
 .module-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+/* Model names in the logo's pixel font. */
+.module h3.pixel-name {
+  font-family: "AKIKI Pixel", var(--mono);
+  font-size: 30px;
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: 0;
+  line-height: 1;
+  color: #2f4d5c;
+  margin-right: 8px;
+}
 .chip {
   padding: 0 8px;
   border: var(--hairline) solid var(--border);

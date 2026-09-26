@@ -6,7 +6,8 @@ first k, the golden dot on the middle i, and the first a and last i in the diamo
 
 The font also sets the motto "A kinder Kind of AI.": letters are unicase (capitals share the
 pixel shapes), the small k is flipped like the logo's first k, every i has a golden dot, and
-"AI" in capitals becomes the coloured a and i of the logo.
+"AI" in capitals becomes the coloured a and i of the logo. It also covers the model names
+Tulip, Jasmine and Daisy.
 Pixel shapes, spacing and colours come from tools/make_akiki_logo.py, so font and logo match.
 
 Usage: python3 tools/make_akiki_font.py OUTPUT.woff2
@@ -38,8 +39,23 @@ EXTRA = {
     'r': ['X.XX', 'XX..', 'X...', 'X...', 'X...'],
     'o': ['.XX.', 'X..X', 'X..X', 'X..X', '.XX.'],
     'f': ['..XX', '.X..', 'XXX.', '.X..', '.X..'],
+    # for the model names Tulip, Jasmine and Daisy (no descenders: everything stays the height of the a)
+    't': ['.X.', 'XXX', '.X.', '.X.', '.XX'],
+    'u': ['X..X', 'X..X', 'X..X', 'X..X', '.XXX'],
+    'l': ['X.', 'X.', 'X.', 'X.', '.X'],
+    'p': ['XXX.', 'X..X', 'XXX.', 'X...', 'X...'],
+    'j': ['..d', '...', '..X', 'X.X', '.X.'],
+    's': ['.XXX', 'X...', '.XX.', '...X', 'XXX.'],
+    'm': ['XXXX.', 'X.X.X', 'X.X.X', 'X.X.X', 'X.X.X'],
+    'y': ['X.X', 'X.X', '.X.', '.X.', '.X.'],
     'period': ['.', '.', '.', '.', 'X'],
 }
+LETTERS = 'adefijklmnoprstuy'
+
+
+def rows_for(ch, mirrored=False):
+    rows = logo.GLYPHS[ch] if ch in logo.GLYPHS else EXTRA[ch]
+    return [line[::-1] for line in rows] if mirrored else rows
 
 
 def rgba(h):
@@ -70,8 +86,7 @@ def glyph(pixels):
 
 
 def letter_pixels(ch, mirrored=False):
-    rows = logo.GLYPHS[ch] if ch in logo.GLYPHS else EXTRA[ch]
-    rows = [line[::-1] for line in rows] if mirrored else rows
+    rows = rows_for(ch, mirrored)
     return [(c, r) for r, line in enumerate(rows) for c, px in enumerate(line) if px != '.'], len(rows[0])
 
 
@@ -80,7 +95,7 @@ def word_layers(word='akiki', coloured=logo.COLOURED, mirrored=logo.MIRRORED):
     layers, x = {}, 0
     for n, ch in enumerate(word):
         pixels, w = letter_pixels(ch, n in mirrored)
-        rows = [line[::-1] for line in logo.GLYPHS[ch]] if n in mirrored else logo.GLYPHS[ch]
+        rows = rows_for(ch, n in mirrored)
         for c, r in pixels:
             if n in coloured:
                 colour = logo.palette_at((c + r) / max(1, (w - 1) + (logo.ROWS - 1)))
@@ -95,18 +110,6 @@ def build(out):
     glyphs = {'.notdef': glyph([]), 'space': glyph([])}
     advance = {'.notdef': 2 * P, 'space': 3 * P}
     cmap = {0x20: 'space', ord('_'): 'underscore', ord('.'): 'period'}
-    for ch in 'akinderof':
-        for name in (ch, ch.upper()):             # unicase: capitals share the pixel shapes
-            # the small k is flipped, like the logo's first k, so "kinder Kind" face each other
-            pixels, w = letter_pixels(ch, mirrored=(name == 'k'))
-            glyphs[name] = glyph(pixels)
-            advance[name] = (w + 1) * P
-            cmap[ord(name)] = name
-    pixels, w = letter_pixels('period')
-    glyphs['period'], advance['period'] = glyph(pixels), (w + 1) * P
-    glyphs['underscore'] = glyph([(0, logo.ROWS - 1), (1, logo.ROWS - 1), (2, logo.ROWS - 1)])
-    advance['underscore'] = 4 * P
-
     colours, colr = [], {}
 
     def colour_glyph(name, layers, width):
@@ -122,13 +125,27 @@ def build(out):
                 colours.append(colour)
             colr[name].append((lname, INK if colour == 'ink' else colours.index(colour)))
 
+    for ch in LETTERS:
+        for name in (ch, ch.upper()):             # unicase: capitals share the pixel shapes
+            cmap[ord(name)] = name
+            if any('d' in line for line in rows_for(ch)):
+                # dotted letters (i, j): ink stem and the logo's golden dot
+                layers, width = word_layers(ch, coloured=(), mirrored=())
+                colour_glyph(name, layers, width)
+                continue
+            # the small k is flipped, like the logo's first k, so "kinder Kind" face each other
+            pixels, w = letter_pixels(ch, mirrored=(name == 'k'))
+            glyphs[name] = glyph(pixels)
+            advance[name] = (w + 1) * P
+    pixels, w = letter_pixels('period')
+    glyphs['period'], advance['period'] = glyph(pixels), (w + 1) * P
+    glyphs['underscore'] = glyph([(0, logo.ROWS - 1), (1, logo.ROWS - 1), (2, logo.ROWS - 1)])
+    advance['underscore'] = 4 * P
+
     layers, width = word_layers()
     colour_glyph('akiki', layers, width)                                   # the logo word
     layers, width = word_layers('ai', coloured=(0, 1), mirrored=())
     colour_glyph('A_I', layers, width)                                     # "AI": the logo's coloured a and i
-    for name in ('i', 'I'):                                                # every i gets the golden dot
-        layers, width = word_layers('i', coloured=(), mirrored=())
-        colour_glyph(name, layers, width)
     palette = [rgba(c) for c in colours]
 
     order = list(glyphs)
