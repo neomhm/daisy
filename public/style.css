@@ -251,6 +251,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .module:target { border-color: var(--tab-line); box-shadow: 0 0 0 1px var(--tab-line); }
 .module img { flex: none; width: 120px; height: 120px; }
 .module h3 { margin: 0 4px 0 0; font-size: 1.25em; font-weight: 600; line-height: 1.25; }
+.kicker { font-family: var(--mono); font-size: 0.95em; letter-spacing: 0.06em; }
 .module-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .chip {
   padding: 0 8px;
