@@ -32,6 +32,7 @@ GLYPHS = {
 }
 ROWS = 5
 COLOURED = (0, 4)   # the first a and the last i take the diamond's colours
+MIRRORED = (1,)     # the first k is flipped, so the two k's face each other around the middle i
 # One byte: petals 0-7 clockwise from the top, H is the heart.
 FLOWER = ['..0..', '.7.1.', '6.H.2', '.5.3.', '..4..']
 
@@ -69,7 +70,7 @@ def palette_at(t):
 def word(col, row, ink, dot=GOLD, cursor=True):
     out, x = [], col
     for n, ch in enumerate('akiki'):
-        g = GLYPHS[ch]
+        g = [line[::-1] for line in GLYPHS[ch]] if n in MIRRORED else GLYPHS[ch]
         w = len(g[0])
         for r, line in enumerate(g):
             for c, px in enumerate(line):
