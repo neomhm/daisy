@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AKIKI.AI</title>
+  <meta name="description" content="AKIKI.AI: a new agentic approach. Hyper-focused AI models, organized by one larger model that runs in the cloud or on your own machine.">
+  <meta name="theme-color" content="#0a0c11">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg: #0a0c11;
+      --fg: #eef0f6;
+      --muted: #9ba3b4;
+      --accent: #7c9cff;
+      --accent-2: #c08cff;
+      --line: rgba(255, 255, 255, 0.16);
+      --node: #151a26;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(900px 520px at 50% -8%, rgba(124, 156, 255, 0.16), transparent 65%),
+        radial-gradient(700px 420px at 85% 110%, rgba(192, 140, 255, 0.10), transparent 60%),
+        var(--bg);
+      color: var(--fg);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header, footer {
+      padding: 24px clamp(16px, 5vw, 48px);
+    }
+
+    .wordmark {
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      font-size: 0.95rem;
+    }
+
+    .wordmark span { color: var(--accent); }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px clamp(16px, 5vw, 48px) 48px;
+    }
+
+    .diagram {
+      width: min(220px, 60vw);
+      height: auto;
+      margin-bottom: 32px;
+      overflow: visible;
+    }
+
+    .diagram .link { stroke: var(--line); stroke-width: 1.5; }
+
+    .diagram .pulse {
+      stroke: var(--accent);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-dasharray: 3 11;
+      animation: flow 1.6s linear infinite;
+    }
+
+    .diagram .expert { fill: var(--node); stroke: var(--accent); stroke-width: 1.5; }
+    .diagram .expert-dot { fill: var(--accent-2); }
+
+    @keyframes flow {
+      to { stroke-dashoffset: -28; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .diagram .pulse { animation: none; }
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      max-width: 14em;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .gradient {
+      display: inline-block;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .lede {
+      margin: 0 0 32px;
+      max-width: 36em;
+      color: var(--muted);
+      font-size: clamp(1rem, 2.4vw, 1.15rem);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 18px;
+      border: 1px solid rgba(124, 156, 255, 0.45);
+      border-radius: 999px;
+      background: rgba(124, 156, 255, 0.08);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    footer {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wordmark">AKIKI<span>.</span>AI</div>
+  </header>
+
+  <main>
+    <svg class="diagram" viewBox="0 0 240 240" role="img" aria-label="One central model connected to six smaller, focused models">
+      <defs>
+        <radialGradient id="core" cx="35%" cy="35%" r="75%">
+          <stop offset="0%" stop-color="#c08cff"/>
+          <stop offset="100%" stop-color="#7c9cff"/>
+        </radialGradient>
+      </defs>
+
+      <g>
+        <line class="link" x1="120" y1="120" x2="204" y2="120"/>
+        <line class="link" x1="120" y1="120" x2="162" y2="192.75"/>
+        <line class="link" x1="120" y1="120" x2="78" y2="192.75"/>
+        <line class="link" x1="120" y1="120" x2="36" y2="120"/>
+        <line class="link" x1="120" y1="120" x2="78" y2="47.25"/>
+        <line class="link" x1="120" y1="120" x2="162" y2="47.25"/>
+      </g>
+
+      <g>
+        <line class="pulse" x1="120" y1="120" x2="204" y2="120"/>
+        <line class="pulse" x1="120" y1="120" x2="162" y2="192.75"/>
+        <line class="pulse" x1="120" y1="120" x2="78" y2="192.75"/>
+        <line class="pulse" x1="120" y1="120" x2="36" y2="120"/>
+        <line class="pulse" x1="120" y1="120" x2="78" y2="47.25"/>
+        <line class="pulse" x1="120" y1="120" x2="162" y2="47.25"/>
+      </g>
+
+      <circle cx="120" cy="120" r="44" fill="#7c9cff" opacity="0.12"/>
+      <circle cx="120" cy="120" r="26" fill="url(#core)"/>
+
+      <g>
+        <circle class="expert" cx="204" cy="120" r="11"/>
+        <circle class="expert" cx="162" cy="192.75" r="11"/>
+        <circle class="expert" cx="78" cy="192.75" r="11"/>
+        <circle class="expert" cx="36" cy="120" r="11"/>
+        <circle class="expert" cx="78" cy="47.25" r="11"/>
+        <circle class="expert" cx="162" cy="47.25" r="11"/>
+      </g>
+
+      <g>
+        <circle class="expert-dot" cx="204" cy="120" r="3"/>
+        <circle class="expert-dot" cx="162" cy="192.75" r="3"/>
+        <circle class="expert-dot" cx="78" cy="192.75" r="3"/>
+        <circle class="expert-dot" cx="36" cy="120" r="3"/>
+        <circle class="expert-dot" cx="78" cy="47.25" r="3"/>
+        <circle class="expert-dot" cx="162" cy="47.25" r="3"/>
+      </g>
+    </svg>
+
+    <h1>Hyper-focused models, <span class="gradient">working as one.</span></h1>
+
+    <p class="lede">
+      A new agentic approach to AI: small models that each master one task,
+      organized by a larger model to take on complex work.
+      Run the organizer in the cloud or on your own machine. Your choice.
+    </p>
+
+    <span class="badge">Coming soon</span>
+  </main>
+
+  <footer>&copy; 2026 AKIKI.AI</footer>
+</body>
+</html>
