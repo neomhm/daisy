@@ -7,7 +7,7 @@
   <meta name="description" content="D.AI.SY by AKIKI.AI. A kinder Kind of AI.">
   <meta name="theme-color" content="#f6f8fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -72,30 +72,30 @@
             </div>
 
             <h2 id="modules">Modules</h2>
-            <p>Small models, each named after a flower, each with one job.</p>
+            <p><strong>Next-gen distributed AI.</strong> Instead of one giant model, a team of hyper-focused, feather-light models, each built and trained from scratch for a single job. They run on an ordinary CPU with every byte of memory accounted for, and answer in milliseconds.</p>
             <div class="modules">
               <section class="module" id="tulip">
                 <img class="sway" src="tulip.svg" width="120" height="120" alt="Tulip logo">
                 <div>
-                  <h3>Tulip</h3>
-                  <p class="module-role">Imports your spreadsheets</p>
-                  <p>Tulip reads your spreadsheets, like price lists and product sheets, and copies their rows into the right tables of your business's own database. For each sheet she writes a short recipe, and code checks every step before anything is copied. If a sheet doesn't fit, she says so instead of guessing.</p>
+                  <div class="module-head"><h3>Tulip</h3><span class="chip">38M params</span><span class="chip tbd">? tensors</span></div>
+                  <p class="module-role">Spreadsheet importer</p>
+                  <p>Hand Tulip a spreadsheet and she reads its preview, then writes a tiny TulipScript program that maps every row into the right table of your business database. That program never runs as raw code: a locked-down interpreter executes it and checks every instruction. If a sheet doesn't fit, Tulip refuses cleanly. No guessing, no silent damage.</p>
                 </div>
               </section>
               <section class="module" id="jasmine">
                 <img class="spin" src="jasmine.svg" width="120" height="120" alt="Jasmine logo">
                 <div>
-                  <h3>Jasmine</h3>
-                  <p class="module-role">Proposes your site's design</p>
-                  <p>Jasmine proposes how your website looks: colors, fonts, spacing and the order of the sections on each page. She picks only from vetted options and works in a fraction of a second, on your own computer. Code checks every proposal, from readable colors to fonts that cover your language. You see a few proposals side by side, choose one and adjust it live.</p>
+                  <div class="module-head"><h3>Jasmine</h3><span class="chip">~2&ndash;5M params</span><span class="chip tbd">? tensors</span></div>
+                  <p class="module-role">Design engine</p>
+                  <p>The lightest petal. A few million parameters that compose your site's whole look in milliseconds, right on your CPU: palette, font pair, type scale, corners, density and the order of every section. Every choice comes from a vetted catalog, and code verifies it (contrast computed, fonts checked against your language) before you ever see it. She learns from the designs owners approve.</p>
                 </div>
               </section>
               <section class="module" id="daisy">
                 <img class="spin" src="daisy.svg" width="120" height="120" alt="Daisy logo">
                 <div>
-                  <h3>Daisy</h3>
+                  <div class="module-head"><h3>Daisy</h3><span class="chip">27M params</span><span class="chip tbd">? tensors</span><span class="chip">~300 ms per answer</span></div>
                   <p class="module-role">Answers questions about your own data</p>
-                  <p>Once your site is live, ask Daisy about your business in plain English, like "which services earned most last quarter?". She turns your question into a precise request; code checks it, reads your data without changing anything, and shows you the exact rows behind the answer. Daisy runs on your own computer, and when she doesn't know, she says so.</p>
+                  <p>Ask in plain English, like "which services earned most last quarter?". Daisy's 27 million parameters turn your question into a precise query spec in about 0.3 seconds on a single CPU core. Code checks the spec, compiles it to SQL in 0.4 ms and runs it read-only, then shows you the exact rows and the SQL behind the answer. No GPU needed, and when she doesn't know, she says so.</p>
                 </div>
               </section>
             </div>
