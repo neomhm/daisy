@@ -227,17 +227,6 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .acronym strong { color: var(--fg); }
 .acronym { color: var(--fg-muted); }
 
-/* Workflow (the journey of one business) */
-
-.workflow { border: 1px solid var(--border); border-radius: 6px; margin: 0 0 16px; font-size: 14px; }
-.workflow .box-header { font-size: 14px; }
-.markdown .wf-steps { margin: 0; padding: 8px 0; list-style: none; }
-.wf-steps li { display: flex; gap: 12px; padding: 8px 16px; margin: 0; }
-.wf-steps li + li { margin-top: 0; }
-.wf-steps .icon { margin-top: 3px; color: var(--check); }
-.wf-steps strong { display: block; font-weight: 600; }
-.wf-steps span { color: var(--fg-muted); }
-
 /* Principles */
 
 .markdown .principles { padding-left: 0; list-style: none; }
