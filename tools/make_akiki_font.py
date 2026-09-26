@@ -3,6 +3,10 @@
 Typing "akiki" in this font triggers a ligature that draws the whole logo word: the flipped
 first k, the golden dot on the middle i, and the first a and last i in the diamond's colours
 (a COLR/CPAL colour font). Ink pixels use the page's text colour. "_" is the cursor.
+
+The font also sets the motto "A kinder Kind of AI.": letters are unicase (capitals share the
+pixel shapes), every i has a golden dot, and "AI" in capitals becomes the coloured a and i of
+the logo.
 Pixel shapes, spacing and colours come from tools/make_akiki_logo.py, so font and logo match.
 
 Usage: python3 tools/make_akiki_font.py OUTPUT.woff2
@@ -24,6 +28,18 @@ SIZE = round(P * logo.SIZE / logo.PITCH)  # drawn pixel, same proportions as the
 RAD = round(P * logo.RADIUS / logo.PITCH)
 GAP = (P - SIZE) / 2
 INK = 0xFFFF                              # COLR: use the current text colour
+
+
+# Extra letters for the motto, in the logo's 5-row style.
+EXTRA = {
+    'n': ['XXX.', 'X..X', 'X..X', 'X..X', 'X..X'],
+    'd': ['...X', '.XXX', 'X..X', 'X..X', '.XXX'],
+    'e': ['.XX.', 'X..X', 'XXXX', 'X...', '.XXX'],
+    'r': ['X.XX', 'XX..', 'X...', 'X...', 'X...'],
+    'o': ['.XX.', 'X..X', 'X..X', 'X..X', '.XX.'],
+    'f': ['..XX', '.X..', 'XXX.', '.X..', '.X..'],
+    'period': ['.', '.', '.', '.', 'X'],
+}
 
 
 def rgba(h):
@@ -54,19 +70,19 @@ def glyph(pixels):
 
 
 def letter_pixels(ch, mirrored=False):
-    rows = logo.GLYPHS[ch]
+    rows = logo.GLYPHS[ch] if ch in logo.GLYPHS else EXTRA[ch]
     rows = [line[::-1] for line in rows] if mirrored else rows
     return [(c, r) for r, line in enumerate(rows) for c, px in enumerate(line) if px != '.'], len(rows[0])
 
 
-def word_layers():
-    """Pixels of the logo word, grouped by colour (same rules as the logo)."""
+def word_layers(word='akiki', coloured=logo.COLOURED, mirrored=logo.MIRRORED):
+    """Pixels of a word, grouped by colour (same rules as the logo)."""
     layers, x = {}, 0
-    for n, ch in enumerate('akiki'):
-        pixels, w = letter_pixels(ch, n in logo.MIRRORED)
-        rows = [line[::-1] for line in logo.GLYPHS[ch]] if n in logo.MIRRORED else logo.GLYPHS[ch]
+    for n, ch in enumerate(word):
+        pixels, w = letter_pixels(ch, n in mirrored)
+        rows = [line[::-1] for line in logo.GLYPHS[ch]] if n in mirrored else logo.GLYPHS[ch]
         for c, r in pixels:
-            if n in logo.COLOURED:
+            if n in coloured:
                 colour = logo.palette_at((c + r) / max(1, (w - 1) + (logo.ROWS - 1)))
             else:
                 colour = logo.GOLD if rows[r][c] == 'd' else 'ink'
@@ -76,33 +92,48 @@ def word_layers():
 
 
 def build(out):
-    layers, word_width = word_layers()
-    colours = [c for c in layers if c != 'ink']
-    palette = [rgba(c) for c in colours]
-
     glyphs = {'.notdef': glyph([]), 'space': glyph([])}
-    advance = {'.notdef': 2 * P, 'space': 2 * P}
-    for ch in 'aki':
+    advance = {'.notdef': 2 * P, 'space': 3 * P}
+    cmap = {0x20: 'space', ord('_'): 'underscore', ord('.'): 'period'}
+    for ch in 'akinderof':
         pixels, w = letter_pixels(ch)
-        glyphs[ch] = glyph(pixels)
-        advance[ch] = (w + 1) * P
+        for name in (ch, ch.upper()):             # unicase: capitals share the pixel shapes
+            glyphs[name] = glyph(pixels)
+            advance[name] = (w + 1) * P
+            cmap[ord(name)] = name
+    pixels, w = letter_pixels('period')
+    glyphs['period'], advance['period'] = glyph(pixels), (w + 1) * P
     glyphs['underscore'] = glyph([(0, logo.ROWS - 1), (1, logo.ROWS - 1), (2, logo.ROWS - 1)])
     advance['underscore'] = 4 * P
 
-    all_pixels = [p for pixels in layers.values() for p in pixels]
-    glyphs['akiki'] = glyph(all_pixels)            # plain fallback where colour fonts aren't supported
-    advance['akiki'] = word_width * P
-    colr = []
-    for i, (colour, pixels) in enumerate(layers.items()):
-        name = f'akiki.layer{i}'
-        glyphs[name] = glyph(pixels)
-        advance[name] = word_width * P
-        colr.append((name, INK if colour == 'ink' else colours.index(colour)))
+    colours, colr = [], {}
+
+    def colour_glyph(name, layers, width):
+        """A colour glyph: plain outline for fallback plus one layer per colour."""
+        glyphs[name] = glyph([p for pixels in layers.values() for p in pixels])
+        advance[name] = width * P
+        colr[name] = []
+        for i, (colour, pixels) in enumerate(layers.items()):
+            lname = f'{name}.layer{i}'
+            glyphs[lname] = glyph(pixels)
+            advance[lname] = width * P
+            if colour != 'ink' and colour not in colours:
+                colours.append(colour)
+            colr[name].append((lname, INK if colour == 'ink' else colours.index(colour)))
+
+    layers, width = word_layers()
+    colour_glyph('akiki', layers, width)                                   # the logo word
+    layers, width = word_layers('ai', coloured=(0, 1), mirrored=())
+    colour_glyph('A_I', layers, width)                                     # "AI": the logo's coloured a and i
+    for name in ('i', 'I'):                                                # every i gets the golden dot
+        layers, width = word_layers('i', coloured=(), mirrored=())
+        colour_glyph(name, layers, width)
+    palette = [rgba(c) for c in colours]
 
     order = list(glyphs)
     fb = FontBuilder(UPM, isTTF=True)
     fb.setupGlyphOrder(order)
-    fb.setupCharacterMap({0x20: 'space', ord('a'): 'a', ord('k'): 'k', ord('i'): 'i', ord('_'): 'underscore'})
+    fb.setupCharacterMap(cmap)
     fb.setupGlyf(glyphs)
     glyf = fb.font['glyf']
     metrics = {}
@@ -117,8 +148,8 @@ def build(out):
                 sxHeight=700, sCapHeight=700)
     fb.setupPost()
     fb.setupCPAL([palette])
-    fb.setupCOLR({'akiki': colr})
-    addOpenTypeFeaturesFromString(fb.font, 'feature liga { sub a k i k i by akiki; } liga;')
+    fb.setupCOLR(colr)
+    addOpenTypeFeaturesFromString(fb.font, 'feature liga { sub a k i k i by akiki; sub A I by A_I; } liga;')
     fb.font.flavor = 'woff2' if out.endswith('.woff2') else None
     fb.save(out)
 
