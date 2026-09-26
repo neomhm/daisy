@@ -5,6 +5,7 @@ Website source code for AKIKI.AI.
 ## What's where
 
 - `public/`: the website itself. Everything in this folder is copied to the live site.
+  - `public/fonts/akiki-pixel.woff2`: the AKIKI Pixel colour font. Typing "akiki" in it draws the logo word (used in the header). Built by `tools/make_akiki_font.py`.
 - `.cpanel.yml`: tells cPanel to copy `public/` into `/home/akiki/public_html/` when you deploy.
 - `tools/`: scripts that draw the logos. They are not part of the live site.
 - `brand/`: the AKIKI logo (SVG and PNG, for light and dark backgrounds) and icon. Not part of the live site.

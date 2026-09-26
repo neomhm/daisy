@@ -51,7 +51,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .spin, .sway { animation: none; }
+  .spin, .sway, .logo-word .cursor { animation: none; }
 }
 
 .container { max-width: 1280px; margin: 0 auto; padding: 0 var(--gutter); }
@@ -72,6 +72,23 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .brand { display: block; line-height: 0; }
 
 .crumbs { font-size: 16px; }
+
+/* The AKIKI logo word, drawn by its own colour font (fonts/akiki-pixel.woff2): typing "akiki" becomes the logo. */
+@font-face {
+  font-family: "AKIKI Pixel";
+  src: url("fonts/akiki-pixel.woff2") format("woff2");
+  font-display: block;
+}
+.logo-word {
+  font-family: "AKIKI Pixel", var(--mono);
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-ligatures: common-ligatures;
+  color: #2f4d5c;
+}
+.logo-word .cursor { animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
 .crumbs .sep { margin: 0 4px; color: var(--fg-muted); }
 .crumbs strong { font-weight: 600; }
 
