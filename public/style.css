@@ -261,7 +261,6 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   font: 12px/20px var(--mono);
   white-space: nowrap;
 }
-.chip.tbd { border-style: dashed; background: transparent; }
 .markdown .module-role { margin: 2px 0 8px; color: var(--fg-muted); font-style: italic; }
 .markdown .module p:last-child { margin-bottom: 0; }
 
