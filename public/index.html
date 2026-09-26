@@ -3,195 +3,171 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AKIKI.AI</title>
-  <meta name="description" content="AKIKI.AI: a new agentic approach. Hyper-focused AI models, organized by one larger model that runs in the cloud or on your own machine.">
-  <meta name="theme-color" content="#0a0c11">
+  <title>D.AI.SY · A kinder Kind of AI · AKIKI.AI</title>
+  <meta name="description" content="Bigger is not Better. D.AI.SY turns a small business's own files into its website, using small, fast models that run on your own computer. Checked at every step, approved by you.">
+  <meta name="theme-color" content="#f6f8fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <style>
-    :root {
-      --bg: #0a0c11;
-      --fg: #eef0f6;
-      --muted: #9ba3b4;
-      --accent: #7c9cff;
-      --accent-2: #c08cff;
-      --line: rgba(255, 255, 255, 0.16);
-      --node: #151a26;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background:
-        radial-gradient(900px 520px at 50% -8%, rgba(124, 156, 255, 0.16), transparent 65%),
-        radial-gradient(700px 420px at 85% 110%, rgba(192, 140, 255, 0.10), transparent 60%),
-        var(--bg);
-      color: var(--fg);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    header, footer {
-      padding: 24px clamp(16px, 5vw, 48px);
-    }
-
-    .wordmark {
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      font-size: 0.95rem;
-    }
-
-    .wordmark span { color: var(--accent); }
-
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 24px clamp(16px, 5vw, 48px) 48px;
-    }
-
-    .diagram {
-      width: min(220px, 60vw);
-      height: auto;
-      margin-bottom: 32px;
-      overflow: visible;
-    }
-
-    .diagram .link { stroke: var(--line); stroke-width: 1.5; }
-
-    .diagram .pulse {
-      stroke: var(--accent);
-      stroke-width: 1.5;
-      stroke-linecap: round;
-      stroke-dasharray: 3 11;
-      animation: flow 1.6s linear infinite;
-    }
-
-    .diagram .expert { fill: var(--node); stroke: var(--accent); stroke-width: 1.5; }
-    .diagram .expert-dot { fill: var(--accent-2); }
-
-    @keyframes flow {
-      to { stroke-dashoffset: -28; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .diagram .pulse { animation: none; }
-    }
-
-    h1 {
-      margin: 0 0 16px;
-      max-width: 14em;
-      font-size: clamp(2rem, 6vw, 3.5rem);
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-    }
-
-    .gradient {
-      display: inline-block;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .lede {
-      margin: 0 0 32px;
-      max-width: 36em;
-      color: var(--muted);
-      font-size: clamp(1rem, 2.4vw, 1.15rem);
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 8px 18px;
-      border: 1px solid rgba(124, 156, 255, 0.45);
-      border-radius: 999px;
-      background: rgba(124, 156, 255, 0.08);
-      font-size: 0.85rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    footer {
-      color: var(--muted);
-      font-size: 0.85rem;
-      text-align: center;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css?v=1">
 </head>
 <body>
-  <header>
-    <div class="wordmark">AKIKI<span>.</span>AI</div>
+  <!-- Icons: Octicons by GitHub (https://primer.style/octicons), MIT License. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-book" viewBox="0 0 16 16"><path d="M0 1.75A.75.75 0 0 1 .75 1h4.253c1.227 0 2.317.59 3 1.501A3.743 3.743 0 0 1 11.006 1h4.245a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-4.507a2.25 2.25 0 0 0-1.591.659l-.622.621a.75.75 0 0 1-1.06 0l-.622-.621A2.25 2.25 0 0 0 5.258 13H.75a.75.75 0 0 1-.75-.75Zm7.251 10.324.004-5.073-.002-2.253A2.25 2.25 0 0 0 5.003 2.5H1.5v9h3.757a3.75 3.75 0 0 1 1.994.574ZM8.755 4.75l-.004 7.322a3.752 3.752 0 0 1 1.992-.572H14.5v-9h-3.495a2.25 2.25 0 0 0-2.25 2.25Z"></path></symbol>
+    <symbol id="i-branch" viewBox="0 0 16 16"><path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"></path></symbol>
+    <symbol id="i-workflow" viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h3.5C6.216 0 7 .784 7 1.75v3.5A1.75 1.75 0 0 1 5.25 7H4v4a1 1 0 0 0 1 1h4v-1.25C9 9.784 9.784 9 10.75 9h3.5c.966 0 1.75.784 1.75 1.75v3.5A1.75 1.75 0 0 1 14.25 16h-3.5A1.75 1.75 0 0 1 9 14.25v-.75H5A2.5 2.5 0 0 1 2.5 11V7h-.75A1.75 1.75 0 0 1 0 5.25Zm1.75-.25a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h3.5a.25.25 0 0 0 .25-.25v-3.5a.25.25 0 0 0-.25-.25Zm9 9a.25.25 0 0 0-.25.25v3.5c0 .138.112.25.25.25h3.5a.25.25 0 0 0 .25-.25v-3.5a.25.25 0 0 0-.25-.25Z"></path></symbol>
+    <symbol id="i-shield" viewBox="0 0 16 16"><path d="m8.533.133 5.25 1.68A1.75 1.75 0 0 1 15 3.48V7c0 1.566-.32 3.182-1.303 4.682-.983 1.498-2.585 2.813-5.032 3.855a1.697 1.697 0 0 1-1.33 0c-2.447-1.042-4.049-2.357-5.032-3.855C1.32 10.182 1 8.566 1 7V3.48a1.75 1.75 0 0 1 1.217-1.667l5.25-1.68a1.748 1.748 0 0 1 1.066 0Zm-.61 1.429.001.001-5.25 1.68a.251.251 0 0 0-.174.237V7c0 1.36.275 2.666 1.057 3.859.784 1.194 2.121 2.342 4.366 3.298a.196.196 0 0 0 .154 0c2.245-.957 3.582-2.103 4.366-3.297C13.225 9.666 13.5 8.358 13.5 7V3.48a.25.25 0 0 0-.174-.238l-5.25-1.68a.25.25 0 0 0-.153 0ZM11.28 6.28l-3.5 3.5a.75.75 0 0 1-1.06 0l-1.5-1.5a.749.749 0 0 1 .326-1.275.749.749 0 0 1 .734.215l.97.97 2.97-2.97a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z"></path></symbol>
+    <symbol id="i-rocket" viewBox="0 0 16 16"><path d="M14.064 0h.186C15.216 0 16 .784 16 1.75v.186a8.752 8.752 0 0 1-2.564 6.186l-.458.459c-.314.314-.641.616-.979.904v3.207c0 .608-.315 1.172-.833 1.49l-2.774 1.707a.749.749 0 0 1-1.11-.418l-.954-3.102a1.214 1.214 0 0 1-.145-.125L3.754 9.816a1.218 1.218 0 0 1-.124-.145L.528 8.717a.749.749 0 0 1-.418-1.11l1.71-2.774A1.748 1.748 0 0 1 3.31 4h3.204c.288-.338.59-.665.904-.979l.459-.458A8.749 8.749 0 0 1 14.064 0ZM8.938 3.623h-.002l-.458.458c-.76.76-1.437 1.598-2.02 2.5l-1.5 2.317 2.143 2.143 2.317-1.5c.902-.583 1.74-1.26 2.499-2.02l.459-.458a7.25 7.25 0 0 0 2.123-5.127V1.75a.25.25 0 0 0-.25-.25h-.186a7.249 7.249 0 0 0-5.125 2.123ZM3.56 14.56c-.732.732-2.334 1.045-3.005 1.148a.234.234 0 0 1-.201-.064.234.234 0 0 1-.064-.201c.103-.671.416-2.273 1.15-3.003a1.502 1.502 0 1 1 2.12 2.12Zm6.94-3.935c-.088.06-.177.118-.266.175l-2.35 1.521.548 1.783 1.949-1.2a.25.25 0 0 0 .119-.213ZM3.678 8.116 5.2 5.766c.058-.09.117-.178.176-.266H3.309a.25.25 0 0 0-.213.119l-1.2 1.95ZM12 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></symbol>
+    <symbol id="i-dir" viewBox="0 0 16 16"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"></path></symbol>
+    <symbol id="i-file" viewBox="0 0 16 16"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></symbol>
+    <symbol id="i-tag" viewBox="0 0 16 16"><path d="M1 7.775V2.75C1 1.784 1.784 1 2.75 1h5.025c.464 0 .91.184 1.238.513l6.25 6.25a1.75 1.75 0 0 1 0 2.474l-5.026 5.026a1.75 1.75 0 0 1-2.474 0l-6.25-6.25A1.752 1.752 0 0 1 1 7.775Zm1.5 0c0 .066.026.13.073.177l6.25 6.25a.25.25 0 0 0 .354 0l5.025-5.025a.25.25 0 0 0 0-.354l-6.25-6.25a.25.25 0 0 0-.177-.073H2.75a.25.25 0 0 0-.25.25ZM6 5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"></path></symbol>
+    <symbol id="i-history" viewBox="0 0 16 16"><path d="m.427 1.927 1.215 1.215a8.002 8.002 0 1 1-1.6 5.685.75.75 0 1 1 1.493-.154 6.5 6.5 0 1 0 1.18-4.458l1.358 1.358A.25.25 0 0 1 3.896 6H.25A.25.25 0 0 1 0 5.75V2.104a.25.25 0 0 1 .427-.177ZM7.75 4a.75.75 0 0 1 .75.75v2.992l2.028.812a.75.75 0 0 1-.557 1.392l-2.5-1A.751.751 0 0 1 7 8.25v-3.5A.75.75 0 0 1 7.75 4Z"></path></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16Zm3.78-9.72a.751.751 0 0 0-.018-1.042.751.751 0 0 0-1.042-.018L6.75 9.19 5.28 7.72a.751.751 0 0 0-1.042.018.751.751 0 0 0-.018 1.042l2 2a.75.75 0 0 0 1.06 0Z"></path></symbol>
+  </svg>
+
+  <header class="appheader">
+    <div class="container appheader-top">
+      <a class="brand" href="./" aria-label="AKIKI.AI home">
+        <img class="spin" src="favicon.svg" width="32" height="32" alt="">
+      </a>
+      <div class="crumbs"><span>akiki</span><span class="sep">/</span><strong>daisy</strong></div>
+      <span class="label">Coming soon</span>
+    </div>
+    <nav class="container tabs" aria-label="Sections">
+      <a href="#readme" aria-current="true"><svg class="octicon" aria-hidden="true"><use href="#i-book"/></svg>Overview</a>
+      <a href="#how-it-works"><svg class="octicon" aria-hidden="true"><use href="#i-workflow"/></svg>How it works</a>
+      <a href="#principles"><svg class="octicon" aria-hidden="true"><use href="#i-shield"/></svg>Principles</a>
+      <a href="#status"><svg class="octicon" aria-hidden="true"><use href="#i-rocket"/></svg>Status</a>
+    </nav>
   </header>
 
-  <main>
-    <svg class="diagram" viewBox="0 0 240 240" role="img" aria-label="One central model connected to six smaller, focused models">
-      <defs>
-        <radialGradient id="core" cx="35%" cy="35%" r="75%">
-          <stop offset="0%" stop-color="#c08cff"/>
-          <stop offset="100%" stop-color="#7c9cff"/>
-        </radialGradient>
-      </defs>
+  <main class="container">
+    <div class="layout">
+      <div class="main-col">
+        <div class="box">
+          <div class="box-header">
+            <img src="favicon.svg" width="20" height="20" alt="">
+            <strong>akiki</strong>
+            <span class="commit-msg">Bigger is not Better</span>
+            <span class="commit-meta"><svg class="octicon" aria-hidden="true"><use href="#i-history"/></svg>coming soon</span>
+          </div>
+          <ul class="file-list">
+            <li><a href="#how-it-works"><svg class="octicon i-dir" aria-label="Folder"><use href="#i-dir"/></svg><span class="name">organizer</span><span class="msg">writes the plan for your site, once per business</span><span class="when">coming soon</span></a></li>
+            <li><a href="#how-it-works"><svg class="octicon i-dir" aria-label="Folder"><use href="#i-dir"/></svg><span class="name">extractor</span><span class="msg">reads your files and marks the facts</span><span class="when">coming soon</span></a></li>
+            <li><a href="#how-it-works"><svg class="octicon i-dir" aria-label="Folder"><use href="#i-dir"/></svg><span class="name">tulip</span><span class="msg">imports your spreadsheets</span><span class="when">coming soon</span></a></li>
+            <li><a href="#how-it-works"><svg class="octicon i-dir" aria-label="Folder"><use href="#i-dir"/></svg><span class="name">jasmine</span><span class="msg">proposes your site's design</span><span class="when">coming soon</span></a></li>
+            <li><a href="#how-it-works"><svg class="octicon i-dir" aria-label="Folder"><use href="#i-dir"/></svg><span class="name">daisy</span><span class="msg">answers questions about your own data</span><span class="when">coming soon</span></a></li>
+            <li><a href="#how-it-works"><svg class="octicon i-dir" aria-label="Folder"><use href="#i-dir"/></svg><span class="name">blocks</span><span class="msg">vetted building blocks for your website</span><span class="when">coming soon</span></a></li>
+            <li><a href="#principles"><svg class="octicon i-file" aria-label="File"><use href="#i-file"/></svg><span class="name">PRINCIPLES.md</span><span class="msg">a kinder kind of AI</span><span class="when">coming soon</span></a></li>
+            <li><a href="#readme"><svg class="octicon i-file" aria-label="File"><use href="#i-file"/></svg><span class="name">README.md</span><span class="msg">bigger is not better</span><span class="when">coming soon</span></a></li>
+          </ul>
+        </div>
 
-      <g>
-        <line class="link" x1="120" y1="120" x2="204" y2="120"/>
-        <line class="link" x1="120" y1="120" x2="162" y2="192.75"/>
-        <line class="link" x1="120" y1="120" x2="78" y2="192.75"/>
-        <line class="link" x1="120" y1="120" x2="36" y2="120"/>
-        <line class="link" x1="120" y1="120" x2="78" y2="47.25"/>
-        <line class="link" x1="120" y1="120" x2="162" y2="47.25"/>
-      </g>
+        <article class="box readme" id="readme">
+          <div class="box-header"><svg class="octicon" aria-hidden="true"><use href="#i-book"/></svg><strong>README</strong></div>
+          <div class="markdown">
+            <div class="hero">
+              <img class="spin hero-logo" src="daisy.svg" width="152" height="152" alt="The D.AI.SY daisy: small models as petals around one organizer">
+              <h1>Bigger is <em>not</em> Better.</h1>
+              <p class="motto">A kinder Kind of AI.</p>
+              <p class="acronym"><strong>D</strong>istributed <strong>A</strong>rtificial <strong>I</strong>ntelligence <strong>S</strong>erving <strong>Y</strong>ou</p>
+              <p class="badges">
+                <span class="badge"><span>status</span><span class="b-orange">coming soon</span></span>
+                <span class="badge"><span>languages</span><span class="b-teal">10</span></span>
+                <span class="badge"><span>small models</span><span class="b-blue">on your CPU</span></span>
+                <span class="badge"><span>organizer</span><span class="b-purple">cloud or local</span></span>
+              </p>
+            </div>
 
-      <g>
-        <line class="pulse" x1="120" y1="120" x2="204" y2="120"/>
-        <line class="pulse" x1="120" y1="120" x2="162" y2="192.75"/>
-        <line class="pulse" x1="120" y1="120" x2="78" y2="192.75"/>
-        <line class="pulse" x1="120" y1="120" x2="36" y2="120"/>
-        <line class="pulse" x1="120" y1="120" x2="78" y2="47.25"/>
-        <line class="pulse" x1="120" y1="120" x2="162" y2="47.25"/>
-      </g>
+            <hr>
 
-      <circle cx="120" cy="120" r="44" fill="#7c9cff" opacity="0.12"/>
-      <circle cx="120" cy="120" r="26" fill="url(#core)"/>
+            <p>Hand over a folder of your business's own files: invoices, quotes, price lists, spreadsheets, brochures, letters. <strong>D.AI.SY turns it into your website</strong>, checked at every step. You approve everything before anything is published.</p>
+            <p>After launch, ask questions about your own data, like <em>"which services earned most last quarter?"</em>, and get exact answers in about a second.</p>
 
-      <g>
-        <circle class="expert" cx="204" cy="120" r="11"/>
-        <circle class="expert" cx="162" cy="192.75" r="11"/>
-        <circle class="expert" cx="78" cy="192.75" r="11"/>
-        <circle class="expert" cx="36" cy="120" r="11"/>
-        <circle class="expert" cx="78" cy="47.25" r="11"/>
-        <circle class="expert" cx="162" cy="47.25" r="11"/>
-      </g>
+            <h2 id="why-small">Why small models</h2>
+            <p>Most AI today is one giant model that tries to do everything. D.AI.SY does the opposite. Small, fast models, each built for one precise job, do the work on your own computer's ordinary processor. No graphics card needed.</p>
+            <p>One larger model is the organizer. It's called once per business to write the plan, and it runs on our server or on your own PC. Your choice.</p>
 
-      <g>
-        <circle class="expert-dot" cx="204" cy="120" r="3"/>
-        <circle class="expert-dot" cx="162" cy="192.75" r="3"/>
-        <circle class="expert-dot" cx="78" cy="192.75" r="3"/>
-        <circle class="expert-dot" cx="36" cy="120" r="3"/>
-        <circle class="expert-dot" cx="78" cy="47.25" r="3"/>
-        <circle class="expert-dot" cx="162" cy="47.25" r="3"/>
-      </g>
-    </svg>
+            <h2 id="how-it-works">How it works</h2>
+            <div class="workflow">
+              <div class="box-header"><svg class="octicon" aria-hidden="true"><use href="#i-workflow"/></svg><strong>one-business.yml</strong><span class="muted">from your files to your website</span></div>
+              <ol class="wf-steps">
+                <li><svg class="octicon" aria-hidden="true"><use href="#i-check"/></svg><div><strong>Read</strong><span>Every file becomes text, in any of ten languages.</span></div></li>
+                <li><svg class="octicon" aria-hidden="true"><use href="#i-check"/></svg><div><strong>Understand</strong><span>Small models mark the facts in your documents, and code checks each one against its source.</span></div></li>
+                <li><svg class="octicon" aria-hidden="true"><use href="#i-check"/></svg><div><strong>Plan</strong><span>The organizer writes the plan for your site, once. It sees only codes and counts, never your names, addresses or figures.</span></div></li>
+                <li><svg class="octicon" aria-hidden="true"><use href="#i-check"/></svg><div><strong>Build</strong><span>Your site is assembled from vetted, hand-written building blocks. No model writes code.</span></div></li>
+                <li><svg class="octicon" aria-hidden="true"><use href="#i-check"/></svg><div><strong>Check</strong><span>Code checks every page: every number matches its source, and nothing is unsourced.</span></div></li>
+                <li><svg class="octicon" aria-hidden="true"><use href="#i-check"/></svg><div><strong>Approve</strong><span>You see the finished site and approve, edit or remove every fact, sentence and photo.</span></div></li>
+                <li><svg class="octicon" aria-hidden="true"><use href="#i-check"/></svg><div><strong>Publish</strong><span>Only what you approved goes live. The last ten versions are kept, so you can always switch back.</span></div></li>
+                <li><svg class="octicon" aria-hidden="true"><use href="#i-check"/></svg><div><strong>Ask</strong><span>After launch, ask Daisy about your own data. You get the exact answer and the rows it came from.</span></div></li>
+              </ol>
+            </div>
 
-    <h1>Hyper-focused models, <span class="gradient">working as one.</span></h1>
+            <h2 id="principles">Principles</h2>
+            <p>What <em>a kinder Kind of AI</em> means to us:</p>
+            <ul class="principles">
+              <li><svg class="octicon" aria-hidden="true"><use href="#i-shield"/></svg><strong>Small models, on your own computer.</strong> The precise work is done by small, fast models on an ordinary PC.</li>
+              <li><svg class="octicon" aria-hidden="true"><use href="#i-shield"/></svg><strong>The organizer runs where you choose:</strong> on our server, or on your own PC.</li>
+              <li><svg class="octicon" aria-hidden="true"><use href="#i-shield"/></svg><strong>Code checks everything.</strong> No model judges another model, and nothing a model writes is ever run as code.</li>
+              <li><svg class="octicon" aria-hidden="true"><use href="#i-shield"/></svg><strong>Every value has a source:</strong> a line in your documents, a cell in your spreadsheet, or your own answer.</li>
+              <li><svg class="octicon" aria-hidden="true"><use href="#i-shield"/></svg><strong>"No" is a normal answer.</strong> When a model isn't sure, it says so, and the question comes to you instead of a guess.</li>
+              <li><svg class="octicon" aria-hidden="true"><use href="#i-shield"/></svg><strong>Private stays private.</strong> Revenue, staff numbers and client names are never published. Bank and card numbers, ID numbers and salaries are never even extracted.</li>
+              <li><svg class="octicon" aria-hidden="true"><use href="#i-shield"/></svg><strong>You approve every public fact</strong> before anything is published.</li>
+            </ul>
 
-    <p class="lede">
-      A new agentic approach to AI: small models that each master one task,
-      organized by a larger model to take on complex work.
-      Run the organizer in the cloud or on your own machine. Your choice.
-    </p>
+            <h2 id="status">Status</h2>
+            <p>In development. The first release is coming soon.</p>
+          </div>
+        </article>
+      </div>
 
-    <span class="badge">Coming soon</span>
+      <aside class="side-col">
+        <section class="side">
+          <p class="side-desc">Turns a small business's own files into its website, checked at every step and approved by the owner.</p>
+          <p class="side-motto">A kinder Kind of AI.</p>
+          <ul class="topics">
+            <li>small-models</li>
+            <li>runs-on-cpu</li>
+            <li>small-business</li>
+            <li>websites</li>
+            <li>privacy</li>
+            <li>kinder-ai</li>
+          </ul>
+        </section>
+
+        <section class="side">
+          <h2>Releases</h2>
+          <p class="release"><svg class="octicon" aria-hidden="true"><use href="#i-tag"/></svg>No releases yet</p>
+          <p class="muted">The first release is coming soon.</p>
+        </section>
+
+        <section class="side">
+          <h2>Languages</h2>
+          <div class="lang-bar" aria-hidden="true">
+            <span style="--c:#35adb0"></span><span style="--c:#3aa56f"></span><span style="--c:#6592b4"></span><span style="--c:#7c8acb"></span><span style="--c:#f2b632"></span><span style="--c:#ec8e4a"></span><span style="--c:#a06fc2"></span><span style="--c:#ad76bb"></span><span style="--c:#8a80cf"></span><span style="--c:#2fb39a"></span>
+          </div>
+          <ul class="lang-list">
+            <li style="--c:#35adb0">Arabic</li>
+            <li style="--c:#3aa56f">Chinese</li>
+            <li style="--c:#6592b4">English</li>
+            <li style="--c:#7c8acb">French</li>
+            <li style="--c:#f2b632">Hindi</li>
+            <li style="--c:#ec8e4a">Italian</li>
+            <li style="--c:#a06fc2">Japanese</li>
+            <li style="--c:#ad76bb">Korean</li>
+            <li style="--c:#8a80cf">Russian</li>
+            <li style="--c:#2fb39a">Spanish</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
   </main>
 
-  <footer>&copy; 2026 AKIKI.AI</footer>
+  <footer class="footer">
+    <div class="container footer-inner">
+      <img src="favicon.svg" width="24" height="24" alt="">
+      <span>&copy; 2026 AKIKI.AI</span>
+      <span class="footer-motto">A kinder Kind of AI.</span>
+    </div>
+  </footer>
 </body>
 </html>
