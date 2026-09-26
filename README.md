@@ -6,6 +6,7 @@ Website source code for AKIKI.AI.
 
 - `public/`: the website itself. Everything in this folder is copied to the live site.
 - `.cpanel.yml`: tells cPanel to copy `public/` into `/home/akiki/public_html/` when you deploy.
+- `tools/`: scripts that draw the logos. They are not part of the live site.
 
 ## Putting changes live
 

@@ -199,7 +199,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .markdown hr { height: 1px; margin: 24px 0; border: 0; background: var(--border-muted); }
 
 .hero { text-align: center; scroll-margin-top: 16px; }
-.hero-logo { width: clamp(128px, 30vw, 152px); height: auto; }
+.hero-logo { width: clamp(200px, 56vw, 240px); height: auto; }
 .hero h1 {
   margin: 12px 0 20px;
   font-size: clamp(2.25rem, 7vw, 3.5rem);
