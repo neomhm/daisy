@@ -45,9 +45,13 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .spin { animation: spin 90s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* The tulip sways on its stem instead of turning. */
+.sway { animation: sway 6s ease-in-out infinite; transform-origin: 50% 96%; }
+@keyframes sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .spin { animation: none; }
+  .spin, .sway { animation: none; }
 }
 
 .container { max-width: 1280px; margin: 0 auto; padding: 0 var(--gutter); }
@@ -231,6 +235,29 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .markdown .principles { padding-left: 0; list-style: none; }
 .principles li { position: relative; padding-left: 28px; }
 .principles .icon { position: absolute; left: 0; top: 5px; color: var(--check); }
+
+/* Modules */
+
+.modules { display: grid; gap: 16px; margin: 0 0 16px; }
+.module {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+  border: var(--hairline) solid var(--border);
+  border-radius: 6px;
+  scroll-margin-top: 16px;
+}
+.module:target { border-color: var(--tab-line); box-shadow: 0 0 0 1px var(--tab-line); }
+.module img { flex: none; width: 120px; height: 120px; }
+.module h3 { margin: 0; font-size: 1.25em; font-weight: 600; line-height: 1.25; }
+.markdown .module-role { margin: 2px 0 8px; color: var(--fg-muted); font-style: italic; }
+.markdown .module p:last-child { margin-bottom: 0; }
+
+@media (max-width: 543px) {
+  .module { flex-direction: column; text-align: center; gap: 12px; }
+  .markdown .module p:not(.module-role) { text-align: left; }
+}
 
 /* Sidebar */
 
