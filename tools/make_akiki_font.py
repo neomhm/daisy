@@ -5,8 +5,8 @@ first k, the golden dot on the middle i, and the first a and last i in the diamo
 (a COLR/CPAL colour font). Ink pixels use the page's text colour. "_" is the cursor.
 
 The font also sets the motto "A kinder Kind of AI.": letters are unicase (capitals share the
-pixel shapes), every i has a golden dot, and "AI" in capitals becomes the coloured a and i of
-the logo.
+pixel shapes), the small k is flipped like the logo's first k, every i has a golden dot, and
+"AI" in capitals becomes the coloured a and i of the logo.
 Pixel shapes, spacing and colours come from tools/make_akiki_logo.py, so font and logo match.
 
 Usage: python3 tools/make_akiki_font.py OUTPUT.woff2
@@ -96,8 +96,9 @@ def build(out):
     advance = {'.notdef': 2 * P, 'space': 3 * P}
     cmap = {0x20: 'space', ord('_'): 'underscore', ord('.'): 'period'}
     for ch in 'akinderof':
-        pixels, w = letter_pixels(ch)
         for name in (ch, ch.upper()):             # unicase: capitals share the pixel shapes
+            # the small k is flipped, like the logo's first k, so "kinder Kind" face each other
+            pixels, w = letter_pixels(ch, mirrored=(name == 'k'))
             glyphs[name] = glyph(pixels)
             advance[name] = (w + 1) * P
             cmap[ord(name)] = name
