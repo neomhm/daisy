@@ -257,6 +257,20 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .b-purple { background: #7e57c2; }
 
 
+/* The pixel stripe into the models, after mistral.ai's "sunset stripe": rows of logo pixels
+   (pixel-band.svg, drawn by tools/make_pixel_band.py). 13 rows of 8px, 6px on phones,
+   running edge to edge across the README. */
+.pixel-band {
+  --px: 8px;
+  height: calc(13 * var(--px));
+  margin: 40px -32px 0;
+  background: url("pixel-band.svg") 50% 0 / auto 100% repeat-x;
+}
+.markdown .pixel-band + h2 { margin-top: 28px; }
+@media (max-width: 543px) {
+  .pixel-band { --px: 6px; margin: 32px -16px 0; }
+}
+
 /* Principles */
 
 .markdown .principles { padding-left: 0; list-style: none; }
