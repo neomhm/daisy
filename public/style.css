@@ -403,6 +403,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   .stack-box:hover .stack-handles { opacity: 1; }
 }
 .stack-icon { width: calc(.22 * var(--u)); height: calc(.22 * var(--u)); }
+.stack-computer .stack-icon { width: calc(.484 * var(--u)); }   /* the farm is 13 pixels wide, not 5 */
 .stack-spec { position: absolute; top: calc(.09 * var(--u)); right: calc(.09 * var(--u)); color: var(--fg-muted); font: 11px/1 var(--mono); }
 .stack-name {
   margin-top: auto;
