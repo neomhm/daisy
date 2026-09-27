@@ -14,7 +14,7 @@ import sys
 
 W, H = 500, 330
 M = 2.0                         # module: a gear with N teeth has a pitch radius of N units
-RATE = 2.0                      # teeth per second passing every contact
+RATE = 1.4                      # teeth per second passing every contact
 TIP, ROOT = 0.9 * M, 1.25 * M   # addendum and dedendum
 THICK = 0.42 * math.pi * M      # tooth thickness on the pitch circle
 FLANK = math.tan(math.radians(14))
