@@ -348,7 +348,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .footer-inner img { opacity: 0.7; }
 .footer-motto { margin-left: auto; font-style: italic; }
 
-/* The box stack at the top, after mistral.ai's: the orchestra, the small models and what they
+/* The box stack at the top, after mistral.ai's: the bouquet, the small models and what they
    run on. Behind the boxes turns one gear train (gears.svg, drawn by tools/make_gears.py), seen
    through the grey slots. A box slides a fifth of its size out of its slot when the mouse is on
    it (or it has keyboard focus), showing corner handles and the gears behind. Everything is
@@ -424,7 +424,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 }
 
 /* Where each box sits, and which way (--mx, --my, in boxes) it slides: towards open space. */
-.stack-organizer { --x: 1.5; --y: .15; --w: 2; --i: 0; --my: -.2; }
+.stack-bouquet { --x: 1.5; --y: .15; --w: 2; --i: 0; --my: -.2; }
 .stack-tulip { --x: 1.5; --y: 1.15; --i: 1; --mx: -.2; }
 .stack-jasmine { --x: 2.5; --y: 1.15; --i: 2; --my: .2; }
 .stack-daisy { --x: 3.5; --y: 1.15; --i: 3; --mx: .2; }
@@ -438,7 +438,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   .stack-frame { --u: 150px; display: grid; grid-template-columns: 1fr 1fr; width: auto; height: auto; }
   .stack-frame > * { position: relative; left: auto; top: auto; width: auto; }
   .stack-slot, .stack-frame > .stack-gears, .stack-diamond, .stack-handles { display: none; }
-  .stack-organizer, .stack-computer { grid-column: span 2; }
+  .stack-bouquet, .stack-computer { grid-column: span 2; }
   .stack-box.stack-box { transform: none; }
 }
 

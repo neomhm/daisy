@@ -1,7 +1,7 @@
-"""Draw the Tulip and Jasmine logos in the same network-of-nodes style as the Daisy logo.
+"""Draw the Tulip, Jasmine and Bouquet logos in the same network-of-nodes style as the Daisy logo.
 
 Usage: python3 tools/make_flowers.py OUTPUT_DIR
-Writes OUTPUT_DIR/tulip.svg and OUTPUT_DIR/jasmine.svg.
+Writes OUTPUT_DIR/tulip.svg, OUTPUT_DIR/jasmine.svg and OUTPUT_DIR/bouquet.svg.
 """
 import math
 import os
@@ -114,9 +114,8 @@ def jasmine():
     return d.svg('Jasmine')
 
 
-def tulip():
-    d = Drawing()
-    # Tulip head: two side petals behind, one petal in front, built from named nodes.
+def tulip_head():
+    """The tulip's head: two side petals behind, one petal in front, as named nodes and edges."""
     N = {'B': (0, 4, 3.2),
          'L1': (-24, -2, 2.4), 'L2': (-40, -24, 2.8), 'L3': (-46, -50, 3.0), 'L4': (-44, -72, 3.2), 'Lt': (-36, -91, 4.6),
          'C1L': (-12, -20, 2.2), 'C2L': (-20, -48, 2.6), 'C3L': (-16, -75, 2.8), 'Ct': (0, -97, 5.0),
@@ -127,15 +126,21 @@ def tulip():
             x, y, r = N[name]
             N[name.replace('L', 'R', 1) if name[0] == 'L' else name[:-1] + 'R'] = (-x, y, r)
     petal = {'left': '#a06fc2', 'centre': '#ad76bb', 'right': '#927fcc'}
-    d.gradient('tl', (0, 4), (-36, -91), ORANGE, petal['left'], 0.55)
-    d.gradient('tc', (0, 4), (0, -97), ORANGE, petal['centre'], 0.55)
-    d.gradient('tr', (0, 4), (36, -91), ORANGE, petal['right'], 0.55)
     edges = {
         'tl': 'B-L1 L1-L2 L2-L3 L3-L4 L4-Lt Lt-SVL SVL-C3L L1-S1L L2-S1L S1L-C1L S1L-C2L S1L-S2L L2-S2L L3-S2L S2L-C2L S2L-SVL L4-SVL',
         'tr': 'B-R1 R1-R2 R2-R3 R3-R4 R4-Rt Rt-SVR SVR-C3R R1-S1R R2-S1R S1R-C1R S1R-C2R S1R-S2R R2-S2R R3-S2R S2R-C2R S2R-SVR R4-SVR',
         'tc': 'B-C1L C1L-C2L C2L-C3L C3L-Ct Ct-C3R C3R-C2R C2R-C1R C1R-B B-M1 M1-M2 M2-M3 M3-Ct '
               'C1L-M1 C1R-M1 C2L-M1 C2R-M1 C2L-M2 C2R-M2 C3L-M2 C3R-M2 C3L-M3 C3R-M3',
     }
+    return N, edges, petal
+
+
+def tulip():
+    d = Drawing()
+    N, edges, petal = tulip_head()
+    d.gradient('tl', (0, 4), (-36, -91), ORANGE, petal['left'], 0.55)
+    d.gradient('tc', (0, 4), (0, -97), ORANGE, petal['centre'], 0.55)
+    d.gradient('tr', (0, 4), (36, -91), ORANGE, petal['right'], 0.55)
     for gid, spec in edges.items():
         for e in spec.split():
             a, b = e.split('-')
@@ -160,9 +165,115 @@ def tulip():
     return d.svg('Tulip')
 
 
+def bouquet():
+    """Bouquet: the team's flowers, a daisy, a tulip and a jasmine, tied together with a golden bow."""
+    d = Drawing()
+    GREEN = '#3aa56f'
+    tie = (0, 56)
+    at = lambda c, r, a: (c[0] + r * math.cos(math.radians(a)), c[1] + r * math.sin(math.radians(a)))
+    warm = lambda t: mix(YELLOW, ORANGE, t)
+
+    def stem(points, gid):
+        d.gradient(gid, points[0], points[-1], mix(ORANGE, GREEN, 0.5), GREEN, 0.4)
+        for p, q in zip(points, points[1:]):
+            d.line(p, q, f'url(#{gid})', 1.0)
+        for p in points[1:-1]:
+            d.node(p, 1.9, GREEN)
+
+    # The daisy, the tallest: twelve petals in the Daisy logo's colours around a golden heart.
+    centre = (0, -50)
+    colours = ['#3aa56f', '#7f8fb3', '#a06fc2', '#ad76bb', '#a07cc8', '#927fcc',
+               '#8a80cf', '#7c8acb', '#6f94c4', '#6592b4', '#35adb0', '#2fb39a']
+    ring = [at(centre, 6.5, -60 + 60 * k) for k in range(6)]
+    stem([at(centre, 6.5, 90), (0, -8), (0, 16), (0, 38), tie], 'bds')
+    for k in range(12):
+        a = -75 + 30 * k
+        col, gid = colours[k], f'bd{k}'
+        base, rib, tip = at(centre, 12, a), at(centre, 27.5, a), at(centre, 47, a)
+        l1, r1 = at(at(centre, 21, a), 3.6, a - 90), at(at(centre, 21, a), 3.6, a + 90)
+        l2, r2 = at(at(centre, 34, a), 5.0, a - 90), at(at(centre, 34, a), 5.0, a + 90)
+        d.gradient(gid, base, tip, warm(0.4), col, 0.45)
+        for p, q in ((base, l1), (l1, l2), (l2, tip), (base, r1), (r1, r2), (r2, tip), (l1, r1), (l2, r2),
+                     (base, rib), (rib, tip), (l1, rib), (r1, rib), (l2, rib), (r2, rib)):
+            d.line(p, q, f'url(#{gid})', 0.6)
+        for r in sorted(ring, key=lambda r: math.dist(r, base))[:2]:
+            d.line(r, base, warm(0.3), 0.6, 0.85)
+        d.node(base, 1.8, mix(ORANGE, col, 0.25))
+        for p, r, t in ((l1, 1.6, 0.5), (r1, 1.6, 0.5), (rib, 1.5, 0.7), (l2, 2.0, 0.9), (r2, 2.0, 0.9)):
+            d.node(p, r, mix(ORANGE, col, t))
+        d.node(tip, 3.4, col)
+    for i, r in enumerate(ring):
+        d.line(centre, r, warm(0.2), 0.7, 0.85)
+        d.line(r, ring[(i + 1) % 6], warm(0.2), 0.7, 0.85)
+        d.node(r, 2.0, warm(0.3))
+    d.node(centre, 4.6, YELLOW)
+
+    # The tulip, leaning out to the left: the Tulip logo's head, smaller.
+    N, edges, petal = tulip_head()
+    turn, scale, origin = math.radians(-40), 0.5, (-38, 22)
+    tp = lambda x, y: (origin[0] + scale * (math.cos(turn) * x - math.sin(turn) * y),
+                       origin[1] + scale * (math.sin(turn) * x + math.cos(turn) * y))
+    stem([tp(0, 4), (-24, 36), (-11, 47), tie], 'bts')
+    for gid, tip in (('tl', 'Lt'), ('tc', 'Ct'), ('tr', 'Rt')):
+        side = {'tl': 'left', 'tc': 'centre', 'tr': 'right'}[gid]
+        d.gradient('b' + gid, tp(0, 4), tp(*N[tip][:2]), ORANGE, petal[side], 0.55)
+    for gid, spec in edges.items():
+        for e in spec.split():
+            a, b = e.split('-')
+            d.line(tp(*N[a][:2]), tp(*N[b][:2]), f'url(#b{gid})', 0.6)
+    for name, (x, y, r) in N.items():
+        t = max(0.0, min(1.0, (4 - y) / 101))
+        side = petal['left'] if x < -8 else petal['right'] if x > 8 else petal['centre']
+        d.node(tp(x, y), r * 0.6, mix(ORANGE, side, min(1, t / 0.55)))
+
+    # The jasmine, leaning out to the right: five petals around a golden heart.
+    centre, spin = (62, 4), 184
+    stem([at(centre, 6, spin - 36), (30, 34), (14, 47), tie], 'bjs')
+    jcol = ['#a06fc2', '#8a80cf', '#ad76bb', '#927fcc', '#7c8acb']
+    hub = [at(centre, 5.5, spin + 36 + 72 * k) for k in range(5)]
+    for k in range(5):
+        a = spin + 72 * k
+        base, tip = at(centre, 7, a), at(centre, 36, a + 6)
+        col = jcol[k]
+        d.gradient(f'bj{k}', base, tip, warm(0.5), col)
+        b, left, right = lattice(d, f'bj{k}', base, tip, 10, lambda t, c=col: mix(warm(0.5), c, min(1, t / 0.45)),
+                                 sizes=(1.4, 1.9), tip_r=3.0, shear=0.05, steps=4)
+        for h in (hub[k - 1], hub[k]):
+            d.line(h, b, warm(0.5), 0.6, 0.85)
+    for i, h in enumerate(hub):
+        d.line(centre, h, warm(0.3), 0.6, 0.85)
+        d.line(h, hub[(i + 1) % 5], warm(0.3), 0.6, 0.85)
+        d.node(h, 1.8, warm(0.4))
+    d.node(centre, 3.8, YELLOW)
+
+    # Below the bow the three stems fan out again.
+    for end in ((-14, 98), (0, 100), (14, 98)):
+        mid = (end[0] * 0.55, (tie[1] + end[1]) / 2 + 2)
+        d.line(tie, mid, GREEN, 1.0)
+        d.line(mid, end, GREEN, 1.0)
+        d.node(mid, 1.9, GREEN)
+        d.node(end, 2.6, GREEN)
+
+    # The golden bow that ties them: two loops and two ribbon ends.
+    for sx in (-1, 1):
+        loop = [(sx * 10, 47), (sx * 20, 44), (sx * 26, 52), (sx * 22, 62), (sx * 11, 62)]
+        chain = [tie] + loop + [tie]
+        for p, q in zip(chain, chain[1:]):
+            d.line(p, q, warm(0.55), 0.8)
+        d.line(loop[0], loop[3], warm(0.55), 0.6, 0.8)
+        d.line(loop[1], loop[4], warm(0.55), 0.6, 0.8)
+        tail = [(sx * 6, 68), (sx * 9, 78)]
+        d.line(tie, tail[0], warm(0.7), 0.8)
+        d.line(tail[0], tail[1], warm(0.7), 0.8)
+        for p, r, t in zip(loop + tail, (1.8, 2.2, 2.8, 2.2, 1.8, 1.9, 2.6), (0.3, 0.5, 0.7, 0.6, 0.4, 0.6, 0.9)):
+            d.node(p, r, warm(t))
+    d.node(tie, 4.6, YELLOW)
+    return d.svg('Bouquet')
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     out = sys.argv[1]
     open(os.path.join(out, 'tulip.svg'), 'w').write(tulip())
     open(os.path.join(out, 'jasmine.svg'), 'w').write(jasmine())
+    open(os.path.join(out, 'bouquet.svg'), 'w').write(bouquet())

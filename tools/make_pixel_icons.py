@@ -1,7 +1,7 @@
 """Draw the pixel icons of the box stack at the top of the page, as SVG <symbol>s.
 
-Each icon is a 5x5 glyph of the AKIKI logo's rounded pixels. The models get a coloured tile with
-a white glyph (the organizer's plan, Tulip's flower head, Jasmine's star, the one-byte daisy);
+Each icon is a 5x5 glyph of the AKIKI logo's rounded pixels. The models get a white glyph (the
+bouquet, Tulip's flower head, Jasmine's star, the one-byte daisy) on a tile in their card's colour;
 "your data" and "your computer" are bare glyphs in ink. H marks a golden pixel.
 
 Usage: python3 tools/make_pixel_icons.py > symbols.txt   (paste into the sprite in index.html)
@@ -17,10 +17,10 @@ SIZE = PITCH * logo.SIZE / logo.PITCH
 RADIUS = PITCH * logo.RADIUS / logo.PITCH
 
 ICONS = {
-    'organizer': ('#ec8e4a', ['X.XXX', '.....', 'X.XXX', '.....', 'X.XXX']),   # the plan
+    'bouquet': ('#35adb0', ['.X.X.', 'X.X.X', '.XXX.', '..H..', '.X.X.']),     # flowers tied with a golden bow
     'tulip': ('#3aa56f', ['X.X.X', 'XXXXX', 'XXXXX', '.XXX.', '..X..']),
     'jasmine': ('#a06fc2', ['..X..', '..X..', 'XXHXX', '.X.X.', 'X...X']),
-    'daisy': ('#7c8acb', ['..X..', '.X.X.', 'X.H.X', '.X.X.', '..X..']),       # the one-byte flower
+    'daisy': ('#ec8e4a', ['..X..', '.X.X.', 'X.H.X', '.X.X.', '..X..']),       # the one-byte flower
     'data': (None, ['XXXXX', 'X.H.X', 'XXXXX', 'X.X.X', 'XXXXX']),             # a spreadsheet
     'computer': (None, ['.X.X.', 'XXXXX', 'X.H.X', 'XXXXX', '.X.X.']),         # a chip
 }
