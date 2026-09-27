@@ -1,8 +1,8 @@
 """Draw the page background: gentle pastel squares in the logo's colours, drifting very slowly.
 
 Soft rounded squares of a few sizes, mostly large and calm with a few small ones, are spread
-evenly over the window (no clumps). Each one glides back and forth in its own direction, a
-little over a minute or two, never in step with the others. Colours are the logo's, mixed
+evenly over the window (no clumps). Each one glides back and forth in its own direction over
+five to ten minutes, never in step with the others. Colours are the logo's, mixed
 mostly with white. The squares are plain HTML elements moved by CSS, which is light work for
 the browser.
 
@@ -42,7 +42,7 @@ def place():
                     best, best_gap = (x, y), gap
             a = rnd.uniform(0, 2 * math.pi)                     # its own direction
             reach = rnd.uniform(50, 140)                        # px travelled each way
-            time = rnd.uniform(70, 140)                         # seconds per glide
+            time = rnd.uniform(280, 560)                        # seconds per glide
             squares.append(dict(x=best[0], y=best[1], s=side, c=mix(rnd.choice(COLOURS), WHITE),
                                 dx=reach * math.cos(a), dy=reach * math.sin(a), t=time,
                                 p=-rnd.uniform(0, 2 * time)))   # start part-way, out of step
