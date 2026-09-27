@@ -1,10 +1,12 @@
-"""Draw the page background: gentle pastel squares in the logo's colours, as one seamless tile.
+"""Draw the page background: gentle pastel squares in the logo's colours, drifting very slowly.
 
 Soft rounded squares of a few sizes, mostly large and calm with a few small ones, are spread
-evenly (no clumps, no overlaps) and wrap around the tile's edges, so the pattern repeats
-without a seam. Colours are the logo's, mixed mostly with white.
+evenly over the window (no clumps). Each one glides back and forth in its own direction, a
+little over a minute or two, never in step with the others. Colours are the logo's, mixed
+mostly with white. The squares are plain HTML elements moved by CSS, which is light work for
+the browser.
 
-Usage: python3 tools/make_background.py OUTPUT.svg
+Usage: python3 tools/make_background.py > drift.txt   (paste into index.html, right after <body>)
 """
 import math
 import os
@@ -14,20 +16,16 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import make_akiki_logo as logo  # noqa: E402  (same colours as the logo)
 
-TILE = 1080
-SIZES = [(96, 7), (64, 11), (40, 11), (22, 11)]   # (side in px, how many per tile)
+SIZES = [(96, 5), (64, 8), (40, 8), (22, 9)]      # (side in px, how many)
 COLOURS = logo.PETALS + [logo.GOLD, '#ec8e4a']
 WHITE = 0.84                                      # share of white mixed into each colour
+ASPECT = 1.6                                      # spread them for a typical wide window
 SEED = 11
 
 
 def mix(c, t):
     r, g, b = (int(c[i:i + 2], 16) for i in (1, 3, 5))
     return '#%02x%02x%02x' % tuple(round(v + (255 - v) * t) for v in (r, g, b))
-
-
-def wrap(d):
-    return min(d, TILE - d)
 
 
 def place():
@@ -37,34 +35,26 @@ def place():
     for side, count in SIZES:
         for _ in range(count):
             best, best_gap = None, -1
-            for _ in range(400):
-                x, y = rnd.uniform(0, TILE), rnd.uniform(0, TILE)
-                gap = min((max(wrap(abs(x - sx)), wrap(abs(y - sy))) - (side + ss) / 2
-                           for sx, sy, ss, _ in squares), default=TILE)
+            for _ in range(300):
+                x, y = rnd.uniform(0, 100), rnd.uniform(0, 100)
+                gap = min((math.hypot((x - q['x']) * ASPECT, y - q['y']) for q in squares), default=1e9)
                 if gap > best_gap:
                     best, best_gap = (x, y), gap
-            squares.append((best[0], best[1], side, rnd.choice(COLOURS)))
+            a = rnd.uniform(0, 2 * math.pi)                     # its own direction
+            reach = rnd.uniform(50, 140)                        # px travelled each way
+            time = rnd.uniform(70, 140)                         # seconds per glide
+            squares.append(dict(x=best[0], y=best[1], s=side, c=mix(rnd.choice(COLOURS), WHITE),
+                                dx=reach * math.cos(a), dy=reach * math.sin(a), t=time,
+                                p=-rnd.uniform(0, 2 * time)))   # start part-way, out of step
     return squares
 
 
-def svg(squares):
-    rects = []
-    for x, y, side, colour in squares:
-        for dx in (-TILE, 0, TILE):                # copies across the edges keep the tile seamless
-            for dy in (-TILE, 0, TILE):
-                cx, cy = x + dx, y + dy
-                if -side < cx < TILE + side and -side < cy < TILE + side:
-                    rects.append(f'<rect x="{cx - side / 2:.1f}" y="{cy - side / 2:.1f}" width="{side}" '
-                                 f'height="{side}" rx="{side * 0.12:.1f}" fill="{mix(colour, WHITE)}"/>')
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{TILE}" height="{TILE}" '
-            f'viewBox="0 0 {TILE} {TILE}">' + ''.join(rects) + '</svg>\n')
+def html(squares):
+    items = ''.join(f'<i style="--x:{q["x"]:.1f}vw;--y:{q["y"]:.1f}vh;--s:{q["s"]}px;--c:{q["c"]};'
+                    f'--dx:{q["dx"]:.0f}px;--dy:{q["dy"]:.0f}px;--t:{q["t"]:.0f}s;--p:{q["p"]:.0f}s"></i>'
+                    for q in squares)
+    return f'  <div class="drift" aria-hidden="true">{items}</div>'
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        sys.exit(__doc__)
-    squares = place()
-    open(sys.argv[1], 'w').write(svg(squares))
-    gap = min(max(wrap(abs(a[0] - b[0])), wrap(abs(a[1] - b[1]))) - (a[2] + b[2]) / 2
-              for i, a in enumerate(squares) for b in squares[i + 1:])
-    print(f'{len(squares)} squares; the closest two are {gap:.0f}px apart')
+    print(html(place()))

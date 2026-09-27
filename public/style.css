@@ -28,12 +28,28 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  /* gentle pastel squares in the logo's colours (background.svg, drawn by tools/make_background.py) */
-  background: var(--bg) url("background.svg") 50% 0 / 1080px 1080px repeat;
+  background: var(--bg);
   color: var(--fg);
   font: 14px/1.5 var(--sans);
   -webkit-text-size-adjust: 100%;
 }
+
+/* The page background: gentle pastel squares in the logo's colours, each gliding very slowly
+   back and forth its own way, behind everything (drawn by tools/make_background.py). */
+.drift { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.drift i {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+  border-radius: calc(var(--s) * .12);
+  background: var(--c);
+  animation: drift var(--t) ease-in-out var(--p) infinite alternate;
+}
+@keyframes drift { to { transform: translate(var(--dx), var(--dy)); } }
+@media (max-width: 700px) { .drift i:nth-child(2n) { display: none; } }   /* fewer on small screens */
 
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -50,7 +66,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .spin, .sway, .logo-word .cursor { animation: none; }
+  .spin, .sway, .logo-word .cursor, .drift i { animation: none; }
 }
 
 /* One column, at a comfortable reading width. */
