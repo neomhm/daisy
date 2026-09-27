@@ -28,7 +28,8 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* gentle pastel squares in the logo's colours (background.svg, drawn by tools/make_background.py) */
+  background: var(--bg) url("background.svg") 50% 0 / 1080px 1080px repeat;
   color: var(--fg);
   font: 14px/1.5 var(--sans);
   -webkit-text-size-adjust: 100%;
