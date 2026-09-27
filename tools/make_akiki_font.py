@@ -6,8 +6,8 @@ first k, the golden dot on the middle i, and the first a and last i in the diamo
 
 The font also sets the motto "A kinder Kind of AI.": letters are unicase (capitals share the
 pixel shapes), the small k is flipped like the logo's first k, every i has a golden dot, and
-"AI" in capitals becomes the coloured a and i of the logo. It also covers the model names
-Tulip, Jasmine and Daisy.
+"AI" in capitals becomes the coloured a and i of the logo. It covers the whole alphabet, every
+letter the height of the a, so it also sets the model names and other short titles.
 Pixel shapes, spacing and colours come from tools/make_akiki_logo.py, so font and logo match.
 
 Usage: python3 tools/make_akiki_font.py OUTPUT.woff2
@@ -48,9 +48,19 @@ EXTRA = {
     's': ['.XXX', 'X...', '.XX.', '...X', 'XXX.'],
     'm': ['XXXX.', 'X.X.X', 'X.X.X', 'X.X.X', 'X.X.X'],
     'y': ['X.X', 'X.X', '.X.', '.X.', '.X.'],
+    # the rest of the alphabet, in the same style
+    'b': ['X...', 'XXX.', 'X..X', 'X..X', 'XXX.'],
+    'c': ['.XXX', 'X...', 'X...', 'X...', '.XXX'],
+    'g': ['.XXX', 'X..X', '.XXX', '...X', 'XXX.'],
+    'h': ['X...', 'XXX.', 'X..X', 'X..X', 'X..X'],
+    'q': ['.XXX', 'X..X', '.XXX', '...X', '...X'],
+    'v': ['X.X', 'X.X', 'X.X', 'X.X', '.X.'],
+    'w': ['X...X', 'X...X', 'X.X.X', 'X.X.X', '.X.X.'],
+    'x': ['X.X', 'X.X', '.X.', 'X.X', 'X.X'],
+    'z': ['XXXX', '...X', '.XX.', 'X...', 'XXXX'],
     'period': ['.', '.', '.', '.', 'X'],
 }
-LETTERS = 'adefijklmnoprstuy'
+LETTERS = 'abcdefghijklmnopqrstuvwxyz'
 
 
 def rows_for(ch, mirrored=False):

@@ -75,7 +75,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 /* The AKIKI logo word, drawn by its own colour font (fonts/akiki-pixel.woff2): typing "akiki" becomes the logo. */
 @font-face {
   font-family: "AKIKI Pixel";
-  src: url("fonts/akiki-pixel.woff2?v=3") format("woff2");
+  src: url("fonts/akiki-pixel.woff2?v=4") format("woff2");
   font-display: block;
 }
 .logo-word {
@@ -128,11 +128,6 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 
 .layout { padding: 24px 0 48px; }
 .main-col { display: flex; flex-direction: column; gap: 16px; }
-
-/* On phones the README (and its headline) comes first. */
-@media (max-width: 1011px) {
-  .readme { order: -1; }
-}
 
 /* Boxes */
 
@@ -310,3 +305,102 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 }
 .footer-inner img { opacity: 0.7; }
 .footer-motto { margin-left: auto; font-style: italic; }
+
+/* The box stack at the top, after mistral.ai's: the organizer, the small models and what they
+   run on. The boxes assemble on load, then keep sliding out of their slots like drawers and
+   back, showing corner handles while they move. Everything is sized in --u, one box. */
+
+.stack { container-type: inline-size; margin: 0 0 8px; }
+.stack-frame {
+  --u: min(172px, 100cqw / 5.1);
+  position: relative;
+  width: calc(5 * var(--u));
+  height: calc(3.3 * var(--u));
+  margin: 0 auto;
+}
+.stack-frame > * {
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: calc(var(--y) * var(--u));
+  width: calc(var(--w, 1) * var(--u));
+  height: var(--u);
+}
+.stack-slot { background: #eef1f4; box-shadow: 0 0 0 var(--hairline) var(--border); }
+.stack-diamond {
+  width: calc(.42 * var(--u));
+  height: calc(.42 * var(--u));
+  margin: calc(-.21 * var(--u)) 0 0 calc(-.21 * var(--u));
+  transform: rotate(45deg);
+  background: var(--bg-subtle);
+  box-shadow: 0 0 0 var(--hairline) var(--border);
+}
+.stack-box {
+  display: flex;
+  flex-direction: column;
+  padding: calc(.09 * var(--u));
+  background: var(--bg);
+  box-shadow: 0 0 0 var(--hairline) var(--border);
+  color: var(--fg);
+  --move: drawer;
+  --handles: handles;
+  animation: stack-in .7s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * .1s) both,
+             var(--move) 16s ease-in-out var(--at) infinite;
+}
+.stack-box:hover { background: var(--bg-subtle); text-decoration: none; }
+.stack-box:hover .stack-name { color: var(--link); }
+.stack-icon { width: calc(.22 * var(--u)); height: calc(.22 * var(--u)); }
+.stack-spec { position: absolute; top: calc(.09 * var(--u)); right: calc(.09 * var(--u)); color: var(--fg-muted); font: 11px/1 var(--mono); }
+.stack-name {
+  margin-top: auto;
+  font-family: "AKIKI Pixel", var(--mono);
+  font-size: calc(.14 * var(--u));
+  line-height: 1;
+  color: #2f4d5c;
+}
+.stack-text { margin-top: calc(.06 * var(--u)); font-size: max(12.5px, calc(.08 * var(--u))); line-height: 1.35; }
+.stack-handles {
+  --h: linear-gradient(var(--fg), var(--fg));
+  position: absolute;
+  inset: -3px;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--h) left top / 6px 6px no-repeat, var(--h) right top / 6px 6px no-repeat,
+              var(--h) left bottom / 6px 6px no-repeat, var(--h) right bottom / 6px 6px no-repeat;
+  animation: var(--handles) 16s ease-in-out var(--at) infinite;
+}
+
+/* Where each box sits, where it comes from, and how it moves: a drawer slides out by (--mx, --my)
+   boxes after --at seconds, then slides back; Tulip stays out longer so Jasmine can take her slot. */
+.stack-organizer { --x: 1.5; --y: .15; --w: 2; --i: 0; --iy: -.3; --at: 6s; --my: -.12; }
+.stack-tulip { --x: 1.5; --y: 1.15; --i: 1; --ix: -.3; --at: 8.5s; --mx: -1; --move: drawer-long; --handles: handles-long; }
+.stack-jasmine { --x: 2.5; --y: 1.15; --i: 2; --at: 10s; --mx: -1; }
+.stack-daisy { --x: 3.5; --y: 1.15; --i: 3; --ix: .3; --at: 3.5s; --mx: .4; }
+.stack-data { --x: .5; --y: 2.15; --i: 4; --ix: -.3; --at: 1.5s; --mx: -.4; }
+.stack-computer { --x: 1.5; --y: 2.15; --w: 2; --i: 5; --at: 11.5s; --my: .12; }
+
+@keyframes stack-in {
+  from { opacity: 0; transform: translate(calc(var(--ix, 0) * var(--u)), calc(var(--iy, .3) * var(--u))); }
+}
+@keyframes drawer {
+  0%, 30%, 100% { transform: none; }
+  5%, 25% { transform: translate(calc(var(--mx, 0) * var(--u)), calc(var(--my, 0) * var(--u))); }
+}
+@keyframes drawer-long {
+  0%, 50%, 100% { transform: none; }
+  5%, 45% { transform: translate(calc(var(--mx, 0) * var(--u)), calc(var(--my, 0) * var(--u))); }
+}
+@keyframes handles { 0%, 31%, 100% { opacity: 0; } 1%, 30% { opacity: 1; } }
+@keyframes handles-long { 0%, 51%, 100% { opacity: 0; } 1%, 50% { opacity: 1; } }
+
+/* Narrow screens: two columns, no drawers. */
+@container (max-width: 719px) {
+  .stack-frame { --u: 150px; display: grid; grid-template-columns: 1fr 1fr; width: auto; height: auto; }
+  .stack-frame > * { position: relative; left: auto; top: auto; width: auto; }
+  .stack-slot, .stack-diamond, .stack-handles { display: none; }
+  .stack-organizer, .stack-computer { grid-column: span 2; }
+  .stack-box { animation: stack-in .7s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * .1s) both; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stack-box, .stack-handles { animation: none; }
+}
