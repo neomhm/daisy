@@ -14,7 +14,6 @@
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-flower" viewBox="0 0 16 16"><g fill="currentColor"><ellipse cx="8" cy="2.4" rx="1.5" ry="2.2" transform="rotate(0 8 8)"/><ellipse cx="8" cy="2.4" rx="1.5" ry="2.2" transform="rotate(45 8 8)"/><ellipse cx="8" cy="2.4" rx="1.5" ry="2.2" transform="rotate(90 8 8)"/><ellipse cx="8" cy="2.4" rx="1.5" ry="2.2" transform="rotate(135 8 8)"/><ellipse cx="8" cy="2.4" rx="1.5" ry="2.2" transform="rotate(180 8 8)"/><ellipse cx="8" cy="2.4" rx="1.5" ry="2.2" transform="rotate(225 8 8)"/><ellipse cx="8" cy="2.4" rx="1.5" ry="2.2" transform="rotate(270 8 8)"/><ellipse cx="8" cy="2.4" rx="1.5" ry="2.2" transform="rotate(315 8 8)"/></g><circle cx="8" cy="8" r="2.2" style="fill:var(--center, currentColor)"/></symbol>
     <symbol id="i-sprout" viewBox="0 0 16 16"><path d="M8 14.5V8M4.5 14.5h7" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/><path d="M8 9.5C5.3 9.5 2.6 7.8 2.2 4.4 5.2 4.3 7.7 6 8 9.5ZM8 8C8.3 4.6 10.8 2.2 14.3 2.1 14.3 5.5 11.7 7.9 8 8Z" fill="currentColor"/></symbol>
-    <symbol id="i-tree" viewBox="0 0 16 16"><path d="M8 9.5V15M5.5 15h5" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/><circle cx="8" cy="5.2" r="4.2" fill="currentColor"/><circle cx="4.6" cy="8" r="2.8" fill="currentColor"/><circle cx="11.4" cy="8" r="2.8" fill="currentColor"/></symbol>
     <symbol id="i-tulip" viewBox="0 0 16 16"><path d="M8 9.5V15" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/><path d="M8 13C9 11 11 10.2 13.4 10.5 12.8 12.6 10.6 13.6 8 13Z" fill="currentColor"/><path d="M3.8 2.4 6.1 4.4 8 1 9.9 4.4 12.2 2.4C12.8 6.6 11.2 9.6 8 9.8 4.8 9.6 3.2 6.6 3.8 2.4Z" fill="currentColor"/></symbol>
     <symbol id="i-leaf" viewBox="0 0 16 16"><path d="M1.6 14.4C1 6.5 6.5 1 14.4 1.6 15 9.5 9.5 15 1.6 14.4Z" fill="currentColor"/><path d="M3.4 12.6 11.4 4.6" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></symbol>
     <symbol id="i-tulip-head" viewBox="0 0 16 16"><path d="M2.6 3.2 5.3 5.4 8 1.4 10.7 5.4 13.4 3.2C14 8.8 12 13.4 8 13.8 4 13.4 2 8.8 2.6 3.2Z" fill="currentColor"/><path d="M5.3 5.4C5.8 8.8 6.8 11.4 8 13.6M10.7 5.4C10.2 8.8 9.2 11.4 8 13.6" fill="none" stroke="#fff" stroke-width="0.7" stroke-linecap="round"/></symbol>
@@ -37,7 +36,6 @@
     </div>
     <nav class="container tabs" aria-label="Sections">
       <a href="#readme" aria-current="true"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg>Overview</a>
-      <a href="#principles"><svg class="icon" aria-hidden="true"><use href="#i-tree"/></svg>Principles</a>
       <a href="#status"><svg class="icon" aria-hidden="true"><use href="#i-tulip"/></svg>Status</a>
     </nav>
   </header>
@@ -85,13 +83,13 @@
               <span class="stack-text">Answers questions about your data.</span>
               <span class="stack-handles" aria-hidden="true"></span>
             </a>
-            <a class="stack-box stack-data" href="#principles">
+            <a class="stack-box stack-data" href="#modules">
               <svg class="stack-icon" aria-hidden="true"><use href="#px-data"/></svg>
               <span class="stack-name">your data</span>
               <span class="stack-text">Every value keeps its source.</span>
               <span class="stack-handles" aria-hidden="true"></span>
             </a>
-            <a class="stack-box stack-computer" href="#principles">
+            <a class="stack-box stack-computer" href="#modules">
               <svg class="stack-icon" aria-hidden="true"><use href="#px-computer"/></svg>
               <span class="stack-name">your computer</span>
               <span class="stack-text">Small models on an ordinary CPU. No GPU needed.</span>
@@ -137,18 +135,6 @@
               </section>
             </div>
 
-            <h2 id="principles">Principles</h2>
-            <p>What <em>a kinder Kind of AI</em> means to us:</p>
-            <ul class="principles">
-              <li><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg><strong>Small models, on your own computer.</strong> The precise work is done by small, fast models on an ordinary PC.</li>
-              <li><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg><strong>The organizer runs where you choose:</strong> on our server, or on your own PC.</li>
-              <li><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg><strong>Code checks everything.</strong> No model judges another model, and nothing a model writes is ever run as code.</li>
-              <li><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg><strong>Every value has a source:</strong> a line in your documents, a cell in your spreadsheet, or your own answer.</li>
-              <li><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg><strong>"No" is a normal answer.</strong> When a model isn't sure, it says so, and the question comes to you instead of a guess.</li>
-              <li><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg><strong>Private stays private.</strong> Revenue, staff numbers and client names are never published. Bank and card numbers, ID numbers and salaries are never even extracted.</li>
-              <li><svg class="icon" aria-hidden="true"><use href="#i-leaf"/></svg><strong>You approve every public fact</strong> before anything is published.</li>
-            </ul>
-
             <h2 id="status">Status</h2>
             <p>In development. The first release is coming soon.</p>
           </div>
@@ -168,7 +154,6 @@
             <li><a href="#jasmine"><svg class="icon flower" style="color:#a06fc2" aria-hidden="true"><use href="#i-jasmine"/></svg><span class="name">jasmine</span><span class="msg blur">proposes your site's design</span><span class="when">coming soon</span></a></li>
             <li><a href="#daisy"><svg class="icon flower" style="color:#7c8acb" aria-hidden="true"><use href="#i-flower"/></svg><span class="name">daisy</span><span class="msg blur">answers questions about your own data</span><span class="when">coming soon</span></a></li>
             <li><a href="#readme"><svg class="icon flower" style="color:#6592b4" aria-hidden="true"><use href="#i-flower"/></svg><span class="name">blocks</span><span class="msg blur">vetted building blocks for your website</span><span class="when">coming soon</span></a></li>
-            <li><a href="#principles"><svg class="icon leaf" aria-hidden="true"><use href="#i-leaf"/></svg><span class="name">PRINCIPLES.md</span><span class="msg">a kinder kind of AI</span><span class="when">coming soon</span></a></li>
             <li><a href="#readme"><svg class="icon leaf" aria-hidden="true"><use href="#i-leaf"/></svg><span class="name">README.md</span><span class="msg">initial commit</span><span class="when">coming soon</span></a></li>
           </ul>
         </div>
