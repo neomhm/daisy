@@ -308,7 +308,8 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 
 /* The box stack at the top, after mistral.ai's: the organizer, the small models and what they
    run on. The boxes assemble on load, then keep sliding out of their slots like drawers and
-   back, showing corner handles while they move. Everything is sized in --u, one box. */
+   back, showing corner handles while they move and the turning wheels behind them. Everything
+   is sized in --u, one box. */
 
 .stack { container-type: inline-size; margin: 0 0 8px; }
 .stack-frame {
@@ -326,6 +327,20 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   height: var(--u);
 }
 .stack-slot { background: #eef1f4; box-shadow: 0 0 0 var(--hairline) var(--border); }
+/* In every slot, a wheel of the machine: a 24-tooth gear in the slot's colour at half strength.
+   Neighbouring wheels turn opposite ways. */
+.stack-gear {
+  --dir: 1;
+  position: absolute;
+  top: 0;
+  left: calc(var(--gx, 0) * var(--u));
+  width: var(--u);
+  height: var(--u);
+  color: var(--c);
+  opacity: .5;
+  animation: gear-turn 32s linear infinite;
+}
+.stack-gear.ccw { --dir: -1; }
 .stack-diamond {
   width: calc(.42 * var(--u));
   height: calc(.42 * var(--u));
@@ -382,15 +397,22 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   from { opacity: 0; transform: translate(calc(var(--ix, 0) * var(--u)), calc(var(--iy, .3) * var(--u))); }
 }
 @keyframes drawer {
-  0%, 30%, 100% { transform: none; }
+  0%, 30%, 100% { transform: none; z-index: 1; }
+  1%, 29% { z-index: 2; }
   5%, 25% { transform: translate(calc(var(--mx, 0) * var(--u)), calc(var(--my, 0) * var(--u))); }
 }
 @keyframes drawer-long {
-  0%, 50%, 100% { transform: none; }
+  0%, 50%, 100% { transform: none; z-index: 1; }
+  1%, 49% { z-index: 2; }
   5%, 45% { transform: translate(calc(var(--mx, 0) * var(--u)), calc(var(--my, 0) * var(--u))); }
 }
 @keyframes handles { 0%, 31%, 100% { opacity: 0; } 1%, 30% { opacity: 1; } }
 @keyframes handles-long { 0%, 51%, 100% { opacity: 0; } 1%, 50% { opacity: 1; } }
+/* A wheel starts a quarter tooth back, so neighbours that touch meet tooth to gap. */
+@keyframes gear-turn {
+  from { transform: rotate(-3.75deg); }
+  to { transform: rotate(calc(-3.75deg + var(--dir) * 360deg)); }
+}
 
 /* Narrow screens: two columns, no drawers. */
 @container (max-width: 719px) {
@@ -402,5 +424,5 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stack-box, .stack-handles { animation: none; }
+  .stack-box, .stack-handles, .stack-gear { animation: none; }
 }
