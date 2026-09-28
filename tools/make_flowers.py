@@ -1,7 +1,7 @@
-"""Draw the Tulip, Jasmine and Bouquet logos in the same network-of-nodes style as the Daisy logo.
+"""Draw the Tulip, Jasmine, Orchid and Bouquet logos in the same network-of-nodes style as the Daisy logo.
 
 Usage: python3 tools/make_flowers.py OUTPUT_DIR
-Writes OUTPUT_DIR/tulip.svg, OUTPUT_DIR/jasmine.svg and OUTPUT_DIR/bouquet.svg.
+Writes OUTPUT_DIR/tulip.svg, OUTPUT_DIR/jasmine.svg, OUTPUT_DIR/orchid.svg and OUTPUT_DIR/bouquet.svg.
 """
 import math
 import os
@@ -270,10 +270,51 @@ def bouquet():
     d.node(tie, 4.6, YELLOW)
     return d.svg('Bouquet')
 
+def orchid():
+    """Orchid: a moth orchid seen from the front. A sepal on top, two broad petals, two sepals
+    below and the lip in the middle, around a golden column."""
+    d = Drawing()
+    centre = (0, -8)
+    at = lambda c, r, a: (c[0] + r * math.cos(math.radians(a)), c[1] + r * math.sin(math.radians(a)))
+    warm = lambda p: mix(YELLOW, ORANGE, min(1, max(0, (1 + p[0] / 14) / 2)))
+    hub = [at(centre, 10, -90 + 60 * k) for k in range(6)]
+    for i, p in enumerate(hub):
+        d.line(centre, p, warm(p), 0.7, 0.85)
+        d.line(p, hub[(i + 1) % 6], warm(p), 0.7, 0.85)
+    # (name, base, tip, width, colour, node sizes, tip node, bulge, steps)
+    parts = [
+        ('os', at(centre, 13, -90), (0, -96), 17, '#b85aa8', (2.0, 2.8), 5.0, 0.8, 5),     # sepal on top
+        ('ol', at(centre, 13, -150), (-94, -40), 29, '#c2549e', (2.1, 3.2), 5.4, 0.55, 6),   # petals
+        ('or', at(centre, 13, -30), (94, -40), 29, '#c2549e', (2.1, 3.2), 5.4, 0.55, 6),
+        ('ll', at(centre, 13, 150), (-60, 86), 16, '#ad76bb', (2.0, 2.8), 4.8, 0.8, 5),     # sepals below
+        ('lr', at(centre, 13, 30), (60, 86), 16, '#ad76bb', (2.0, 2.8), 4.8, 0.8, 5),
+        ('lp', at(centre, 13, 90), (0, 64), 12, '#a8488c', (1.9, 2.6), 4.6, 0.9, 4),        # the lip
+    ]
+    for gid, base, tip, width, col, sizes, tip_r, bulge, steps in parts:
+        start = warm(base)
+        d.gradient(gid, base, tip, start, col, 0.45)
+        b, left, right = lattice(d, gid, base, tip, width, lambda t, s=start, c=col: mix(s, c, min(1, t / 0.45)),
+                                 sizes=sizes, tip_r=tip_r, bulge=bulge, steps=steps)
+        for h in sorted(hub, key=lambda h: math.dist(h, b))[:2]:
+            d.line(h, b, f'url(#{gid})', 0.6, 0.85)
+    # two little curls on the lip, as moth orchids have
+    for sx in (-1, 1):
+        a, b = (sx * 9, 40), (sx * 17, 30)
+        d.line((0, 34), a, '#a8488c', 0.7)
+        d.line(a, b, '#a8488c', 0.7)
+        d.node(a, 2.0, '#b85aa8')
+        d.node(b, 2.6, '#a8488c')
+    for p in hub:
+        d.node(p, 2.6, warm(p))
+    d.node(centre, 5.2, YELLOW)
+    return d.svg('Orchid')
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     out = sys.argv[1]
     open(os.path.join(out, 'tulip.svg'), 'w').write(tulip())
     open(os.path.join(out, 'jasmine.svg'), 'w').write(jasmine())
+    open(os.path.join(out, 'orchid.svg'), 'w').write(orchid())
     open(os.path.join(out, 'bouquet.svg'), 'w').write(bouquet())

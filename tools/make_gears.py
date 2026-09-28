@@ -26,7 +26,7 @@ SLOTS = [(50, 115, 100, 100), (350, 215, 100, 100), (150, 15, 200, 100), (150, 1
 
 # teeth, colour, the gear it meshes with, direction from that gear (degrees clockwise from east)
 TRAIN = [
-    (40, '#2fb39a', None, (78, 172)),   # the big wheel in the empty slot left of Tulip
+    (40, '#2fb39a', None, (78, 172)),   # the big wheel in the slot left of Tulip, behind Orchid
     (16, '#ec8e4a', 0, -35),
     (24, '#3aa56f', 1, 20),
     (32, '#35adb0', 2, 35),

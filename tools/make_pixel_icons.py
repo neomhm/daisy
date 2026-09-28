@@ -1,10 +1,10 @@
 """Draw the pixel icons of the box stack at the top of the page, as SVG <symbol>s.
 
 Each icon is a 5x5 glyph of the AKIKI logo's rounded pixels. The models get a white glyph (the
-bouquet, Tulip's flower head, Jasmine's star, the one-byte daisy) on a tile in their card's colour;
-"your data" is a bare glyph in ink. "Your computer" is a little farm, 13 pixels wide: a barn, a silo
-and a row of flowers in the colours of the small models that grow there. H marks a golden pixel;
-g, p and o mark Tulip green, Jasmine purple and Daisy orange.
+bouquet, a moth orchid, Tulip's flower head, Jasmine's star, the one-byte daisy) on a tile in their
+card's colour; "your data" is a bare glyph in ink. "Your computer" is a little farm, 15 pixels wide:
+a barn, a silo and a row of flowers in the colours of the small models that grow there. H marks a
+golden pixel; m, g, p and o mark Orchid magenta, Tulip green, Jasmine purple and Daisy orange.
 
 Usage: python3 tools/make_pixel_icons.py > symbols.txt   (paste into the sprite in index.html)
 """
@@ -20,17 +20,18 @@ RADIUS = PITCH * logo.RADIUS / logo.PITCH
 
 ICONS = {
     'bouquet': ('#35adb0', ['.X.X.', 'X.X.X', '.XXX.', '..H..', '.X.X.']),     # flowers tied with a golden bow
+    'orchid': ('#c2549e', ['XX.XX', 'XX.XX', '..H..', '.XXX.', 'X.X.X']),     # a moth orchid: broad petals, lip
     'tulip': ('#3aa56f', ['X.X.X', 'XXXXX', 'XXXXX', '.XXX.', '..X..']),
     'jasmine': ('#a06fc2', ['..X..', '..X..', 'XXHXX', '.X.X.', 'X...X']),
     'daisy': ('#ec8e4a', ['..X..', '.X.X.', 'X.H.X', '.X.X.', '..X..']),       # the one-byte flower
     'data': (None, ['XXXXX', 'X.H.X', 'XXXXX', 'X.X.X', 'XXXXX']),             # a spreadsheet
-    'farm': (None, ['.XXX.........',                                            # your computer
-                    'XXXXX.X......',
-                    'XXHXX.X.g.p.o',
-                    'XX.XX.X.g.g.g',
-                    'XXXXXXXXXXXXX']),
+    'farm': (None, ['.XXX...........',                                          # your computer
+                    'XXXXX.X........',
+                    'XXHXX.X.m.g.p.o',
+                    'XX.XX.X.g.g.g.g',
+                    'XXXXXXXXXXXXXXX']),
 }
-FLOWERS = {'g': '#3aa56f', 'p': '#a06fc2', 'o': '#ec8e4a'}
+FLOWERS = {'m': '#c2549e', 'g': '#3aa56f', 'p': '#a06fc2', 'o': '#ec8e4a'}
 
 
 def symbol(name, tile, rows):
