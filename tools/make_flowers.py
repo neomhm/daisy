@@ -26,8 +26,16 @@ def f(x):
 
 
 class Drawing:
+    """Lines under nodes, in layers: a later layer is drawn over everything before it."""
+
     def __init__(self):
-        self.defs, self.lines, self.nodes = [], [], []
+        self.defs, self.layers = [], [([], [])]
+
+    lines = property(lambda self: self.layers[-1][0])
+    nodes = property(lambda self: self.layers[-1][1])
+
+    def front(self):
+        self.layers.append(([], []))
 
     def gradient(self, gid, p0, p1, c0, c1, mid=0.45):
         self.defs.append(f'<linearGradient id="{gid}" gradientUnits="userSpaceOnUse" x1="{f(p0[0])}" y1="{f(p0[1])}" '
@@ -44,8 +52,8 @@ class Drawing:
     def svg(self, label):
         return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="-102 -102 204 204" role="img" aria-label="' + label + '">'
                 '<defs>' + ''.join(self.defs) + '</defs>'
-                '<g stroke-linecap="round">' + ''.join(self.lines) + '</g>'
-                '<g>' + ''.join(self.nodes) + '</g></svg>\n')
+                + ''.join('<g stroke-linecap="round">' + ''.join(lines) + '</g><g>' + ''.join(nodes) + '</g>'
+                          for lines, nodes in self.layers) + '</svg>\n')
 
 
 def lattice(d, gid, base, tip, width, colour_at, sizes=(2.0, 3.0), tip_r=4.8, shear=0.0, bulge=0.7, steps=5):
@@ -166,7 +174,7 @@ def tulip():
 
 
 def bouquet():
-    """Bouquet: the team's flowers, a daisy, a tulip and a jasmine, tied together with a golden bow."""
+    """Bouquet: the team's flowers, a daisy, a tulip, a jasmine and an orchid, tied together with a golden bow."""
     d = Drawing()
     GREEN = '#3aa56f'
     tie = (0, 56)
@@ -246,6 +254,12 @@ def bouquet():
         d.node(h, 1.8, warm(0.4))
     d.node(centre, 3.8, YELLOW)
 
+    # The orchid's stem (the orchid herself is drawn last, in front of the others).
+    oturn, oscale, ocentre = math.radians(8), 0.4, (33, -21)       # the Orchid logo's centre is (0, -8)
+    op = lambda x, y: (ocentre[0] + oscale * (math.cos(oturn) * x - math.sin(oturn) * (y + 8)),
+                       ocentre[1] + oscale * (math.sin(oturn) * x + math.cos(oturn) * (y + 8)))
+    stem([op(0, 60), (17, 30), (7, 46), tie], 'bos')
+
     # Below the bow the three stems fan out again.
     for end in ((-14, 98), (0, 100), (14, 98)):
         mid = (end[0] * 0.55, (tie[1] + end[1]) / 2 + 2)
@@ -268,19 +282,30 @@ def bouquet():
         for p, r, t in zip(loop + tail, (1.8, 2.2, 2.8, 2.2, 1.8, 1.9, 2.6), (0.3, 0.5, 0.7, 0.6, 0.4, 0.6, 0.9)):
             d.node(p, r, warm(t))
     d.node(tie, 4.6, YELLOW)
+
+    # The orchid, in front, half over the daisy and half over the jasmine. A soft white glow
+    # behind her fades the flowers she covers.
+    d.defs.append('<radialGradient id="bglow"><stop offset="0" stop-color="#fff" stop-opacity=".88"/>'
+                  '<stop offset=".6" stop-color="#fff" stop-opacity=".72"/>'
+                  '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>')
+    d.front()
+    d.node(ocentre, 42, 'url(#bglow)')
+    d.front()
+    draw_orchid(d, op, oscale, dot=0.6, prefix='bo')
     return d.svg('Bouquet')
 
-def orchid():
-    """Orchid: a moth orchid seen from the front. A sepal on top, two broad petals, two sepals
-    below and the lip in the middle, around a golden column."""
-    d = Drawing()
+
+def draw_orchid(d, place=lambda x, y: (x, y), scale=1.0, dot=1.0, prefix=''):
+    """Draw the moth orchid into d. place maps the Orchid logo's coordinates to d's, scale is how
+    much it shrinks them (for the petals' width) and dot how much the nodes shrink."""
     centre = (0, -8)
     at = lambda c, r, a: (c[0] + r * math.cos(math.radians(a)), c[1] + r * math.sin(math.radians(a)))
     warm = lambda p: mix(YELLOW, ORANGE, min(1, max(0, (1 + p[0] / 14) / 2)))
+    P = lambda p: place(*p)
     hub = [at(centre, 10, -90 + 60 * k) for k in range(6)]
     for i, p in enumerate(hub):
-        d.line(centre, p, warm(p), 0.7, 0.85)
-        d.line(p, hub[(i + 1) % 6], warm(p), 0.7, 0.85)
+        d.line(P(centre), P(p), warm(p), 0.7, 0.85)
+        d.line(P(p), P(hub[(i + 1) % 6]), warm(p), 0.7, 0.85)
     # (name, base, tip, width, colour, node sizes, tip node, bulge, steps)
     parts = [
         ('os', at(centre, 13, -90), (0, -96), 17, '#b85aa8', (2.0, 2.8), 5.0, 0.8, 5),     # sepal on top
@@ -292,21 +317,29 @@ def orchid():
     ]
     for gid, base, tip, width, col, sizes, tip_r, bulge, steps in parts:
         start = warm(base)
-        d.gradient(gid, base, tip, start, col, 0.45)
-        b, left, right = lattice(d, gid, base, tip, width, lambda t, s=start, c=col: mix(s, c, min(1, t / 0.45)),
-                                 sizes=sizes, tip_r=tip_r, bulge=bulge, steps=steps)
-        for h in sorted(hub, key=lambda h: math.dist(h, b))[:2]:
-            d.line(h, b, f'url(#{gid})', 0.6, 0.85)
+        d.gradient(prefix + gid, P(base), P(tip), start, col, 0.45)
+        b, left, right = lattice(d, prefix + gid, P(base), P(tip), width * scale,
+                                 lambda t, s=start, c=col: mix(s, c, min(1, t / 0.45)),
+                                 sizes=(sizes[0] * dot, sizes[1] * dot), tip_r=tip_r * dot, bulge=bulge, steps=steps)
+        for h in sorted(hub, key=lambda h: math.dist(P(h), b))[:2]:
+            d.line(P(h), b, f'url(#{prefix}{gid})', 0.6, 0.85)
     # two little curls on the lip, as moth orchids have
     for sx in (-1, 1):
         a, b = (sx * 9, 40), (sx * 17, 30)
-        d.line((0, 34), a, '#a8488c', 0.7)
-        d.line(a, b, '#a8488c', 0.7)
-        d.node(a, 2.0, '#b85aa8')
-        d.node(b, 2.6, '#a8488c')
+        d.line(P((0, 34)), P(a), '#a8488c', 0.7)
+        d.line(P(a), P(b), '#a8488c', 0.7)
+        d.node(P(a), 2.0 * dot, '#b85aa8')
+        d.node(P(b), 2.6 * dot, '#a8488c')
     for p in hub:
-        d.node(p, 2.6, warm(p))
-    d.node(centre, 5.2, YELLOW)
+        d.node(P(p), 2.6 * dot, warm(p))
+    d.node(P(centre), 5.2 * dot, YELLOW)
+
+
+def orchid():
+    """Orchid: a moth orchid seen from the front. A sepal on top, two broad petals, two sepals
+    below and the lip in the middle, around a golden column."""
+    d = Drawing()
+    draw_orchid(d)
     return d.svg('Orchid')
 
 
