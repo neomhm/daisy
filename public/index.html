@@ -127,14 +127,26 @@
                   <div class="module-head"><h3 class="pixel-name">Orchid</h3><span class="chip status">Orchid 1.0 &middot; trained</span></div>
                   <p class="module-role">Finds the facts in your documents</p>
                   <p>Hand Orchid your documents, such as invoices, brochures, web pages or a registration extract. She reads them one chunk at a time and marks the facts: your business's name, address, phone, e-mail, website, opening hours, founding date and more, 25 kinds in all. She also says what kind of document it is and what language it's in. Orchid never writes a word: she only marks what is already there, so every value she returns is a slice of your own document. Code then checks each value and keeps its source.</p>
-                  <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
-                  <ul class="scores">
-                    <li><span>Made-up documents in layouts she never saw (F1)</span><b>0.935</b><i style="--v:93.5%" aria-hidden="true"></i></li>
-                    <li><span>Business name right, made-up businesses</span><b>99.8%</b><i style="--v:99.8%" aria-hidden="true"></i></li>
-                    <li><span>Real web pages of US small businesses (F1)</span><b>0.455</b><i style="--v:45.5%" aria-hidden="true"></i></li>
-                    <li class="note">Invented values: 0, on every test, real pages included. Next round: training on real pages.</li>
-                  </ul>
-                  <p class="arch">Transformer encoder, trained from scratch: 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. First trained on Wikipedia in ten languages, then on made-up business documents. She labels words and never writes text. Runs on any PC processor, no GPU.</p>
+                  <div class="versions">
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-0" checked>
+                    <p class="version-tabs">
+                      <label for="orchid-1-0"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.0</label>
+                      <span class="version-ink" aria-hidden="true"></span>
+                    </p>
+                    <div class="version-panels">
+                      <div class="version">
+                        <p class="version-lead">Final test results.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Made-up documents in layouts she never saw (F1)</span><b>0.935</b><i style="--v:93.5%" aria-hidden="true"></i></li>
+                          <li><span>Business name right, made-up businesses</span><b>99.8%</b><i style="--v:99.8%" aria-hidden="true"></i></li>
+                          <li><span>Real web pages of US small businesses (F1)</span><b>0.455</b><i style="--v:45.5%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test, real pages included. Next round: training on real pages.</li>
+                        </ul>
+                        <p class="arch">Transformer encoder, trained from scratch: 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. First trained on Wikipedia in ten languages, then on made-up business documents. She labels words and never writes text. Runs on any PC processor, no GPU.</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
               <section class="module" id="tulip" style="--c:#3aa56f">

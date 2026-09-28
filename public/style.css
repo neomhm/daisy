@@ -345,7 +345,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   cursor: pointer;
 }
 .version-tabs label:hover { color: var(--fg); border-bottom-color: var(--border); }
-.version-tabs .icon { --leaf: #3aa56f; width: 20px; height: 20px; color: var(--t); transform-origin: 50% 90%; }
+.version-tabs .icon { --leaf: #3aa56f; --center: #f2b632; width: 20px; height: 20px; color: var(--t); transform-origin: 50% 90%; }
 .version-tabs label:nth-of-type(1) { --t: #e65b56; }   /* red */
 .version-tabs label:nth-of-type(2) { --t: #ec8e4a; }   /* orange */
 .version-tabs label:nth-of-type(3) { --t: #f2b632; }   /* yellow */
