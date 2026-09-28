@@ -7,7 +7,7 @@
   <meta name="description" content="D.AI.SY by AKIKI.AI. A kinder Kind of AI.">
   <meta name="theme-color" content="#f6f8fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=29">
+  <link rel="stylesheet" href="style.css?v=30">
   <script src="versions.js?v=1" defer></script>
 </head>
 <body>
@@ -124,24 +124,39 @@
               <section class="module" id="orchid" style="--c:#c2549e">
                 <img class="sway" src="orchid.svg" width="120" height="120" alt="Orchid logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Orchid</h3><span class="chip status">Orchid 1.0 &middot; trained</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Orchid</h3><span class="chip status">Orchid 1.1 &middot; trained</span></div>
                   <p class="module-role">Finds the facts in your documents</p>
-                  <p>Hand Orchid your documents, such as invoices, brochures, web pages or a registration extract. She reads them one chunk at a time and marks the facts: your business's name, address, phone, e-mail, website, opening hours, founding date and more, 25 kinds in all. She also says what kind of document it is and what language it's in. Orchid never writes a word: she only marks what is already there, so every value she returns is a slice of your own document. Code then checks each value and keeps its source.</p>
+                  <p>Hand Orchid your documents, such as invoices, brochures, price lists, web pages or registration papers. She reads them one chunk at a time and marks the facts: your business's name, address, phone, e-mail, website, opening hours, founding date and more, 25 kinds in all. She also says what kind of document it is and what language it's in. Orchid never writes a word: she only marks what is already there, so every value she returns is a slice of your own document. Code then checks each value and keeps its source.</p>
                   <div class="versions">
-                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-0" checked>
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-1" checked>
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-0">
                     <p class="version-tabs">
+                      <label for="orchid-1-1"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.1</label>
                       <label for="orchid-1-0"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.0</label>
                       <span class="version-ink" aria-hidden="true"></span>
                     </p>
                     <div class="version-panels">
                       <div class="version">
-                        <p class="version-lead">Final test results.</p>
+                        <p class="version-lead">Final results. Trained further on real web pages of 196 businesses in the US and France, then tested on real pages she never saw.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
                         <ul class="scores">
-                          <li><span>Made-up documents in layouts she never saw (F1)</span><b>0.935</b><i style="--v:93.5%" aria-hidden="true"></i></li>
-                          <li><span>Business name right, made-up businesses</span><b>99.8%</b><i style="--v:99.8%" aria-hidden="true"></i></li>
+                          <li><span>Real web pages of US small businesses (F1)</span><b>0.700</b><i style="--v:70%" aria-hidden="true"></i></li>
+                          <li><span>Real web pages of French small businesses (F1)</span><b>0.715</b><i style="--v:71.5%" aria-hidden="true"></i></li>
+                          <li><span>Business name found on real pages, per business</span><b>62.7%</b><i style="--v:62.7%" aria-hidden="true"></i></li>
+                          <li><span>Made-up documents in layouts she never saw (F1)</span><b>0.938</b><i style="--v:93.8%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. On real US pages her precision doubled, from 0.370 to 0.732: she marks far fewer wrong facts. Not there yet: her targets are the business name for 95% of businesses and 0.80 overall.</li>
+                        </ul>
+                        <p class="arch">Same design as 1.0: transformer encoder, 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. Trained further from 1.0 for 1,140 steps, about nine minutes, replaying her made-up documents so she forgets nothing; she stopped by herself once her real-page score stopped improving.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Final test results. Trained on Wikipedia and made-up business documents only.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
+                        <ul class="scores">
                           <li><span>Real web pages of US small businesses (F1)</span><b>0.455</b><i style="--v:45.5%" aria-hidden="true"></i></li>
-                          <li class="note">Invented values: 0, on every test, real pages included. Next round: training on real pages.</li>
+                          <li><span>Real web pages of French small businesses (F1)</span><b>0.523</b><i style="--v:52.3%" aria-hidden="true"></i></li>
+                          <li><span>Business name found on real pages, per business</span><b>48.0%</b><i style="--v:48%" aria-hidden="true"></i></li>
+                          <li><span>Made-up documents in layouts she never saw (F1)</span><b>0.935</b><i style="--v:93.5%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test, real pages included.</li>
                         </ul>
                         <p class="arch">Transformer encoder, trained from scratch: 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. First trained on Wikipedia in ten languages, then on made-up business documents. She labels words and never writes text. Runs on any PC processor, no GPU.</p>
                       </div>
