@@ -226,17 +226,45 @@
               <section class="module" id="daisy" style="--c:#ec8e4a">
                 <img class="spin" src="daisy.svg" width="120" height="120" alt="Daisy logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Daisy</h3><span class="chip status">sql7c &middot; next version in training</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Daisy</h3><span class="chip status">Daisy 1.1 &middot; trained</span></div>
                   <p class="module-role">Answers questions about your own data</p>
-                  <p>Ask in plain English, like "which services earned most last quarter?". Daisy turns your question into a precise query spec in about 0.3 seconds on a single CPU core. Code checks the spec, compiles it to SQL for SQLite, PostgreSQL or MySQL in 0.4 ms and runs it read-only, then shows you the exact rows and the SQL behind the answer. No GPU needed, and when she doesn't know, she says so.</p>
-                  <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Per question, 1 CPU core</dt><dd>0.33 s</dd></div></dl>
-                  <ul class="scores">
-                    <li><span>Her quiz, templated questions (sql5)</span><b>107/107</b><i style="--v:100%" aria-hidden="true"></i></li>
-                    <li><span>Refused what she should (sql5)</span><b>13/13</b><i style="--v:100%" aria-hidden="true"></i></li>
-                    <li><span>New questions, blind test (sql7c, SQLite)</span><b>34.5%</b><i style="--v:34.5%" aria-hidden="true"></i></li>
-                    <li class="note">On the same quiz, a 27-billion-parameter model scored 87/107 at 6.78 s per question: Daisy is about 20 times faster.</li>
-                  </ul>
-                  <p class="arch">Decoder-only transformer, trained from scratch: 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Runs on any PC processor, no GPU.</p>
+                  <p>Ask in plain English, like "which services earned most last quarter?". Daisy turns your question into a precise query spec in about 0.3 seconds on a single CPU core. Code checks the spec, compiles it to SQL for SQLite, PostgreSQL or MySQL in 0.4 ms and runs it read-only, then shows you the exact rows and the SQL behind the answer. No GPU needed. When she doesn't know, she says so, and when she isn't sure, she asks you back with a few choices.</p>
+                  <div class="versions">
+                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-1" checked>
+                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-0">
+                    <p class="version-tabs">
+                      <label for="daisy-1-1"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.1</label>
+                      <label for="daisy-1-0"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.0</label>
+                      <span class="version-ink" aria-hidden="true"></span>
+                    </p>
+                    <div class="version-panels">
+                      <div class="version">
+                        <p class="version-lead">Final results on 118 owners' questions she never saw: 93 to answer, 25 to refuse.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.25 s</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Owners' questions she never saw, right rows</span><b>41.9%</b><i style="--v:41.9%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76%" aria-hidden="true"></i></li>
+                          <li><span>New questions, blind test, all three databases</span><b>38.3%</b><i style="--v:38.3%" aria-hidden="true"></i></li>
+                          <li><span>Her quiz, templated questions</span><b>99.1%</b><i style="--v:99.1%" aria-hidden="true"></i></li>
+                          <li class="note">Wrong rows shown: 21.2% of questions, down from 36.4%. When she isn't sure, she now asks you back with a few choices (16.1% of the questions she could answer; the right reading is among them in 9 of 15). Without that check she gets 51.6% right, but shows more wrong rows.</li>
+                        </ul>
+                        <p class="version-new"><strong>New in 1.1:</strong> a confidence check that asks you back instead of guessing, and real people's questions from open datasets (Spider, BIRD and WikiSQL) among her lessons, with their licences and credits kept in her model file.</p>
+                        <p class="arch">Same design as 1.0: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.0 for 1 h 33 min. Her weakest spot: columns named in ways she has never seen.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Final results on the same 118 owners' questions.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Per question, 1 CPU core</dt><dd>0.33 s</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Owners' questions she never saw, right rows</span><b>41.9%</b><i style="--v:41.9%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76%" aria-hidden="true"></i></li>
+                          <li><span>New questions, blind test, all three databases</span><b>33.3%</b><i style="--v:33.3%" aria-hidden="true"></i></li>
+                          <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
+                          <li class="note">Wrong rows shown: 36.4% of questions.</li>
+                        </ul>
+                        <p class="arch">Decoder-only transformer, trained from scratch: 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Runs on any PC processor, no GPU.</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
               <section class="module" id="bouquet" style="--c:#35adb0">
