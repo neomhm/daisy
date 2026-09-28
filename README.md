@@ -8,6 +8,7 @@ Website source code for AKIKI.AI.
   - `public/fonts/akiki-pixel.woff2`: the AKIKI Pixel colour font (the whole alphabet), used for the logo word in the header, the motto headline, the model names and the box titles. Typing "akiki" in it draws the logo word. Built by `tools/make_akiki_font.py`.
   - `public/pixel-band.svg`: the pixel stripe that leads into the models. Drawn by `tools/make_pixel_band.py`.
   - `public/gears.svg`: the turning gear train behind the box stack at the top. Drawn by `tools/make_gears.py`.
+  - `public/versions.js`: the motion of the version tabs on the model cards. The tabs also work without it.
 - `.cpanel.yml`: tells cPanel to copy `public/` into `/home/akiki/public_html/` when you deploy.
 - `tools/`: scripts that draw the logos. They are not part of the live site.
 - `brand/`: the AKIKI logo (SVG and PNG, for light and dark backgrounds) and icon. Not part of the live site.

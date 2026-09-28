@@ -326,10 +326,14 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .markdown .module .arch { color: var(--fg-muted); font: 12px/1.5 var(--mono); }
 
 /* Version tabs on a model card: one radio button per version, newest first and open. Each tab
-   has a little tulip, coloured in rainbow order; the checked radio shows its panel. No script. */
+   has a little tulip, coloured in rainbow order; the checked radio shows its panel. This works
+   without a script. versions.js adds the motion: the coloured line glides to the chosen tab, its
+   tulip blooms, and the new version opens in a circle growing from the tulip, with a band of
+   rounded pixels in the tab's colour on the circle's edge (--r is that circle's radius). */
+@property --r { syntax: "<length>"; inherits: true; initial-value: 0px; }
 .versions { margin-top: 16px; }
 .version-pick { position: absolute; opacity: 0; pointer-events: none; }
-.markdown .version-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; border-bottom: var(--hairline) solid var(--border); }
+.markdown .version-tabs { position: relative; display: flex; flex-wrap: wrap; gap: 4px; margin: 0; border-bottom: var(--hairline) solid var(--border); }
 .version-tabs label {
   display: flex;
   align-items: center;
@@ -342,7 +346,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   cursor: pointer;
 }
 .version-tabs label:hover { color: var(--fg); border-bottom-color: var(--border); }
-.version-tabs .icon { --leaf: #3aa56f; width: 20px; height: 20px; color: var(--t); }
+.version-tabs .icon { --leaf: #3aa56f; width: 20px; height: 20px; color: var(--t); transform-origin: 50% 90%; }
 .version-tabs label:nth-of-type(1) { --t: #e65b56; }   /* red */
 .version-tabs label:nth-of-type(2) { --t: #ec8e4a; }   /* orange */
 .version-tabs label:nth-of-type(3) { --t: #f2b632; }   /* yellow */
@@ -351,13 +355,13 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .version-tabs label:nth-of-type(6) { --t: #7c8acb; }   /* indigo */
 .version-tabs label:nth-of-type(7) { --t: #a06fc2; }   /* violet */
 .version { display: none; }
-.version-pick:nth-of-type(1):checked ~ .version:nth-of-type(1),
-.version-pick:nth-of-type(2):checked ~ .version:nth-of-type(2),
-.version-pick:nth-of-type(3):checked ~ .version:nth-of-type(3),
-.version-pick:nth-of-type(4):checked ~ .version:nth-of-type(4),
-.version-pick:nth-of-type(5):checked ~ .version:nth-of-type(5),
-.version-pick:nth-of-type(6):checked ~ .version:nth-of-type(6),
-.version-pick:nth-of-type(7):checked ~ .version:nth-of-type(7) { display: block; }
+.version-pick:nth-of-type(1):checked ~ .version-panels > .version:nth-of-type(1),
+.version-pick:nth-of-type(2):checked ~ .version-panels > .version:nth-of-type(2),
+.version-pick:nth-of-type(3):checked ~ .version-panels > .version:nth-of-type(3),
+.version-pick:nth-of-type(4):checked ~ .version-panels > .version:nth-of-type(4),
+.version-pick:nth-of-type(5):checked ~ .version-panels > .version:nth-of-type(5),
+.version-pick:nth-of-type(6):checked ~ .version-panels > .version:nth-of-type(6),
+.version-pick:nth-of-type(7):checked ~ .version-panels > .version:nth-of-type(7) { display: block; }
 .version-pick:nth-of-type(1):checked ~ .version-tabs label:nth-of-type(1),
 .version-pick:nth-of-type(2):checked ~ .version-tabs label:nth-of-type(2),
 .version-pick:nth-of-type(3):checked ~ .version-tabs label:nth-of-type(3),
@@ -365,7 +369,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .version-pick:nth-of-type(5):checked ~ .version-tabs label:nth-of-type(5),
 .version-pick:nth-of-type(6):checked ~ .version-tabs label:nth-of-type(6),
 .version-pick:nth-of-type(7):checked ~ .version-tabs label:nth-of-type(7) {
-  border-bottom-color: var(--t);
+  border-bottom-color: var(--tab-line, var(--t));
   color: var(--fg);
   font-weight: 600;
 }
@@ -386,6 +390,78 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .stats dd small { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
 .stats dd.pending { color: var(--fg-muted); font-weight: 400; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Each time a version opens, its score bars fill up. */
+.version .scores i { animation: meter-fill .8s cubic-bezier(.2, .8, .2, 1) .25s both; }
+.version .scores li:nth-child(2) i { animation-delay: .33s; }
+.version .scores li:nth-child(3) i { animation-delay: .41s; }
+@keyframes meter-fill { from { background-size: 0 100%; } }
+
+/* The motion added by versions.js. */
+.version-ink { display: none; }
+.versions.is-live { --tab-line: transparent; }
+.versions.is-live .version-ink {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--ink-w, 0);
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ink-c, transparent);
+  transform: translate(var(--ink-x, 0), var(--ink-y, 0));
+  transition: transform .5s cubic-bezier(.2, .8, .2, 1), width .5s cubic-bezier(.2, .8, .2, 1), background-color .5s;
+}
+.version-tabs.is-still .version-ink { transition: none; }
+.version-tabs label.is-blooming .icon { animation: tulip-bloom .7s cubic-bezier(.2, .8, .2, 1); }
+@keyframes tulip-bloom {
+  0% { transform: scale(.5) rotate(-16deg); }
+  50% { transform: scale(1.22) rotate(8deg); }
+  78% { transform: scale(.95) rotate(-3deg); }
+  100% { transform: none; }
+}
+.version-panels { position: relative; }
+.version-panels.is-switching {
+  overflow: hidden;
+  transition: height .55s cubic-bezier(.2, .8, .2, 1);
+  animation: bloom-open 1s cubic-bezier(.4, .1, .2, 1) both;
+}
+@keyframes bloom-open { from { --r: 0px; } to { --r: var(--reach); } }
+.version.is-entering { clip-path: circle(var(--r) at var(--ox) var(--oy)); }
+.version.is-leaving {
+  display: block;
+  position: absolute;
+  inset: 0 0 auto;
+  mask: radial-gradient(circle at var(--ox) var(--oy), transparent var(--r), #000 calc(var(--r) + 1px));
+  opacity: .75;
+}
+.version.is-leaving * { animation: none !important; }
+.version-panels.is-switching::before,
+.version-panels.is-switching::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  mask-composite: intersect;
+}
+/* the edge: a band of rounded pixels, full at the front, thinning out behind it */
+.version-panels.is-switching::after {
+  background: color-mix(in srgb, var(--ring) 78%, var(--bg));
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Crect x='1' y='1' width='8' height='8' rx='2'/%3E%3C/svg%3E") 0 0 / 10px 10px,
+        radial-gradient(circle at var(--ox) var(--oy), transparent calc(var(--r) - 22px), #000 calc(var(--r) - 21px), #000 var(--r), transparent calc(var(--r) + 1px));
+  mask-composite: intersect;
+}
+.version-panels.is-switching::before {
+  background: color-mix(in srgb, var(--ring) 45%, var(--bg));
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect x='1' y='1' width='8' height='8' rx='2'/%3E%3Crect x='11' y='11' width='8' height='8' rx='2'/%3E%3C/svg%3E") 0 0 / 20px 20px,
+        radial-gradient(circle at var(--ox) var(--oy), transparent calc(var(--r) - 52px), #000 calc(var(--r) - 51px), #000 calc(var(--r) - 22px), transparent calc(var(--r) - 21px));
+  mask-composite: intersect;
+}
+@media (prefers-reduced-motion: reduce) {
+  .version .scores i, .version-tabs label.is-blooming .icon { animation: none; }
+  .versions.is-live .version-ink { transition: none; }
+}
 
 @media (max-width: 543px) {
   .module { flex-direction: column; align-items: center; gap: 12px; }
