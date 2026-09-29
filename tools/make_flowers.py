@@ -190,11 +190,12 @@ def bouquet():
         for p in points[1:-1]:
             d.node(p, 1.9, GREEN)
 
-    # The iris's stem (the iris herself is drawn in front, in the gap below the magnolia, between
-    # the tulip and the orchid).
-    isc, iheart = 0.28, (-6, 16)
-    ip = lambda x, y: (iheart[0] + isc * x, iheart[1] + isc * (y - 2))  # the Iris logo's heart is (0, 2)
-    stem([ip(0, 12), (-3, 34), tie], 'bis')
+    # The iris, in the upper right: she balances the tulip leaning out low on the left.
+    isc, iheart, it = 0.34, (64, -60), math.radians(22)
+    ip = lambda x, y: (iheart[0] + isc * (math.cos(it) * x - math.sin(it) * (y - 2)),   # the Iris logo's
+                       iheart[1] + isc * (math.sin(it) * x + math.cos(it) * (y - 2)))   # heart is (0, 2)
+    stem([ip(0, 12), (32, -2), tie], 'bis')
+    draw_iris(d, ip, isc, dot=0.55, prefix='bi')
 
     # The magnolia's stem (the magnolia herself is drawn in front, at the orchid's height, halfway
     # between the tulip and the orchid).
@@ -310,8 +311,6 @@ def bouquet():
     d.node(mheart, 26, 'url(#bglow)')
     d.front()
     draw_magnolia(d, mp, msc, dot=0.55, prefix='bm')
-    d.front()
-    draw_iris(d, ip, isc, dot=0.5, prefix='bi')
     d.front()
     d.node(ocentre, 42, 'url(#bglow)')
     d.front()
