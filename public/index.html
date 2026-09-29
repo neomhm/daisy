@@ -7,7 +7,7 @@
   <meta name="description" content="D.AI.SY by AKIKI.AI. A kinder Kind of AI.">
   <meta name="theme-color" content="#f6f8fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
   <script src="versions.js?v=1" defer></script>
 </head>
 <body>
@@ -273,50 +273,70 @@
                     <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-3" checked>
                     <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-2">
                     <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-1">
+                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-0">
                     <p class="version-tabs">
                       <label for="daisy-1-3"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.3</label>
                       <label for="daisy-1-2"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.2</label>
                       <label for="daisy-1-1"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.1</label>
+                      <label for="daisy-1-0"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.0</label>
                       <span class="version-ink" aria-hidden="true"></span>
                     </p>
                     <div class="version-panels">
                       <div class="version">
-                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), and a fresh set of 113 (74 to answer, 39 to refuse) for six other businesses, written by a separate model. Nothing in her training was shaped by them.</p>
-                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>109 MB</dd></div><div><dt>Question to rows</dt><dd>0.27 s</dd></div></dl>
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.27 s</dd></div></dl>
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>68.8%</b><i style="--v:68.8%" aria-hidden="true"></i></li>
                           <li><span>Fresh blind test, right rows</span><b>47.3%</b><i style="--v:47.3%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
                           <li><span>Blind hand-written query specs, all three databases</span><b>36.7%</b><i style="--v:36.7%" aria-hidden="true"></i></li>
-                          <li><span>Her quiz, templated questions</span><b>93.5%</b><i style="--v:93.5%" aria-hidden="true"></i></li>
-                          <li class="note">Wrong rows shown: 13.6% of owners' questions, down from 19.5%, and 16.8% on the fresh test, unchanged. Answerable questions she wrongly refused on the fresh test: 9.5%, down from 17.6%. Not there yet: her targets are 75% right and at most 3% wrong rows shown.</li>
+                          <li><span>Her quiz, templated questions</span><b>99.3%</b><i style="--v:99.3%" aria-hidden="true"></i></li>
+                          <li class="note">Wrong rows shown: 13.6% of owners' questions, and 16.8% on the fresh test. Answerable owners' questions she wrongly refused: 4.3%. Asked back when unsure: 7.5% (the right reading among her choices in 4 of 7). Right rows without the asking-back check: 69.9%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
                         </ul>
-                        <p class="version-new"><strong>New in 1.3:</strong> she learned how owners actually phrase things, in 17 families, each taught with its opposite so she learns the difference: &ldquo;how many left&rdquo; means the stock, not a count of rows; &ldquo;billed&rdquo; and &ldquo;paid us&rdquo; mean invoices; &ldquo;haven't been in since&rdquo; is a NOT; &ldquo;busiest weekday&rdquo; and &ldquo;per trainer&rdquo; are rankings; &ldquo;how much&rdquo; is not &ldquo;how many&rdquo;. Some owner words were held back on purpose, and she still understood 57% of them.</p>
-                        <p class="arch">Same design as 1.0: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.2 for about 3.5 hours on MEGA9.</p>
+                        <p class="version-new"><strong>New in 1.3:</strong> she learned how owners actually phrase things, in 17 families, each taught with its opposite: &ldquo;how many left&rdquo; means the stock; &ldquo;billed&rdquo; and &ldquo;paid us&rdquo; mean invoices; &ldquo;haven't been in since&rdquo; is a NOT; &ldquo;busiest weekday&rdquo; and &ldquo;per trainer&rdquo; are rankings; &ldquo;how much&rdquo; is not &ldquo;how many&rdquo;. More owners' questions answered right (68.8%), on the fresh test too (47.3%), with fewer wrong rows shown and half the wrong refusals. Her weakest spot is still showing wrong rows on questions phrased in new ways.</p>
+                        <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.2 for about 3.5 hours.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Results on the same two blind tests.</p>
-                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div></dl>
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.27 s</dd></div></dl>
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>47.3%</b><i style="--v:47.3%" aria-hidden="true"></i></li>
                           <li><span>Fresh blind test, right rows</span><b>40.5%</b><i style="--v:40.5%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
                           <li><span>Blind hand-written query specs, all three databases</span><b>36.1%</b><i style="--v:36.1%" aria-hidden="true"></i></li>
-                          <li><span>Her quiz, templated questions</span><b>94.5%</b><i style="--v:94.5%" aria-hidden="true"></i></li>
-                          <li class="note">Wrong rows shown: 19.5% of owners' questions, and 16.8% on the fresh test. Answerable questions she wrongly refused on the fresh test: 17.6%.</li>
+                          <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
+                          <li class="note">Wrong rows shown: 19.5% of owners' questions, and 16.8% on the fresh test. Answerable owners' questions she wrongly refused: 8.6%. Asked back when unsure: 17.2% (the right reading among her choices in 8 of 16). Right rows without the asking-back check: 52.7%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
                         </ul>
-                        <p class="arch">Same design as 1.0: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary.</p>
+                        <p class="version-new"><strong>New in 1.2:</strong> 109 more varied column names among her lessons. More owners' questions right (47.3%), fewer wrongly refused.</p>
+                        <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.1 for 1 h 30 min.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Final results on 118 owners' questions she never saw: 93 to answer, 25 to refuse.</p>
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.25 s</dd></div></dl>
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>41.9%</b><i style="--v:41.9%" aria-hidden="true"></i></li>
-                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76%" aria-hidden="true"></i></li>
+                          <li><span>Fresh blind test, right rows</span><b>43.2%</b><i style="--v:43.2%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
                           <li><span>Blind hand-written query specs, all three databases</span><b>38.3%</b><i style="--v:38.3%" aria-hidden="true"></i></li>
                           <li><span>Her quiz, templated questions</span><b>99.1%</b><i style="--v:99.1%" aria-hidden="true"></i></li>
-                          <li class="note">Wrong rows shown: 21.2% of questions, down from 36.4%. When she isn't sure, she now asks you back with a few choices (16.1% of the questions she could answer; the right reading is among them in 9 of 15). Without that check she gets 51.6% right, but shows more wrong rows.</li>
+                          <li class="note">Wrong rows shown: 21.2% of owners' questions, and 15.0% on the fresh test. Answerable owners' questions she wrongly refused: 11.8%. Asked back when unsure: 16.1% (the right reading among her choices in 9 of 15). Right rows without the asking-back check: 51.6%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
                         </ul>
                         <p class="version-new"><strong>New in 1.1:</strong> a confidence check that asks you back instead of guessing, and real people's questions from open datasets (Spider, BIRD and WikiSQL) among her lessons, with their licences and credits kept in her model file.</p>
-                        <p class="arch">Same design as 1.0: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.0 for 1 h 33 min. Her weakest spot: columns named in ways she has never seen.</p>
+                        <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.0 for 1 h 33 min.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them. The fresh test was added after 1.0, so 1.0 has no score on it.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd class="pending">not measured</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Owners' questions she never saw, right rows</span><b>41.9%</b><i style="--v:41.9%" aria-hidden="true"></i></li>
+                          <li><span>Fresh blind test, right rows</span><b>not measured</b><i style="--v:0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Blind hand-written query specs, all three databases</span><b>33.3%</b><i style="--v:33.3%" aria-hidden="true"></i></li>
+                          <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
+                          <li class="note">Wrong rows shown: 36.4% of owners' questions. Answerable owners' questions she wrongly refused: 8.6%. Asked back when unsure: no check yet. Right rows without the asking-back check: 41.9%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
+                        </ul>
+                        <p class="version-new">The first Daisy that reads an owner's plain English. No asking-back check yet, so every uncertain answer was shown.</p>
+                        <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary.</p>
                       </div>
                     </div>
                   </div>
