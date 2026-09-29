@@ -124,18 +124,32 @@
               <section class="module" id="orchid" style="--c:#c2549e">
                 <img class="sway" src="orchid.svg" width="120" height="120" alt="Orchid logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Orchid</h3><span class="chip status">Orchid 1.1 &middot; trained</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Orchid</h3><span class="chip status">Orchid 1.2 &middot; experiment</span></div>
                   <p class="module-role">Finds the facts in your documents</p>
                   <p>Hand Orchid your documents, such as invoices, brochures, price lists, web pages or registration papers. She reads them one chunk at a time and marks the facts: your business's name, address, phone, e-mail, website, opening hours, founding date and more, 25 kinds in all. She also says what kind of document it is and what language it's in. Orchid never writes a word: she only marks what is already there, so every value she returns is a slice of your own document. Code then checks each value and keeps its source.</p>
                   <div class="versions">
-                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-1" checked>
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-2" checked>
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-1">
                     <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-0">
                     <p class="version-tabs">
+                      <label for="orchid-1-2"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.2</label>
                       <label for="orchid-1-1"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.1</label>
                       <label for="orchid-1-0"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.0</label>
                       <span class="version-ink" aria-hidden="true"></span>
                     </p>
                     <div class="version-panels">
+                      <div class="version">
+                        <p class="version-lead">Experiment, not in use yet. The same real-page training as 1.1, on a pretrained multilingual encoder, then tested on real pages she never saw.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>277.5M</dd></div><div><dt>Tensors</dt><dd>203</dd></div><div><dt>Weights</dt><dd>1.0 GB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>250 ms</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Real web pages of US small businesses (F1)</span><b>0.869</b><i style="--v:86.9%" aria-hidden="true"></i></li>
+                          <li><span>Real web pages of French small businesses (F1)</span><b>0.827</b><i style="--v:82.7%" aria-hidden="true"></i></li>
+                          <li><span>Business name found on real pages, per business</span><b>75.0%</b><i style="--v:75%" aria-hidden="true"></i></li>
+                          <li><span>Made-up documents in layouts she never saw (F1)</span><b>0.942</b><i style="--v:94.2%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. The first version above 0.80 on real pages: on real US pages her precision is 0.830 and her recall 0.910. Not there yet: the business name for 95% of businesses. She is 8.5&times; larger and about 3&times; slower than 1.1, so next she is retrained on more real pages, then teaches a small, fast model.</li>
+                        </ul>
+                        <p class="arch">Pretrained multilingual transformer encoder (xlm-roberta-base, MIT licence): 12 blocks &times; 768, 12 attention heads, 512-token context, 250,002-piece vocabulary. Trained first on made-up business documents for 2 h 27 min, then on the same real pages as 1.1 for 44 min.</p>
+                      </div>
                       <div class="version">
                         <p class="version-lead">Final results. Trained further on real web pages of 196 businesses in the US and France, then tested on real pages she never saw.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
