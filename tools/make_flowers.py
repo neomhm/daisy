@@ -175,7 +175,8 @@ def tulip():
 
 
 def bouquet():
-    """Bouquet: the team's flowers, a daisy, a tulip, a jasmine and an orchid, tied together with a golden bow."""
+    """Bouquet: the team's flowers, a daisy, a tulip, a jasmine, an orchid, a magnolia and an iris,
+    tied together with a golden bow."""
     d = Drawing()
     GREEN = '#3aa56f'
     tie = (0, 56)
@@ -188,6 +189,14 @@ def bouquet():
             d.line(p, q, f'url(#{gid})', 1.0)
         for p in points[1:-1]:
             d.node(p, 1.9, GREEN)
+
+    # The magnolia and the iris, furthest back, in the upper corners.
+    for draw, centre, turn, pre in ((draw_magnolia, (-60, -58), -24, 'bm'), (draw_iris, (62, -58), 22, 'bi')):
+        t, sc = math.radians(turn), 0.36
+        pl = lambda x, y, c=centre, t=t, sc=sc: (c[0] + sc * (math.cos(t) * x - math.sin(t) * y),
+                                                 c[1] + sc * (math.sin(t) * x + math.cos(t) * y))
+        stem([pl(0, 12), (centre[0] * 0.6, -14), (centre[0] * 0.3, 24), tie], pre + 's')
+        draw(d, pl, sc, dot=0.55, prefix=pre)
 
     # The daisy, the tallest: twelve petals in the Daisy logo's colours around a golden heart.
     centre = (0, -50)
@@ -344,18 +353,67 @@ def orchid():
     return d.svg('Orchid')
 
 
-def magnolia():
-    """Magnolia: a cup-shaped flower opening at the tip of a branch. Three inner petals stand up
-    around a golden centre, two outer petals open wide, and a leaf grows from the woody branch."""
-    d = Drawing()
-    rose, blush, deep = '#de7c95', '#ec9fb4', '#c75f86'
-    centre = (0, 8)
-    warm = lambda p: mix(YELLOW, ORANGE, min(1, max(0, (1 + p[0] / 12) / 2)))
-    hub = [(centre[0] + 11 * math.cos(math.radians(a)), centre[1] + 7 * math.sin(math.radians(a))) for a in range(0, 360, 60)]
+def draw_head(d, centre, hub_radii, parts, beards=(), place=lambda x, y: (x, y), scale=1.0, dot=1.0, prefix=''):
+    """Draw a flower head of lattice petals around a golden hub into d: Magnolia's and Iris's.
+    parts are (name, base angle on the hub, tip, width, colour, node sizes, tip node, bulge,
+    steps); a part named in beards gets two golden nodes along it. place, scale and dot work as
+    in draw_orchid."""
+    warm = lambda p: mix(YELLOW, ORANGE, min(1, max(0, (1 + (p[0] - centre[0]) / 12) / 2)))
+    P = lambda p: place(*p)
+    rx, ry, start = hub_radii
+    hub = [(centre[0] + rx * math.cos(math.radians(a)), centre[1] + ry * math.sin(math.radians(a)))
+           for a in range(start, start + 360, 60)]
     for i, p in enumerate(hub):
-        d.line(centre, p, warm(p), 0.7, 0.85)
-        d.line(p, hub[(i + 1) % 6], warm(p), 0.7, 0.85)
-    # Branch and leaf first, so the flower is drawn over them.
+        d.line(P(centre), P(p), warm(p), 0.7, 0.85)
+        d.line(P(p), P(hub[(i + 1) % 6]), warm(p), 0.7, 0.85)
+    for gid, angle, tip, width, col, sizes, tip_r, bulge, steps in parts:
+        base = (centre[0] + (rx + 2) * math.cos(math.radians(angle)), centre[1] + (ry + 2) * math.sin(math.radians(angle)))
+        begin = warm(base)
+        d.gradient(prefix + gid, P(base), P(tip), begin, col, 0.45)
+        b, left, right = lattice(d, prefix + gid, P(base), P(tip), width * scale,
+                                 lambda t, s=begin, c=col: mix(s, c, min(1, t / 0.45)),
+                                 sizes=(sizes[0] * dot, sizes[1] * dot), tip_r=tip_r * dot, bulge=bulge, steps=steps)
+        for h in sorted(hub, key=lambda h: math.dist(P(h), b))[:2]:
+            d.line(P(h), b, f'url(#{prefix}{gid})', 0.6, 0.85)
+        if gid in beards:
+            for k in (0.3, 0.5):
+                d.node(P((base[0] + (tip[0] - base[0]) * k, base[1] + (tip[1] - base[1]) * k)), 2.4 * dot, YELLOW)
+    for p in hub:
+        d.node(P(p), 2.6 * dot, warm(p))
+    d.node(P(centre), 5.2 * dot, YELLOW)
+
+
+def draw_magnolia(d, place=lambda x, y: (x, y), scale=1.0, dot=1.0, prefix=''):
+    """Magnolia's flower: three inner petals stand up around a golden centre, two outer petals
+    open wide."""
+    rose, blush, deep = '#de7c95', '#ec9fb4', '#c75f86'
+    draw_head(d, (0, 8), (11, 7, 0), [
+        ('mol', 180, (-92, -30), 24, blush, (2.0, 2.9), 5.0, 0.6, 5),   # outer petals, open wide
+        ('mor', 0, (92, -30), 24, blush, (2.0, 2.9), 5.0, 0.6, 5),
+        ('mil', 240, (-40, -90), 21, rose, (2.1, 3.1), 5.2, 0.7, 6),    # inner petals, standing up
+        ('mir', 300, (40, -90), 21, rose, (2.1, 3.1), 5.2, 0.7, 6),
+        ('mic', 270, (0, -100), 18, deep, (2.1, 3.1), 5.4, 0.8, 6),
+    ], place=place, scale=scale, dot=dot, prefix=prefix)
+
+
+def draw_iris(d, place=lambda x, y: (x, y), scale=1.0, dot=1.0, prefix=''):
+    """Iris's flower: three standards stand up, three falls droop out and down, each fall with a
+    golden beard."""
+    blue, violet, deep = '#6592b4', '#7c8acb', '#5c6fbd'
+    draw_head(d, (0, 2), (10, 10, -90), [
+        ('ifl', 150, (-92, 40), 22, blue, (2.0, 2.9), 5.0, 0.6, 5),     # falls, drooping out and down
+        ('ifr', 30, (92, 40), 22, blue, (2.0, 2.9), 5.0, 0.6, 5),
+        ('ifc', 90, (0, 62), 15, deep, (1.9, 2.6), 4.6, 0.8, 4),
+        ('isl', 210, (-50, -86), 18, violet, (2.0, 2.9), 5.0, 0.7, 5),  # standards, standing up
+        ('isr', 330, (50, -86), 18, violet, (2.0, 2.9), 5.0, 0.7, 5),
+        ('isc', 270, (0, -100), 16, deep, (2.1, 3.0), 5.4, 0.8, 6),
+    ], beards=('ifl', 'ifr', 'ifc'), place=place, scale=scale, dot=dot, prefix=prefix)
+
+
+def magnolia():
+    """Magnolia: a cup-shaped flower opening at the tip of a branch, with a leaf on the woody
+    branch."""
+    d = Drawing()
     branch = [(0, 14), (-4, 38), (-12, 62), (-22, 84), (-30, 98)]
     d.gradient('mb', branch[0], branch[-1], mix(ORANGE, '#3aa56f', 0.6), '#3aa56f', 0.3)
     for p, q in zip(branch, branch[1:]):
@@ -366,39 +424,13 @@ def magnolia():
         d.node(p, 2.2, '#3aa56f')
     d.node(branch[-1], 3.0, '#3aa56f')
     d.front()
-    # (name, base angle on the hub, tip, width, colour, node sizes, tip node, bulge, steps)
-    parts = [
-        ('mol', 180, (-92, -30), 24, blush, (2.0, 2.9), 5.0, 0.6, 5),   # outer petals, open wide
-        ('mor', 0, (92, -30), 24, blush, (2.0, 2.9), 5.0, 0.6, 5),
-        ('mil', 240, (-40, -90), 21, rose, (2.1, 3.1), 5.2, 0.7, 6),    # inner petals, standing up
-        ('mir', 300, (40, -90), 21, rose, (2.1, 3.1), 5.2, 0.7, 6),
-        ('mic', 270, (0, -100), 18, deep, (2.1, 3.1), 5.4, 0.8, 6),
-    ]
-    for gid, angle, tip, width, col, sizes, tip_r, bulge, steps in parts:
-        base = (centre[0] + 13 * math.cos(math.radians(angle)), centre[1] + 9 * math.sin(math.radians(angle)))
-        start = warm(base)
-        d.gradient(gid, base, tip, start, col, 0.45)
-        b, left, right = lattice(d, gid, base, tip, width, lambda t, s=start, c=col: mix(s, c, min(1, t / 0.45)),
-                                 sizes=sizes, tip_r=tip_r, bulge=bulge, steps=steps)
-        for h in sorted(hub, key=lambda h: math.dist(h, b))[:2]:
-            d.line(h, b, f'url(#{gid})', 0.6, 0.85)
-    for p in hub:
-        d.node(p, 2.6, warm(p))
-    d.node(centre, 5.2, YELLOW)
+    draw_magnolia(d)
     return d.svg('Magnolia')
 
 
 def iris():
-    """Iris: a bearded iris seen from the front. Three standards stand up, three falls droop out
-    and down, each fall with a golden beard, above a stem and a sword-shaped leaf."""
+    """Iris: a bearded iris seen from the front, above a stem and a sword-shaped leaf."""
     d = Drawing()
-    blue, violet, deep = '#6592b4', '#7c8acb', '#5c6fbd'
-    centre = (0, 2)
-    warm = lambda p: mix(YELLOW, ORANGE, min(1, max(0, (1 + p[0] / 12) / 2)))
-    hub = [(centre[0] + 10 * math.cos(math.radians(a)), centre[1] + 10 * math.sin(math.radians(a))) for a in range(-90, 270, 60)]
-    for i, p in enumerate(hub):
-        d.line(centre, p, warm(p), 0.7, 0.85)
-        d.line(p, hub[(i + 1) % 6], warm(p), 0.7, 0.85)
     stem = [(0, 12), (0, 40), (0, 66), (0, 96)]
     d.gradient('is', stem[0], stem[-1], mix(ORANGE, '#3aa56f', 0.6), '#3aa56f', 0.3)
     for p, q in zip(stem, stem[1:]):
@@ -409,31 +441,8 @@ def iris():
         d.node(p, 2.2, '#3aa56f')
     d.node(stem[-1], 3.0, '#3aa56f')
     d.front()
-    # (name, base angle on the hub, tip, width, colour, node sizes, tip node, bulge, steps)
-    parts = [
-        ('ifl', 150, (-92, 40), 22, blue, (2.0, 2.9), 5.0, 0.6, 5),     # falls, drooping out and down
-        ('ifr', 30, (92, 40), 22, blue, (2.0, 2.9), 5.0, 0.6, 5),
-        ('ifc', 90, (0, 62), 15, deep, (1.9, 2.6), 4.6, 0.8, 4),
-        ('isl', 210, (-50, -86), 18, violet, (2.0, 2.9), 5.0, 0.7, 5),  # standards, standing up
-        ('isr', 330, (50, -86), 18, violet, (2.0, 2.9), 5.0, 0.7, 5),
-        ('isc', 270, (0, -100), 16, deep, (2.1, 3.0), 5.4, 0.8, 6),
-    ]
-    for gid, angle, tip, width, col, sizes, tip_r, bulge, steps in parts:
-        base = (centre[0] + 12 * math.cos(math.radians(angle)), centre[1] + 12 * math.sin(math.radians(angle)))
-        start = warm(base)
-        d.gradient(gid, base, tip, start, col, 0.45)
-        b, left, right = lattice(d, gid, base, tip, width, lambda t, s=start, c=col: mix(s, c, min(1, t / 0.45)),
-                                 sizes=sizes, tip_r=tip_r, bulge=bulge, steps=steps)
-        for h in sorted(hub, key=lambda h: math.dist(h, b))[:2]:
-            d.line(h, b, f'url(#{gid})', 0.6, 0.85)
-        if gid.startswith('if'):                    # the golden beard along each fall
-            for k in (0.3, 0.5):
-                d.node((b[0] + (tip[0] - b[0]) * k, b[1] + (tip[1] - b[1]) * k), 2.4, YELLOW)
-    for p in hub:
-        d.node(p, 2.6, warm(p))
-    d.node(centre, 5.2, YELLOW)
+    draw_iris(d)
     return d.svg('Iris')
-
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
