@@ -191,7 +191,7 @@ def bouquet():
             d.node(p, 1.9, GREEN)
 
     # The magnolia and the iris, furthest back, in the upper corners.
-    for draw, centre, turn, pre in ((draw_magnolia, (-60, -58), -24, 'bm'), (draw_iris, (62, -58), 22, 'bi')):
+    for draw, centre, turn, pre in ((draw_magnolia, (-66, -36), -24, 'bm'), (draw_iris, (62, -58), 22, 'bi')):
         t, sc = math.radians(turn), 0.36
         pl = lambda x, y, c=centre, t=t, sc=sc: (c[0] + sc * (math.cos(t) * x - math.sin(t) * y),
                                                  c[1] + sc * (math.sin(t) * x + math.cos(t) * y))
