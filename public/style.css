@@ -396,6 +396,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .version .scores li:nth-child(2) i { animation-delay: .33s; }
 .version .scores li:nth-child(4) i { animation-delay: .49s; }
 .version .scores li:nth-child(5) i { animation-delay: .57s; }
+.version .scores li:nth-child(6) i { animation-delay: .65s; }
 .version .scores li:nth-child(3) i { animation-delay: .41s; }
 @keyframes meter-fill { from { background-size: 0 100%; } }
 

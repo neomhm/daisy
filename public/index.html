@@ -7,7 +7,7 @@
   <meta name="description" content="D.AI.SY by AKIKI.AI. A kinder Kind of AI.">
   <meta name="theme-color" content="#f6f8fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=32">
+  <link rel="stylesheet" href="style.css?v=33">
   <script src="versions.js?v=1" defer></script>
 </head>
 <body>
@@ -130,10 +130,12 @@
                   <div class="versions">
                     <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-1" checked>
                     <input class="version-pick" type="radio" name="orchid-version" id="orchid-small">
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-large">
                     <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-0">
                     <p class="version-tabs">
                       <label for="orchid-1-1"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.1</label>
                       <label for="orchid-small"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>small</label>
+                      <label for="orchid-large"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>large</label>
                       <label for="orchid-1-0"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.0</label>
                       <span class="version-ink" aria-hidden="true"></span>
                     </p>
@@ -158,9 +160,22 @@
                           <li><span>Real web pages of French small businesses (F1)</span><b>0.747</b><i style="--v:74.7%" aria-hidden="true"></i></li>
                           <li><span>Business name found on real pages, per business</span><b>70.3%</b><i style="--v:70.3%" aria-hidden="true"></i></li>
                           <li><span>Hand-written documents (F1)</span><b>0.683</b><i style="--v:68.3%" aria-hidden="true"></i></li>
-                          <li class="note">Invented values: 0, on every test. Held out whole, Oregon 0.737 and Occitanie 0.775 (1.1: 0.619 and 0.658). Contact fields on real US pages: phone 0.976, e-mail 0.993, address 0.923, website 0.836. A larger version trained the same way scores higher still (0.87 on US pages, 0.83 on French pages) but is slower. It is being retrained on twice as many French businesses, and will then teach a small, fast Orchid.</li>
+                          <li class="note">Invented values: 0, on every test. Held out whole, Oregon 0.737 and Occitanie 0.775 (1.1: 0.619 and 0.658). Contact fields on real US pages: phone 0.976, e-mail 0.993, address 0.923, website 0.836. A larger version (xlm-roberta, 278M parameters) was retrained on twice as many French businesses. It is the most accurate Orchid so far, on real pages it never saw: 0.88 on US pages, 0.85 on French pages. It is too heavy for a laptop, so it will teach a small, fast Orchid instead of being used directly.</li>
                         </ul>
                         <p class="arch">BERT-style encoder: 12 blocks &times; 384, 12 attention heads, 512-token context, 250,037-piece vocabulary. Trained on Google Colab (A100) in 2 h 38 min, of which 26 minutes were training.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Experiment, round 3: the large version, on a pretrained multilingual encoder, retrained on twice as many French businesses and tested on real pages she never saw. Too heavy for a laptop, so she will teach a small, fast Orchid instead of being used directly.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>277.5M</dd></div><div><dt>Tensors</dt><dd>203</dd></div><div><dt>Weights</dt><dd>1.0 GB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>293 ms</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Real web pages of US small businesses (F1)</span><b>0.882</b><i style="--v:88.2%" aria-hidden="true"></i></li>
+                          <li><span>Real web pages of French small businesses (F1)</span><b>0.849</b><i style="--v:84.9%" aria-hidden="true"></i></li>
+                          <li><span>Business name found on real pages, per business</span><b>75.9%</b><i style="--v:75.9%" aria-hidden="true"></i></li>
+                          <li><span>Business name found, where the name is on their pages</span><b>80.1%</b><i style="--v:80.1%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. Held out whole, Oregon 0.799 and Occitanie 0.859. Contact fields on real US pages: phone 0.993, e-mail 1.000, address 0.954, website 0.757; on French pages all four reach the 0.90 target (website 0.978). Round 2 of the same version: 0.869 US, 0.827 France, business name 75.0%. Speed measured on 2 CPU threads.</li>
+                        </ul>
+                        <p class="version-new"><strong>Honest note:</strong> the target for the business name is 95%, and she is at 80%. When she misses, she almost always picks another name from the page (155 of 162 misses) rather than finding none. That is the next thing to teach her.</p>
+                        <p class="arch">Pretrained multilingual transformer encoder (xlm-roberta-base, MIT licence): 12 blocks &times; 768, 12 attention heads, 512-token context, 250,002-piece vocabulary.</p>
                       </div>
                       <div class="version">
                         <p class="version-lead">Final test results. Trained on Wikipedia and made-up business documents only.</p>
@@ -225,7 +240,7 @@
               <section class="module" id="jasmine" style="--c:#a06fc2">
                 <img class="spin" src="jasmine.svg" width="120" height="120" alt="Jasmine logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Jasmine</h3><span class="chip status">Jasmine 1c &middot; trained</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Jasmine</h3><span class="chip status">Jasmine 1c &middot; being retrained</span></div>
                   <p class="module-role">Dresses the site to fit the business</p>
                   <p>Jasmine never sees your pictures. Code reads your documents and photos and turns them into a few plain signals: what you sell (pizza, vegan, sushi, bakery), the mood of your words (fresh, rustic, elegant), and how your photos feel (bright or dark, warm or cool, calm or vivid). From these, Jasmine picks the look, the font pair, the background, the main and accent colours, and their strength. A pizzeria gets warm reds and terracotta, a vegan kitchen fresh greens, and a sushi bar calm tones on a neutral background. Your logo, when you have one, stays the main colour. Code turns her choices into exact colours and checks every contrast pair, so she cannot make an unreadable site.</p>
                   <div class="versions">
@@ -247,7 +262,7 @@
                           <li><span>&ldquo;Says pizza&rdquo;: the main colour fits what the business sells</span><b>100%</b><i style="--v:100%" aria-hidden="true"></i></li>
                           <li class="note">Contrast failures: 0 of 65,000.</li>
                         </ul>
-                        <p class="version-new"><strong>Honest note:</strong> Jasmine 1c learned from design rules written as code, and dresses exactly as those rules would. Real taste will come from the designs owners approve and change once PLAN is in use. She is being wired into PLAN now; until then, the same written rules dress the sites.</p>
+                        <p class="version-new"><strong>Honest note:</strong> Jasmine 1c learns from design rules written as code. A review of those rules found places where they leaned on clich&eacute;s or misread words. For example, a French shop that &ldquo;closes at 7 pm&rdquo; (ferme &agrave; 19h) was read as rustic, and every Chinese restaurant got red and gold. The rules have been corrected, so Jasmine 1c is being retrained on them. The figures above are from her first training and will be replaced.</p>
                       </div>
                       <div class="version">
                         <p class="version-lead">Rehearsal model. Proposed a design spec from the business's features, learned from design rules written as code.</p>
@@ -266,15 +281,17 @@
               <section class="module" id="daisy" style="--c:#ec8e4a">
                 <img class="spin" src="daisy.svg" width="120" height="120" alt="Daisy logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Daisy</h3><span class="chip status">Daisy 1.3 &middot; trained</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Daisy</h3><span class="chip status">Daisy 1.4 &middot; trained</span></div>
                   <p class="module-role">Answers questions about your own data</p>
                   <p>Ask in plain English, the way you would type it: &ldquo;how many croissants have we got left?&rdquo;, &ldquo;who hasn't been in since June?&rdquo;, &ldquo;what's our busiest day?&rdquo;. Daisy turns the question into a precise query spec in about 0.3 seconds on one CPU core. Code checks the spec, compiles it to SQL for SQLite, PostgreSQL or MySQL, and runs it read-only. You then see the exact rows and the SQL behind the answer. No GPU is needed. When she doesn't know, she says so. When she isn't sure, she asks you back with a few choices.</p>
                   <div class="versions">
-                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-3" checked>
+                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-4" checked>
+                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-3">
                     <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-2">
                     <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-1">
                     <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-0">
                     <p class="version-tabs">
+                      <label for="daisy-1-4"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.4</label>
                       <label for="daisy-1-3"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.3</label>
                       <label for="daisy-1-2"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.2</label>
                       <label for="daisy-1-1"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.1</label>
@@ -286,9 +303,26 @@
                         <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.27 s</dd></div></dl>
                         <ul class="scores">
+                          <li><span>Owners' questions she never saw, right rows</span><b>63.4%</b><i style="--v:63.4%" aria-hidden="true"></i></li>
+                          <li><span>Fresh blind test, right rows</span><b>45.9%</b><i style="--v:45.9%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (owners' questions)</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (fresh blind test)</span><b>79.5%</b><i style="--v:79.5%" aria-hidden="true"></i></li>
+                          <li><span>Blind hand-written query specs, all three databases</span><b>36.7%</b><i style="--v:36.7%" aria-hidden="true"></i></li>
+                          <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
+                          <li class="note">Wrong rows shown: 11.9% of owners' questions, and 11.5% on the fresh test. Answerable owners' questions she wrongly refused: 7.5%. Asked back when unsure: 9.7% (the right reading among her choices in 6 of 9). Right rows without the asking-back check: 67.7%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
+                        </ul>
+                        <p class="version-new"><strong>New in 1.4:</strong> she learned more kinds of owners' questions, each taught with its opposite: yes/no questions (&ldquo;did anyone buy the gift box?&rdquo;), days the business is closed, totals per service and month, looking one thing up, averages, whether something is available, and questions that almost match the data but not quite, which she must refuse. She is also more careful: she holds back when she isn't sure, instead of showing a guess. On the fresh test she shows a third fewer wrong answers (11.5%, down from 16.8%) and refuses the right questions for the right reason more often (79.5%, up from 64.1%); she gets about as many right (45.9%). Her weakest spot is still questions phrased in ways she has never seen.</p>
+<p class="version-new"><strong>Honest note:</strong> 1.4 gets fewer owners' questions right than 1.3 (63.4% against 68.8%). Rounds 11 and 12 were both designed from the kinds of mistakes found on those questions, so that test is no longer a fair one for them. The fresh blind test was never used to design any lesson: it is the one that decides. Her confidence check is set strictly: she would rather hold back than show a wrong answer.</p>
+                        <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.3.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.27 s</dd></div></dl>
+                        <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>68.8%</b><i style="--v:68.8%" aria-hidden="true"></i></li>
                           <li><span>Fresh blind test, right rows</span><b>47.3%</b><i style="--v:47.3%" aria-hidden="true"></i></li>
-                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (owners' questions)</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (fresh blind test)</span><b>64.1%</b><i style="--v:64.1%" aria-hidden="true"></i></li>
                           <li><span>Blind hand-written query specs, all three databases</span><b>36.7%</b><i style="--v:36.7%" aria-hidden="true"></i></li>
                           <li><span>Her quiz, templated questions</span><b>99.3%</b><i style="--v:99.3%" aria-hidden="true"></i></li>
                           <li class="note">Wrong rows shown: 13.6% of owners' questions, and 16.8% on the fresh test. Answerable owners' questions she wrongly refused: 4.3%. Asked back when unsure: 7.5% (the right reading among her choices in 4 of 7). Right rows without the asking-back check: 69.9%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
@@ -302,7 +336,8 @@
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>47.3%</b><i style="--v:47.3%" aria-hidden="true"></i></li>
                           <li><span>Fresh blind test, right rows</span><b>40.5%</b><i style="--v:40.5%" aria-hidden="true"></i></li>
-                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (owners' questions)</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (fresh blind test)</span><b>not measured</b><i style="--v:0%" aria-hidden="true"></i></li>
                           <li><span>Blind hand-written query specs, all three databases</span><b>36.1%</b><i style="--v:36.1%" aria-hidden="true"></i></li>
                           <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
                           <li class="note">Wrong rows shown: 19.5% of owners' questions, and 16.8% on the fresh test. Answerable owners' questions she wrongly refused: 8.6%. Asked back when unsure: 17.2% (the right reading among her choices in 8 of 16). Right rows without the asking-back check: 52.7%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
@@ -316,7 +351,8 @@
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>41.9%</b><i style="--v:41.9%" aria-hidden="true"></i></li>
                           <li><span>Fresh blind test, right rows</span><b>43.2%</b><i style="--v:43.2%" aria-hidden="true"></i></li>
-                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (owners' questions)</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (fresh blind test)</span><b>not measured</b><i style="--v:0%" aria-hidden="true"></i></li>
                           <li><span>Blind hand-written query specs, all three databases</span><b>38.3%</b><i style="--v:38.3%" aria-hidden="true"></i></li>
                           <li><span>Her quiz, templated questions</span><b>99.1%</b><i style="--v:99.1%" aria-hidden="true"></i></li>
                           <li class="note">Wrong rows shown: 21.2% of owners' questions, and 15.0% on the fresh test. Answerable owners' questions she wrongly refused: 11.8%. Asked back when unsure: 16.1% (the right reading among her choices in 9 of 15). Right rows without the asking-back check: 51.6%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
@@ -330,7 +366,8 @@
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>41.9%</b><i style="--v:41.9%" aria-hidden="true"></i></li>
                           <li><span>Fresh blind test, right rows</span><b>not measured</b><i style="--v:0%" aria-hidden="true"></i></li>
-                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (owners' questions)</span><b>76.0%</b><i style="--v:76.0%" aria-hidden="true"></i></li>
+                          <li><span>Right refusals, for the right reason (fresh blind test)</span><b>not measured</b><i style="--v:0%" aria-hidden="true"></i></li>
                           <li><span>Blind hand-written query specs, all three databases</span><b>33.3%</b><i style="--v:33.3%" aria-hidden="true"></i></li>
                           <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
                           <li class="note">Wrong rows shown: 36.4% of owners' questions. Answerable owners' questions she wrongly refused: 8.6%. Asked back when unsure: no check yet. Right rows without the asking-back check: 41.9%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
