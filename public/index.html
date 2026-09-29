@@ -82,7 +82,7 @@
             </a>
             <a class="stack-box stack-jasmine" href="#jasmine">
               <svg class="stack-icon" aria-hidden="true"><use href="#px-jasmine"/></svg>
-              <span class="stack-spec">2&ndash;5M params</span>
+              <span class="stack-spec">3.4M params</span>
               <span class="stack-name">jasmine</span>
               <span class="stack-text">Design engine.</span>
               <span class="stack-handles" aria-hidden="true"></span>
@@ -124,32 +124,20 @@
               <section class="module" id="orchid" style="--c:#c2549e">
                 <img class="sway" src="orchid.svg" width="120" height="120" alt="Orchid logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Orchid</h3><span class="chip status">Orchid 1.2 &middot; experiment</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Orchid</h3><span class="chip status">Orchid 1.1 &middot; trained</span></div>
                   <p class="module-role">Finds the facts in your documents</p>
                   <p>Hand Orchid your documents, such as invoices, brochures, price lists, web pages or registration papers. She reads them one chunk at a time and marks the facts: your business's name, address, phone, e-mail, website, opening hours, founding date and more, 25 kinds in all. She also says what kind of document it is and what language it's in. Orchid never writes a word: she only marks what is already there, so every value she returns is a slice of your own document. Code then checks each value and keeps its source.</p>
                   <div class="versions">
-                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-2" checked>
-                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-1">
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-1" checked>
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-small">
                     <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-0">
                     <p class="version-tabs">
-                      <label for="orchid-1-2"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.2</label>
                       <label for="orchid-1-1"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.1</label>
+                      <label for="orchid-small"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>small</label>
                       <label for="orchid-1-0"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.0</label>
                       <span class="version-ink" aria-hidden="true"></span>
                     </p>
                     <div class="version-panels">
-                      <div class="version">
-                        <p class="version-lead">Experiment, not in use yet. The same real-page training as 1.1, on a pretrained multilingual encoder, then tested on real pages she never saw.</p>
-                        <dl class="stats"><div><dt>Parameters</dt><dd>277.5M</dd></div><div><dt>Tensors</dt><dd>203</dd></div><div><dt>Weights</dt><dd>1.0 GB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>250 ms</dd></div></dl>
-                        <ul class="scores">
-                          <li><span>Real web pages of US small businesses (F1)</span><b>0.869</b><i style="--v:86.9%" aria-hidden="true"></i></li>
-                          <li><span>Real web pages of French small businesses (F1)</span><b>0.827</b><i style="--v:82.7%" aria-hidden="true"></i></li>
-                          <li><span>Business name found on real pages, per business</span><b>75.0%</b><i style="--v:75%" aria-hidden="true"></i></li>
-                          <li><span>Made-up documents in layouts she never saw (F1)</span><b>0.942</b><i style="--v:94.2%" aria-hidden="true"></i></li>
-                          <li class="note">Invented values: 0, on every test. The first version above 0.80 on real pages: on real US pages her precision is 0.830 and her recall 0.910. Not there yet: the business name for 95% of businesses. She is 8.5&times; larger and about 3&times; slower than 1.1, so next she is retrained on more real pages, then teaches a small, fast model.</li>
-                        </ul>
-                        <p class="arch">Pretrained multilingual transformer encoder (xlm-roberta-base, MIT licence): 12 blocks &times; 768, 12 attention heads, 512-token context, 250,002-piece vocabulary. Trained first on made-up business documents for 2 h 27 min, then on the same real pages as 1.1 for 44 min.</p>
-                      </div>
                       <div class="version">
                         <p class="version-lead">Final results. Trained further on real web pages of 196 businesses in the US and France, then tested on real pages she never saw.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
@@ -161,6 +149,17 @@
                           <li class="note">Invented values: 0, on every test. On real US pages her precision doubled, from 0.370 to 0.732: she marks far fewer wrong facts. Not there yet: her targets are the business name for 95% of businesses and 0.80 overall.</li>
                         </ul>
                         <p class="arch">Same design as 1.0: transformer encoder, 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. Trained further from 1.0 for 1,140 steps, about nine minutes, replaying her made-up documents so she forgets nothing; she stopped by herself once her real-page score stopped improving.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Experiment, not the version in use. A smaller, faster candidate: the same real US and French pages as 1.1, on multilingual-e5-small, a small pretrained multilingual encoder (MIT licence), then tested on real pages she never trained on.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>117.5M</dd></div><div><dt>Weights</dt><dd>about 480 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>98 ms</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Real web pages of US small businesses (F1)</span><b>0.808</b><i style="--v:80.8%" aria-hidden="true"></i></li>
+                          <li><span>Real web pages of French small businesses (F1)</span><b>0.747</b><i style="--v:74.7%" aria-hidden="true"></i></li>
+                          <li><span>Business name found on real pages, per business</span><b>70.3%</b><i style="--v:70.3%" aria-hidden="true"></i></li>
+                          <li><span>Hand-written documents (F1)</span><b>0.683</b><i style="--v:68.3%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. Held out whole, Oregon 0.737 and Occitanie 0.775 (1.1: 0.619 and 0.658). Contact fields on real US pages: phone 0.976, e-mail 0.993, address 0.923, website 0.836. A larger version trained the same way scores higher still (0.87 on US pages, 0.83 on French pages) but is slower. It is being retrained on twice as many French businesses, and will then teach a small, fast Orchid.</li>
+                        </ul>
                       </div>
                       <div class="version">
                         <p class="version-lead">Final test results. Trained on Wikipedia and made-up business documents only.</p>
@@ -225,33 +224,84 @@
               <section class="module" id="jasmine" style="--c:#a06fc2">
                 <img class="spin" src="jasmine.svg" width="120" height="120" alt="Jasmine logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Jasmine</h3><span class="chip status">Jasmine 0 &middot; rehearsal model</span></div>
-                  <p class="module-role">Design engine</p>
-                  <p>The lightest petal. Jasmine reads your business's features and proposes a complete design spec in milliseconds, right on your CPU: palette, font pair, type scale, corners, density and the order of every section. A grammar lets her write only what can pass the checks, and code verifies every choice before you see it. Jasmine 0 learned from design rules written as code; she will learn taste from the designs owners approve.</p>
-                  <dl class="stats"><div><dt>Parameters</dt><dd>3.4M</dd></div><div><dt>Tensors</dt><dd>32</dd></div><div><dt>Weights</dt><dd>13.8 MB</dd></div><div><dt>Vocabulary</dt><dd>316 words</dd></div></dl>
-                  <ul class="scores">
-                    <li><span>Rule-made test designs, answered within the rules</span><b>5,000/5,000</b><i style="--v:100%" aria-hidden="true"></i></li>
-                    <li><span>Refused when she should</span><b>99.6%</b><i style="--v:99.6%" aria-hidden="true"></i></li>
-                    <li><span>Hand-written businesses answered</span><b>32/45</b><i style="--v:71.1%" aria-hidden="true"></i></li>
-                  </ul>
-                  <p class="arch">Decoder-only transformer on Daisy's design, trained from scratch: 4 blocks &times; 256, 4 attention heads, 256-piece context. Runs on any PC processor.</p>
+                  <div class="module-head"><h3 class="pixel-name">Jasmine</h3><span class="chip status">Jasmine 1c &middot; trained</span></div>
+                  <p class="module-role">Dresses the site to fit the business</p>
+                  <p>Jasmine never sees your pictures. Code reads your documents and photos and turns them into a few plain signals: what you sell (pizza, vegan, sushi, bakery), the mood of your words (fresh, rustic, elegant), and how your photos feel (bright or dark, warm or cool, calm or vivid). From these, Jasmine picks the look, the font pair, the background, the main and accent colours, and their strength. A pizzeria gets warm reds and terracotta, a vegan kitchen fresh greens, and a sushi bar calm tones on a neutral background. Your logo, when you have one, stays the main colour. Code turns her choices into exact colours and checks every contrast pair, so she cannot make an unreadable site.</p>
+                  <div class="versions">
+                    <input class="version-pick" type="radio" name="jasmine-version" id="jasmine-1c" checked>
+                    <input class="version-pick" type="radio" name="jasmine-version" id="jasmine-0">
+                    <p class="version-tabs">
+                      <label for="jasmine-1c"><svg class="icon" aria-hidden="true"><use href="#i-jasmine"/></svg><span class="sr-only">Jasmine </span>1c</label>
+                      <label for="jasmine-0"><svg class="icon" aria-hidden="true"><use href="#i-jasmine"/></svg><span class="sr-only">Jasmine </span>0</label>
+                      <span class="version-ink" aria-hidden="true"></span>
+                    </p>
+                    <div class="version-panels">
+                      <div class="version">
+                        <p class="version-lead">Results on combinations she never saw.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>3.4M</dd></div><div><dt>Vocabulary</dt><dd>164 words</dd></div><div><dt>Weights</dt><dd>13.5 MB</dd></div><div><dt>Training</dt><dd>7 minutes</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Whole design matches the written rules, unseen business types</span><b>98.5%</b><i style="--v:98.5%" aria-hidden="true"></i></li>
+                          <li><span>Same, in a language she never saw</span><b>100%</b><i style="--v:100%" aria-hidden="true"></i></li>
+                          <li><span>Same, with a logo as well as context</span><b>99.9%</b><i style="--v:99.9%" aria-hidden="true"></i></li>
+                          <li><span>&ldquo;Says pizza&rdquo;: the main colour fits what the business sells</span><b>100%</b><i style="--v:100%" aria-hidden="true"></i></li>
+                          <li class="note">Contrast failures: 0 of 65,000.</li>
+                        </ul>
+                        <p class="version-new"><strong>Honest note:</strong> Jasmine 1c learned from design rules written as code, and dresses exactly as those rules would. Real taste will come from the designs owners approve and change once PLAN is in use. She is being wired into PLAN now; until then, the same written rules dress the sites.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Rehearsal model. Proposed a design spec from the business's features, learned from design rules written as code.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>3.4M</dd></div><div><dt>Tensors</dt><dd>32</dd></div><div><dt>Weights</dt><dd>13.8 MB</dd></div><div><dt>Vocabulary</dt><dd>316 words</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Rule-made test designs, answered within the rules</span><b>5,000/5,000</b><i style="--v:100%" aria-hidden="true"></i></li>
+                          <li><span>Refused when she should</span><b>99.6%</b><i style="--v:99.6%" aria-hidden="true"></i></li>
+                          <li><span>Hand-written businesses answered</span><b>32/45</b><i style="--v:71.1%" aria-hidden="true"></i></li>
+                        </ul>
+                        <p class="arch">Decoder-only transformer on Daisy's design, trained from scratch: 4 blocks &times; 256, 4 attention heads, 256-piece context. Runs on any PC processor.</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
               <section class="module" id="daisy" style="--c:#ec8e4a">
                 <img class="spin" src="daisy.svg" width="120" height="120" alt="Daisy logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Daisy</h3><span class="chip status">Daisy 1.1 &middot; trained</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Daisy</h3><span class="chip status">Daisy 1.3 &middot; trained</span></div>
                   <p class="module-role">Answers questions about your own data</p>
-                  <p>Ask in plain English, like "which services earned most last quarter?". Daisy turns your question into a precise query spec in about 0.3 seconds on a single CPU core. Code checks the spec, compiles it to SQL for SQLite, PostgreSQL or MySQL in 0.4 ms and runs it read-only, then shows you the exact rows and the SQL behind the answer. No GPU needed. When she doesn't know, she says so, and when she isn't sure, she asks you back with a few choices.</p>
+                  <p>Ask in plain English, the way you would type it: &ldquo;how many croissants have we got left?&rdquo;, &ldquo;who hasn't been in since June?&rdquo;, &ldquo;what's our busiest day?&rdquo;. Daisy turns the question into a precise query spec in about 0.3 seconds on one CPU core. Code checks the spec, compiles it to SQL for SQLite, PostgreSQL or MySQL, and runs it read-only. You then see the exact rows and the SQL behind the answer. No GPU is needed. When she doesn't know, she says so. When she isn't sure, she asks you back with a few choices.</p>
                   <div class="versions">
-                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-1" checked>
-                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-0">
+                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-3" checked>
+                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-2">
+                    <input class="version-pick" type="radio" name="daisy-version" id="daisy-1-1">
                     <p class="version-tabs">
+                      <label for="daisy-1-3"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.3</label>
+                      <label for="daisy-1-2"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.2</label>
                       <label for="daisy-1-1"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.1</label>
-                      <label for="daisy-1-0"><svg class="icon" aria-hidden="true"><use href="#i-flower"/></svg><span class="sr-only">Daisy </span>1.0</label>
                       <span class="version-ink" aria-hidden="true"></span>
                     </p>
                     <div class="version-panels">
+                      <div class="version">
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), and a fresh set of 113 (74 to answer, 39 to refuse) for six other businesses, written by a separate model. Nothing in her training was shaped by them.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>109 MB</dd></div><div><dt>Question to rows</dt><dd>0.27 s</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Owners' questions she never saw, right rows</span><b>68.8%</b><i style="--v:68.8%" aria-hidden="true"></i></li>
+                          <li><span>Fresh blind test, right rows</span><b>47.3%</b><i style="--v:47.3%" aria-hidden="true"></i></li>
+                          <li><span>Her quiz, templated questions</span><b>93.5%</b><i style="--v:93.5%" aria-hidden="true"></i></li>
+                          <li class="note">Wrong rows shown: 13.6% of owners' questions, down from 19.5%, and 16.8% on the fresh test, unchanged. Answerable questions she wrongly refused on the fresh test: 9.5%, down from 17.6%. Not there yet: her targets are 75% right and at most 3% wrong rows shown.</li>
+                        </ul>
+                        <p class="version-new"><strong>New in 1.3:</strong> she learned how owners actually phrase things, in 17 families, each taught with its opposite so she learns the difference: &ldquo;how many left&rdquo; means the stock, not a count of rows; &ldquo;billed&rdquo; and &ldquo;paid us&rdquo; mean invoices; &ldquo;haven't been in since&rdquo; is a NOT; &ldquo;busiest weekday&rdquo; and &ldquo;per trainer&rdquo; are rankings; &ldquo;how much&rdquo; is not &ldquo;how many&rdquo;. Some owner words were held back on purpose, and she still understood 57% of them.</p>
+                        <p class="arch">Same design as 1.0: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.2 for about 3.5 hours on MEGA9.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Results on the same two blind tests.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Owners' questions she never saw, right rows</span><b>47.3%</b><i style="--v:47.3%" aria-hidden="true"></i></li>
+                          <li><span>Fresh blind test, right rows</span><b>40.5%</b><i style="--v:40.5%" aria-hidden="true"></i></li>
+                          <li><span>Her quiz, templated questions</span><b>94.5%</b><i style="--v:94.5%" aria-hidden="true"></i></li>
+                          <li class="note">Wrong rows shown: 19.5% of owners' questions, and 16.8% on the fresh test. Answerable questions she wrongly refused on the fresh test: 17.6%.</li>
+                        </ul>
+                        <p class="arch">Same design as 1.0: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary.</p>
+                      </div>
                       <div class="version">
                         <p class="version-lead">Final results on 118 owners' questions she never saw: 93 to answer, 25 to refuse.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.25 s</dd></div></dl>
@@ -264,18 +314,6 @@
                         </ul>
                         <p class="version-new"><strong>New in 1.1:</strong> a confidence check that asks you back instead of guessing, and real people's questions from open datasets (Spider, BIRD and WikiSQL) among her lessons, with their licences and credits kept in her model file.</p>
                         <p class="arch">Same design as 1.0: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.0 for 1 h 33 min. Her weakest spot: columns named in ways she has never seen.</p>
-                      </div>
-                      <div class="version">
-                        <p class="version-lead">Final results on the same 118 owners' questions.</p>
-                        <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Per question, 1 CPU core</dt><dd>0.33 s</dd></div></dl>
-                        <ul class="scores">
-                          <li><span>Owners' questions she never saw, right rows</span><b>41.9%</b><i style="--v:41.9%" aria-hidden="true"></i></li>
-                          <li><span>Right refusals, for the right reason</span><b>76.0%</b><i style="--v:76%" aria-hidden="true"></i></li>
-                          <li><span>Blind hand-written query specs, all three databases</span><b>33.3%</b><i style="--v:33.3%" aria-hidden="true"></i></li>
-                          <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
-                          <li class="note">Wrong rows shown: 36.4% of questions.</li>
-                        </ul>
-                        <p class="arch">Decoder-only transformer, trained from scratch: 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Runs on any PC processor, no GPU.</p>
                       </div>
                     </div>
                   </div>
@@ -314,7 +352,7 @@
             <li><a href="#bouquet"><svg class="icon flower" style="color:#35adb0" aria-hidden="true"><use href="#i-bouquet"/></svg><span class="name">bouquet</span><span class="msg">writes the plan for your site, once per business</span><span class="when">coming soon</span></a></li>
             <li><a href="#orchid"><svg class="icon flower" style="color:#c2549e" aria-hidden="true"><use href="#i-orchid"/></svg><span class="name">orchid</span><span class="msg">reads your files and marks the facts</span><span class="when">coming soon</span></a></li>
             <li><a href="#tulip"><svg class="icon flower" style="color:#3aa56f" aria-hidden="true"><use href="#i-tulip-head"/></svg><span class="name">tulip</span><span class="msg">imports your spreadsheets</span><span class="when">coming soon</span></a></li>
-            <li><a href="#jasmine"><svg class="icon flower" style="color:#a06fc2" aria-hidden="true"><use href="#i-jasmine"/></svg><span class="name">jasmine</span><span class="msg">proposes your site's design</span><span class="when">coming soon</span></a></li>
+            <li><a href="#jasmine"><svg class="icon flower" style="color:#a06fc2" aria-hidden="true"><use href="#i-jasmine"/></svg><span class="name">jasmine</span><span class="msg">dresses your site to fit your business</span><span class="when">coming soon</span></a></li>
             <li><a href="#daisy"><svg class="icon flower" style="color:#ec8e4a" aria-hidden="true"><use href="#i-flower"/></svg><span class="name">daisy</span><span class="msg">answers questions about your own data</span><span class="when">coming soon</span></a></li>
             <li><a href="#readme"><svg class="icon flower" style="color:#6592b4" aria-hidden="true"><use href="#i-flower"/></svg><span class="name">blocks</span><span class="msg">vetted building blocks for your website</span><span class="when">coming soon</span></a></li>
             <li><a href="#readme"><svg class="icon leaf" aria-hidden="true"><use href="#i-leaf"/></svg><span class="name">README.md</span><span class="msg">initial commit</span><span class="when">coming soon</span></a></li>
