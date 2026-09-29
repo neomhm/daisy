@@ -573,6 +573,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .stack-daisy { --x: 3.5; --y: 1.15; --i: 4; --mx: .2; }
 .stack-magnolia { --x: 3.5; --y: 2.15; --i: 7; --mx: .2; }
 .stack-iris { --x: 3.5; --y: .15; --i: 8; --my: -.2; }
+.stack-lily { --x: .5; --y: .15; --i: 9; --my: -.2; }
 .stack-data { --x: .5; --y: 2.15; --i: 5; --mx: -.2; }
 .stack-computer { --x: 1.5; --y: 2.15; --w: 2; --i: 6; --my: .2; }
 
@@ -583,7 +584,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   .stack-frame { --u: 150px; display: grid; grid-template-columns: 1fr 1fr; width: auto; height: auto; }
   .stack-frame > * { position: relative; left: auto; top: auto; width: auto; }
   .stack-slot, .stack-frame > .stack-gears, .stack-diamond, .stack-handles { display: none; }
-  .stack-bouquet, .stack-iris, .stack-computer { grid-column: span 2; }
+  .stack-bouquet, .stack-iris, .stack-lily, .stack-computer { grid-column: span 2; }
   .stack-box.stack-box { transform: none; }
 }
 

@@ -1,8 +1,8 @@
-"""Draw the Tulip, Jasmine, Orchid, Bouquet, Magnolia and Iris logos in the same network-of-nodes style as the Daisy logo.
+"""Draw the Tulip, Jasmine, Orchid, Bouquet, Magnolia, Iris and Lily logos in the same network-of-nodes style as the Daisy logo.
 
 Usage: python3 tools/make_flowers.py OUTPUT_DIR
 Writes OUTPUT_DIR/tulip.svg, OUTPUT_DIR/jasmine.svg, OUTPUT_DIR/orchid.svg, OUTPUT_DIR/bouquet.svg,
-OUTPUT_DIR/magnolia.svg and OUTPUT_DIR/iris.svg.
+OUTPUT_DIR/magnolia.svg, OUTPUT_DIR/iris.svg and OUTPUT_DIR/lily.svg.
 """
 import math
 import os
@@ -175,8 +175,8 @@ def tulip():
 
 
 def bouquet():
-    """Bouquet: the team's flowers, a daisy, a tulip, a jasmine, an orchid, a magnolia and an iris,
-    tied together with a golden bow."""
+    """Bouquet: the team's flowers, a daisy, a tulip, a jasmine, an orchid, a magnolia, an iris and
+    a lily, tied together with a golden bow."""
     d = Drawing()
     GREEN = '#3aa56f'
     tie = (0, 56)
@@ -196,6 +196,13 @@ def bouquet():
                        iheart[1] + isc * (math.sin(it) * x + math.cos(it) * (y - 2)))   # heart is (0, 2)
     stem([ip(0, 12), (32, -2), tie], 'bis')
     draw_iris(d, ip, isc, dot=0.55, prefix='bi')
+
+    # The lily, in the upper left, mirroring the iris.
+    lsc, lheart, lt = 0.34, (-64, -60), math.radians(-22)
+    lp = lambda x, y: (lheart[0] + lsc * (math.cos(lt) * x - math.sin(lt) * y),
+                       lheart[1] + lsc * (math.sin(lt) * x + math.cos(lt) * y))
+    stem([lp(0, 10), (-32, -2), tie], 'bls')
+    draw_lily(d, lp, lsc, dot=0.55, prefix='bl')
 
     # The magnolia's stem (the magnolia herself is drawn in front, at the orchid's height, halfway
     # between the tulip and the orchid).
@@ -457,6 +464,46 @@ def iris():
     draw_iris(d)
     return d.svg('Iris')
 
+def draw_lily(d, place=lambda x, y: (x, y), scale=1.0, dot=1.0, prefix=''):
+    """Lily's flower seen from the front: six pointed tepals in a star, and six stamens with dark
+    anthers around a golden heart. place, scale and dot work as in draw_orchid."""
+    colours = ['#e65b56', '#ec7a54', '#e8664f', '#f08a5a', '#e65b56', '#ec7a54']
+    centre = (0, 0)
+    P = lambda p: place(*p)
+    at = lambda r, a: (r * math.cos(math.radians(a)), r * math.sin(math.radians(a)))
+    warm = lambda p: mix(YELLOW, ORANGE, min(1, max(0, (1 + p[0] / 12) / 2)))
+    hub = [at(10, -60 + 60 * k) for k in range(6)]
+    for i, p in enumerate(hub):
+        d.line(P(centre), P(p), warm(p), 0.7, 0.85)
+        d.line(P(p), P(hub[(i + 1) % 6]), warm(p), 0.7, 0.85)
+    for k in range(6):
+        a, col = -90 + 60 * k, colours[k]
+        base, tip = at(13, a), at(97, a + 8)
+        gid = f'{prefix}y{k}'
+        begin = warm(base)
+        d.gradient(gid, P(base), P(tip), begin, col, 0.4)
+        b, left, right = lattice(d, gid, P(base), P(tip), 13 * scale, lambda t, s=begin, c=col: mix(s, c, min(1, t / 0.4)),
+                                 sizes=(2.0 * dot, 2.8 * dot), tip_r=4.6 * dot, shear=0.04, bulge=0.9, steps=6)
+        for h in sorted(hub, key=lambda h: math.dist(P(h), b))[:2]:
+            d.line(P(h), b, f'url(#{gid})', 0.6, 0.85)
+    d.front()
+    for k in range(6):                              # the stamens, between the tepals
+        a = -60 + 60 * k
+        root, end = at(8, a), at(46, a + 4)
+        d.line(P(root), P(end), '#c9803a', 0.8)
+        d.node(P(end), 3.4 * dot, '#a0452e')
+    for p in hub:
+        d.node(P(p), 2.6 * dot, warm(p))
+    d.node(P(centre), 5.2 * dot, YELLOW)
+
+
+def lily():
+    """Lily: a lily seen from the front, its six tepals open in a star."""
+    d = Drawing()
+    draw_lily(d)
+    return d.svg('Lily')
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -467,3 +514,4 @@ if __name__ == '__main__':
     open(os.path.join(out, 'bouquet.svg'), 'w').write(bouquet())
     open(os.path.join(out, 'magnolia.svg'), 'w').write(magnolia())
     open(os.path.join(out, 'iris.svg'), 'w').write(iris())
+    open(os.path.join(out, 'lily.svg'), 'w').write(lily())
