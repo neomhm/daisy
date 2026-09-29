@@ -254,6 +254,26 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   .pixel-band { --px: 6px; margin: 32px -16px 0; }
 }
 
+/* Your data: the DNA helix (drawn by tools/make_dna.py). Every rung carries its phase in --p;
+   one angle, --dna, turns them all, so each node rises and falls with sin() and grows as it comes
+   to the front with cos(). Visitors who ask for less motion see it standing still, twisted. */
+@property --dna { syntax: "<angle>"; inherits: true; initial-value: 0deg; }
+.dna-frame { margin: 8px 0 20px; }
+.dna { display: block; width: 100%; height: auto; overflow: visible; animation: dna-turn 16s linear infinite; }
+@keyframes dna-turn { to { --dna: 360deg; } }
+.dna g { --s: sin(var(--dna) + var(--p)); --k: cos(var(--dna) + var(--p)); }
+.dna line { stroke: #2f4d5c; stroke-opacity: .18; stroke-width: 1.5; stroke-linecap: round;
+  transform-box: fill-box; transform-origin: center; transform: scaleY(var(--s)); }
+.dna circle { transform-box: fill-box; transform-origin: center; }
+.dna .a { transform: translateY(calc(var(--s) * -40px)) scale(calc(1 + var(--k) * .4)); opacity: calc(.75 + var(--k) * .25); }
+.dna .b { transform: translateY(calc(var(--s) * 40px)) scale(calc(1 - var(--k) * .4)); opacity: calc(.75 - var(--k) * .25); }
+.markdown .love { font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .dna { animation: none; } }
+@media (max-width: 543px) {   /* on phones the helix is shown larger, its two ends cut off */
+  .dna-frame { overflow: hidden; padding: 8px 0; }
+  .dna { width: 170%; margin-left: -35%; }
+}
+
 /* Model profile cards. Each card has its own colour (--c): it marks the top edge, the tint, the
    stat tiles and the score bars; the text itself stays in the page's ink. */
 
