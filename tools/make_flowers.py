@@ -1,7 +1,8 @@
-"""Draw the Tulip, Jasmine, Orchid and Bouquet logos in the same network-of-nodes style as the Daisy logo.
+"""Draw the Tulip, Jasmine, Orchid, Bouquet and Magnolia logos in the same network-of-nodes style as the Daisy logo.
 
 Usage: python3 tools/make_flowers.py OUTPUT_DIR
-Writes OUTPUT_DIR/tulip.svg, OUTPUT_DIR/jasmine.svg, OUTPUT_DIR/orchid.svg and OUTPUT_DIR/bouquet.svg.
+Writes OUTPUT_DIR/tulip.svg, OUTPUT_DIR/jasmine.svg, OUTPUT_DIR/orchid.svg, OUTPUT_DIR/bouquet.svg and
+OUTPUT_DIR/magnolia.svg.
 """
 import math
 import os
@@ -343,6 +344,50 @@ def orchid():
     return d.svg('Orchid')
 
 
+def magnolia():
+    """Magnolia: a cup-shaped flower opening at the tip of a branch. Three inner petals stand up
+    around a golden centre, two outer petals open wide, and a leaf grows from the woody branch."""
+    d = Drawing()
+    rose, blush, deep = '#de7c95', '#ec9fb4', '#c75f86'
+    centre = (0, 8)
+    warm = lambda p: mix(YELLOW, ORANGE, min(1, max(0, (1 + p[0] / 12) / 2)))
+    hub = [(centre[0] + 11 * math.cos(math.radians(a)), centre[1] + 7 * math.sin(math.radians(a))) for a in range(0, 360, 60)]
+    for i, p in enumerate(hub):
+        d.line(centre, p, warm(p), 0.7, 0.85)
+        d.line(p, hub[(i + 1) % 6], warm(p), 0.7, 0.85)
+    # Branch and leaf first, so the flower is drawn over them.
+    branch = [(0, 14), (-4, 38), (-12, 62), (-22, 84), (-30, 98)]
+    d.gradient('mb', branch[0], branch[-1], mix(ORANGE, '#3aa56f', 0.6), '#3aa56f', 0.3)
+    for p, q in zip(branch, branch[1:]):
+        d.line(p, q, 'url(#mb)', 1.1)
+    d.gradient('ml', (-8, 56), (46, 70), '#3aa56f', '#2fb39a', 0.5)
+    lattice(d, 'ml', (-8, 56), (46, 70), 11, lambda t: mix('#3aa56f', '#2fb39a', t), sizes=(1.8, 2.4), tip_r=3.8, shear=-0.05, steps=4)
+    for p in branch[1:-1]:
+        d.node(p, 2.2, '#3aa56f')
+    d.node(branch[-1], 3.0, '#3aa56f')
+    d.front()
+    # (name, base angle on the hub, tip, width, colour, node sizes, tip node, bulge, steps)
+    parts = [
+        ('mol', 180, (-92, -30), 24, blush, (2.0, 2.9), 5.0, 0.6, 5),   # outer petals, open wide
+        ('mor', 0, (92, -30), 24, blush, (2.0, 2.9), 5.0, 0.6, 5),
+        ('mil', 240, (-40, -90), 21, rose, (2.1, 3.1), 5.2, 0.7, 6),    # inner petals, standing up
+        ('mir', 300, (40, -90), 21, rose, (2.1, 3.1), 5.2, 0.7, 6),
+        ('mic', 270, (0, -100), 18, deep, (2.1, 3.1), 5.4, 0.8, 6),
+    ]
+    for gid, angle, tip, width, col, sizes, tip_r, bulge, steps in parts:
+        base = (centre[0] + 13 * math.cos(math.radians(angle)), centre[1] + 9 * math.sin(math.radians(angle)))
+        start = warm(base)
+        d.gradient(gid, base, tip, start, col, 0.45)
+        b, left, right = lattice(d, gid, base, tip, width, lambda t, s=start, c=col: mix(s, c, min(1, t / 0.45)),
+                                 sizes=sizes, tip_r=tip_r, bulge=bulge, steps=steps)
+        for h in sorted(hub, key=lambda h: math.dist(h, b))[:2]:
+            d.line(h, b, f'url(#{gid})', 0.6, 0.85)
+    for p in hub:
+        d.node(p, 2.6, warm(p))
+    d.node(centre, 5.2, YELLOW)
+    return d.svg('Magnolia')
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -351,3 +396,4 @@ if __name__ == '__main__':
     open(os.path.join(out, 'jasmine.svg'), 'w').write(jasmine())
     open(os.path.join(out, 'orchid.svg'), 'w').write(orchid())
     open(os.path.join(out, 'bouquet.svg'), 'w').write(bouquet())
+    open(os.path.join(out, 'magnolia.svg'), 'w').write(magnolia())
