@@ -1,8 +1,8 @@
-"""Draw the Tulip, Jasmine, Orchid, Bouquet and Magnolia logos in the same network-of-nodes style as the Daisy logo.
+"""Draw the Tulip, Jasmine, Orchid, Bouquet, Magnolia and Iris logos in the same network-of-nodes style as the Daisy logo.
 
 Usage: python3 tools/make_flowers.py OUTPUT_DIR
-Writes OUTPUT_DIR/tulip.svg, OUTPUT_DIR/jasmine.svg, OUTPUT_DIR/orchid.svg, OUTPUT_DIR/bouquet.svg and
-OUTPUT_DIR/magnolia.svg.
+Writes OUTPUT_DIR/tulip.svg, OUTPUT_DIR/jasmine.svg, OUTPUT_DIR/orchid.svg, OUTPUT_DIR/bouquet.svg,
+OUTPUT_DIR/magnolia.svg and OUTPUT_DIR/iris.svg.
 """
 import math
 import os
@@ -388,6 +388,53 @@ def magnolia():
     return d.svg('Magnolia')
 
 
+def iris():
+    """Iris: a bearded iris seen from the front. Three standards stand up, three falls droop out
+    and down, each fall with a golden beard, above a stem and a sword-shaped leaf."""
+    d = Drawing()
+    blue, violet, deep = '#6592b4', '#7c8acb', '#5c6fbd'
+    centre = (0, 2)
+    warm = lambda p: mix(YELLOW, ORANGE, min(1, max(0, (1 + p[0] / 12) / 2)))
+    hub = [(centre[0] + 10 * math.cos(math.radians(a)), centre[1] + 10 * math.sin(math.radians(a))) for a in range(-90, 270, 60)]
+    for i, p in enumerate(hub):
+        d.line(centre, p, warm(p), 0.7, 0.85)
+        d.line(p, hub[(i + 1) % 6], warm(p), 0.7, 0.85)
+    stem = [(0, 12), (0, 40), (0, 66), (0, 96)]
+    d.gradient('is', stem[0], stem[-1], mix(ORANGE, '#3aa56f', 0.6), '#3aa56f', 0.3)
+    for p, q in zip(stem, stem[1:]):
+        d.line(p, q, 'url(#is)', 1.1)
+    d.gradient('il', (0, 92), (40, 30), '#3aa56f', '#2fb39a', 0.5)
+    lattice(d, 'il', (0, 92), (40, 30), 8, lambda t: mix('#3aa56f', '#2fb39a', t), sizes=(1.8, 2.3), tip_r=3.6, shear=0.08, steps=4)
+    for p in stem[1:-1]:
+        d.node(p, 2.2, '#3aa56f')
+    d.node(stem[-1], 3.0, '#3aa56f')
+    d.front()
+    # (name, base angle on the hub, tip, width, colour, node sizes, tip node, bulge, steps)
+    parts = [
+        ('ifl', 150, (-92, 40), 22, blue, (2.0, 2.9), 5.0, 0.6, 5),     # falls, drooping out and down
+        ('ifr', 30, (92, 40), 22, blue, (2.0, 2.9), 5.0, 0.6, 5),
+        ('ifc', 90, (0, 62), 15, deep, (1.9, 2.6), 4.6, 0.8, 4),
+        ('isl', 210, (-50, -86), 18, violet, (2.0, 2.9), 5.0, 0.7, 5),  # standards, standing up
+        ('isr', 330, (50, -86), 18, violet, (2.0, 2.9), 5.0, 0.7, 5),
+        ('isc', 270, (0, -100), 16, deep, (2.1, 3.0), 5.4, 0.8, 6),
+    ]
+    for gid, angle, tip, width, col, sizes, tip_r, bulge, steps in parts:
+        base = (centre[0] + 12 * math.cos(math.radians(angle)), centre[1] + 12 * math.sin(math.radians(angle)))
+        start = warm(base)
+        d.gradient(gid, base, tip, start, col, 0.45)
+        b, left, right = lattice(d, gid, base, tip, width, lambda t, s=start, c=col: mix(s, c, min(1, t / 0.45)),
+                                 sizes=sizes, tip_r=tip_r, bulge=bulge, steps=steps)
+        for h in sorted(hub, key=lambda h: math.dist(h, b))[:2]:
+            d.line(h, b, f'url(#{gid})', 0.6, 0.85)
+        if gid.startswith('if'):                    # the golden beard along each fall
+            for k in (0.3, 0.5):
+                d.node((b[0] + (tip[0] - b[0]) * k, b[1] + (tip[1] - b[1]) * k), 2.4, YELLOW)
+    for p in hub:
+        d.node(p, 2.6, warm(p))
+    d.node(centre, 5.2, YELLOW)
+    return d.svg('Iris')
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -397,3 +444,4 @@ if __name__ == '__main__':
     open(os.path.join(out, 'orchid.svg'), 'w').write(orchid())
     open(os.path.join(out, 'bouquet.svg'), 'w').write(bouquet())
     open(os.path.join(out, 'magnolia.svg'), 'w').write(magnolia())
+    open(os.path.join(out, 'iris.svg'), 'w').write(iris())

@@ -21,7 +21,7 @@ FLANK = math.tan(math.radians(14))
 BACKLASH = 0.8                  # extra distance between meshing gears
 
 # The slots of the stack (x, y, width, height): the machine only shows through these.
-SLOTS = [(50, 115, 100, 100), (350, 215, 100, 100), (150, 15, 200, 100), (150, 115, 100, 100),
+SLOTS = [(50, 115, 100, 100), (350, 215, 100, 100), (150, 15, 200, 100), (350, 15, 100, 100), (150, 115, 100, 100),
          (250, 115, 100, 100), (350, 115, 100, 100), (50, 215, 100, 100), (150, 215, 200, 100)]
 
 # teeth, colour, the gear it meshes with, direction from that gear (degrees clockwise from east)
@@ -44,6 +44,7 @@ TRAIN = [
     (30, '#35adb0', 10, 180),
     (20, '#8a80cf', 3, 100),             # reaching up behind "your computer"
     (16, '#2fb39a', 5, 80),
+    (30, '#7c8acb', 6, -65),            # up into Iris's slot, beside the bouquet
 ]
 
 
