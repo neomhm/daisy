@@ -258,7 +258,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
    one angle, --dna, turns them all, so each node rises and falls with sin() and grows as it comes
    to the front with cos(). Visitors who ask for less motion see it standing still, twisted. */
 @property --dna { syntax: "<angle>"; inherits: true; initial-value: 0deg; }
-.dna-frame { margin: 8px 0 20px; }
+.dna-frame { margin: 32px 0 20px; scroll-margin-top: 16px; }
 .dna { display: block; width: 100%; height: auto; overflow: visible; animation: dna-turn 16s linear infinite; }
 @keyframes dna-turn { to { --dna: 360deg; } }
 .dna g { --s: sin(var(--dna) + var(--p)); --k: cos(var(--dna) + var(--p)); }
