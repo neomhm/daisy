@@ -1,8 +1,8 @@
 """Draw the pixel icons of the box stack at the top of the page, as SVG <symbol>s.
 
 Each icon is a 5x5 glyph of the AKIKI logo's rounded pixels. The models get a white glyph (the
-bouquet, a moth orchid, Tulip's flower head, Jasmine's star, the one-byte daisy) on a tile in their
-card's colour; "your data" is a bare glyph in ink. "Your computer" is a little farm, 15 pixels wide:
+bouquet, a moth orchid, Tulip's flower head, Jasmine's star, Magnolia's cup, the one-byte daisy)
+on a tile in their card's colour; "your data" is a bare glyph in ink. "Your computer" is a little farm, 15 pixels wide:
 a barn, a silo and a row of flowers in the colours of the small models that grow there. H marks a
 golden pixel; m, g, p and o mark Orchid magenta, Tulip green, Jasmine purple and Daisy orange.
 
@@ -23,6 +23,7 @@ ICONS = {
     'orchid': ('#c2549e', ['XX.XX', 'XX.XX', '..H..', '.XXX.', 'X.X.X']),     # a moth orchid: broad petals, lip
     'tulip': ('#3aa56f', ['X.X.X', 'XXXXX', 'XXXXX', '.XXX.', '..X..']),
     'jasmine': ('#a06fc2', ['..X..', '..X..', 'XXHXX', '.X.X.', 'X...X']),
+    'magnolia': ('#de7c95', ['.X.X.', 'XX.XX', '.XXX.', '.XHX.', '..X..']),  # a cup of petals on a stem
     'daisy': ('#ec8e4a', ['..X..', '.X.X.', 'X.H.X', '.X.X.', '..X..']),       # the one-byte flower
     'data': (None, ['XXXXX', 'X.H.X', 'XXXXX', 'X.X.X', 'XXXXX']),             # a spreadsheet
     'farm': (None, ['.XXX...........',                                          # your computer

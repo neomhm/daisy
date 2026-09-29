@@ -35,7 +35,7 @@ TRAIN = [
     (18, '#7c8acb', 5, -30),
     (28, '#8a80cf', 6, 40),
     (20, '#6592b4', 7, 75),
-    (44, '#7c8acb', 8, 60),             # the big wheel in the empty slot under Daisy
+    (44, '#7c8acb', 8, 60),             # the big wheel in the slot under Daisy, behind Magnolia
     (12, '#ec8e4a', 9, 190),
     (24, '#6592b4', 0, 70),
     (20, '#a06fc2', 11, 0),
