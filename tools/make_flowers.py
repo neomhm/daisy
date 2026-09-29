@@ -190,13 +190,21 @@ def bouquet():
         for p in points[1:-1]:
             d.node(p, 1.9, GREEN)
 
-    # The magnolia and the iris, furthest back, in the upper corners.
-    for draw, centre, turn, pre in ((draw_magnolia, (-66, -36), -24, 'bm'), (draw_iris, (62, -58), 22, 'bi')):
-        t, sc = math.radians(turn), 0.36
-        pl = lambda x, y, c=centre, t=t, sc=sc: (c[0] + sc * (math.cos(t) * x - math.sin(t) * y),
-                                                 c[1] + sc * (math.sin(t) * x + math.cos(t) * y))
-        stem([pl(0, 12), (centre[0] * 0.6, -14), (centre[0] * 0.3, 24), tie], pre + 's')
-        draw(d, pl, sc, dot=0.55, prefix=pre)
+    # The iris, furthest back, in the upper right.
+    iturn, isc, icentre = math.radians(22), 0.36, (62, -58)
+    ip = lambda x, y: (icentre[0] + isc * (math.cos(iturn) * x - math.sin(iturn) * y),
+                       icentre[1] + isc * (math.sin(iturn) * x + math.cos(iturn) * y))
+    stem([ip(0, 12), (37, -14), (19, 24), tie], 'bis')
+    draw_iris(d, ip, isc, dot=0.55, prefix='bi')
+
+    # The magnolia's stem (the magnolia herself is drawn in front, at the orchid's height, halfway
+    # between the tulip and the orchid).
+    tturn = math.radians(-40)
+    tulip_centre = (-38 - 0.5 * math.sin(tturn) * -48, 22 + 0.5 * math.cos(tturn) * -48)
+    msc = 0.36
+    mheart = ((tulip_centre[0] + 33) / 2, -21)                        # the orchid's heart is at (33, -21)
+    mp = lambda x, y: (mheart[0] + msc * x, mheart[1] + msc * (y - 8))  # the Magnolia logo's heart is (0, 8)
+    stem([mp(0, 14), (mheart[0] * 0.6, 20), tie], 'bms')
 
     # The daisy, the tallest: twelve petals in the Daisy logo's colours around a golden heart.
     centre = (0, -50)
@@ -293,11 +301,16 @@ def bouquet():
             d.node(p, r, warm(t))
     d.node(tie, 4.6, YELLOW)
 
-    # The orchid, in front, half over the daisy and half over the jasmine. A soft white glow
+    # The magnolia, in front of the daisy and the tulip, and the orchid in front of all, half over
+    # the daisy and half over the jasmine. A soft white glow
     # behind her fades the flowers she covers.
     d.defs.append('<radialGradient id="bglow"><stop offset="0" stop-color="#fff" stop-opacity=".88"/>'
                   '<stop offset=".6" stop-color="#fff" stop-opacity=".72"/>'
                   '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>')
+    d.front()
+    d.node(mheart, 26, 'url(#bglow)')
+    d.front()
+    draw_magnolia(d, mp, msc, dot=0.55, prefix='bm')
     d.front()
     d.node(ocentre, 42, 'url(#bglow)')
     d.front()
