@@ -217,45 +217,62 @@
               <section class="module" id="tulip" style="--c:#3aa56f">
                 <img class="sway" src="tulip.svg" width="120" height="120" alt="Tulip logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Tulip</h3><span class="chip status">Tulip 1.1 &middot; trained</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Tulip</h3><span class="chip status">Tulip 1.2 &middot; trained</span></div>
                   <p class="module-role">Spreadsheet importer</p>
                   <p>Hand Tulip a spreadsheet and she reads its preview, then writes a short TulipScript program that imports every row into the right one of your business tables, or refuses the sheet. That program never runs as raw code: a locked-down interpreter checks every instruction. If a sheet doesn't fit, Tulip refuses cleanly. No guessing, no silent damage.</p>
                   <div class="versions">
-                    <input class="version-pick" type="radio" name="tulip-version" id="tulip-1-1" checked>
+                    <input class="version-pick" type="radio" name="tulip-version" id="tulip-1-2" checked>
+                    <input class="version-pick" type="radio" name="tulip-version" id="tulip-1-1">
                     <input class="version-pick" type="radio" name="tulip-version" id="tulip-1-0">
                     <p class="version-tabs">
+                      <label for="tulip-1-2"><svg class="icon" aria-hidden="true"><use href="#i-tulip"/></svg><span class="sr-only">Tulip </span>1.2</label>
                       <label for="tulip-1-1"><svg class="icon" aria-hidden="true"><use href="#i-tulip"/></svg><span class="sr-only">Tulip </span>1.1</label>
                       <label for="tulip-1-0"><svg class="icon" aria-hidden="true"><use href="#i-tulip"/></svg><span class="sr-only">Tulip </span>1.0</label>
                       <span class="version-ink" aria-hidden="true"></span>
                     </p>
                     <div class="version-panels">
                       <div class="version">
-                        <p class="version-lead">Final test results, on the same tasks as 1.0: 10 of her 11 targets met.</p>
-                        <dl class="stats"><div><dt>Parameters</dt><dd>38.0M</dd></div><div><dt>Tensors</dt><dd>58</dd></div><div><dt>Weights</dt><dd>152.9 MB</dd></div><div><dt>Per sheet, on a CPU</dt><dd>0.55 s</dd></div></dl>
+                        <p class="version-lead">The first Tulip to import real small-business sheets correctly. Measured on real sheets she never trained on, with 1.1 on the same sheets in the same run.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>38.0M</dd></div><div><dt>Tensors</dt><dd>58</dd></div><div><dt>Tables she knows</dt><dd>13</dd></div><div><dt>Per sheet, median</dt><dd>0.09 s</dd></div></dl>
                         <ul class="scores">
+                          <li><span>Real small-business sheets imported correctly</span><b>25.5%</b><i style="--v:25.5%" aria-hidden="true"></i></li>
+                          <li><span>Made-up sheets she never saw, right first try</span><b>94.0%</b><i style="--v:94.0%" aria-hidden="true"></i></li>
+                          <li><span>Hand-written, real-shaped sheets</span><b>40.6%</b><i style="--v:40.6%" aria-hidden="true"></i></li>
+                          <li><span>Number and date formats she never saw</span><b>86.0%</b><i style="--v:86.0%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. Real sheets: wrong table accepted 0.3%, non-tables refused 97.4%, and the slowest 5% of sheets take 0.12 s. Generated sheets: correct imports with the repair loop 93.5%, wrong table accepted 4.6%, weakest trap 96.3%. Build targets met: 7 of 11. Her targets on real sheets: 90% imported correctly, at most 1% wrong tables accepted, 99% of non-tables refused.</li>
+                        </ul>
+                        <p class="version-new"><strong>New in 1.2:</strong> real sheets among her lessons: product lists (17 of 42 right, where 1.1 got none) and service lists (5 of 16). In Occitanie, a region kept out of training entirely, she imports 3 of 19 sheets right (16%), against about 32% elsewhere. She also knows six more tables: stock, suppliers, purchase orders, recipes, allergens and product variants. No real stock, supplier or recipe sheet was found among the 2,830 small businesses crawled, so these were taught from generated sheets only; on generated sheets she has never seen, she gets 16% to 54% of them right, depending on the table.</p>
+                        <p class="version-new"><strong>Honest note:</strong> she is still far from 90% on real sheets, and opening hours and product variants are still at 0. On the generated sheets 1.1 was trained on, she is a little behind (93.5% correct imports against 95.0%), and a sheet built to trick a careless reader is imported by mistake 1.2% of the time (9 of 741), against 0.4% for 1.1. The likely reason: she kept the same size while her job nearly doubled.</p>
+                        <p class="arch">Same design as 1.0 and 1.1: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 24,000-piece vocabulary. Trained further from 1.1 on Colab&rsquo;s A100 for 5,648 steps: 100,000 of 1.1&rsquo;s generated tasks replayed, 59,846 tasks for the new tables, and 41,870 real sheets from French, Irish and Belgian small businesses and open-data portals.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Measured on the same real sheets as 1.2, in the same run, and on the generated sheets every Tulip is built on.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>38.0M</dd></div><div><dt>Tensors</dt><dd>58</dd></div><div><dt>Tables she knows</dt><dd>7</dd></div><div><dt>Per sheet, median</dt><dd>0.09 s</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Real small-business sheets imported correctly</span><b>0%</b><i style="--v:0%" aria-hidden="true"></i></li>
                           <li><span>Made-up sheets she never saw, right first try</span><b>95.7%</b><i style="--v:95.7%" aria-hidden="true"></i></li>
-                          <li><span>Right when she refuses a sheet</span><b>96.8%</b><i style="--v:96.8%" aria-hidden="true"></i></li>
-                          <li><span>Number and date formats she never saw</span><b>87.3%</b><i style="--v:87.3%" aria-hidden="true"></i></li>
                           <li><span>Hand-written, real-shaped sheets</span><b>37.5%</b><i style="--v:37.5%" aria-hidden="true"></i></li>
-                          <li class="note">Invented values: 0, on every test. Wrong table accepted as right: 3.9%, down from 5.6%. The goal is 2% or less: the one target she missed.</li>
+                          <li><span>Number and date formats she never saw</span><b>87.3%</b><i style="--v:87.3%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. Real sheets: wrong table accepted 0.6%, non-tables refused 91.1%, and the slowest 5% of sheets take 1.33 s. Generated sheets: correct imports with the repair loop 95.0%, wrong table accepted 3.9%, weakest trap 98.7%. Build targets met: 10 of 11.</li>
                         </ul>
                         <p class="version-new"><strong>New in 1.1:</strong> tables inside PDFs, old .xls and LibreOffice .ods files, several tables on one sheet, and day ranges such as <span class="nowrap">&ldquo;Mon&ndash;Fri 9&ndash;6&rdquo;</span> or <span class="nowrap">&ldquo;Lun&ndash;Ven 9h&ndash;18h&rdquo;</span>.</p>
                         <p class="arch">Same design as 1.0, trained from scratch: 8 blocks &times; 512, 8 attention heads, 24,000-piece vocabulary. No time cap this time: 8.25 passes in 19.7 hours, and she stopped by herself once she stopped improving.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Final test results: 7 of her 11 targets met.</p>
-                        <dl class="stats"><div><dt>Parameters</dt><dd>38.0M</dd></div><div><dt>Tensors</dt><dd>58</dd></div><div><dt>Weights</dt><dd>152 MB</dd></div><div><dt>Per sheet, on a CPU</dt><dd>0.53 s</dd></div></dl>
+                        <p class="version-lead">Measured on the generated sheets every Tulip is built on. Real sheets were not measured for 1.0.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>38.0M</dd></div><div><dt>Tensors</dt><dd>58</dd></div><div><dt>Tables she knows</dt><dd>7</dd></div><div><dt>Per sheet, median</dt><dd>0.53 s</dd></div></dl>
                         <ul class="scores">
+                          <li><span>Real small-business sheets imported correctly</span><b>not measured</b><i style="--v:0%" aria-hidden="true"></i></li>
                           <li><span>Made-up sheets she never saw, right first try</span><b>90.1%</b><i style="--v:90.1%" aria-hidden="true"></i></li>
-                          <li><span>Right when she refuses a sheet</span><b>99.8%</b><i style="--v:99.8%" aria-hidden="true"></i></li>
-                          <li><span>Number and date formats she never saw</span><b>79.0%</b><i style="--v:79%" aria-hidden="true"></i></li>
-                          <li><span>Hand-written, real-shaped sheets</span><b>31.3%</b><i style="--v:31.25%" aria-hidden="true"></i></li>
-                          <li class="note">Invented values: 0, on every test. Wrong table accepted as right: 5.6% (goal: 2% or less).</li>
+                          <li><span>Hand-written, real-shaped sheets</span><b>31.3%</b><i style="--v:31.3%" aria-hidden="true"></i></li>
+                          <li><span>Number and date formats she never saw</span><b>79.0%</b><i style="--v:79.0%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. Generated sheets: correct imports with the repair loop 91.9%, wrong table accepted 5.6%, weakest trap 86.2%. Build targets met: 7 of 11.</li>
                         </ul>
                         <p class="arch">Decoder-only transformer, trained from scratch: 8 blocks &times; 512, 8 attention heads, 4,096-token context, 24,000-piece vocabulary. Training stopped at a 6-hour cap after 2.53 passes, still improving. Runs on any PC processor, no GPU.</p>
                       </div>
                     </div>
                   </div>
+                  <p class="version-new"><strong>Next, Tulip 1.3:</strong> more than half of the real sheets cannot yet be written in her instruction language at all, so the language grows to cover their common shapes (several days in one cell, a price and a unit in one cell, two tables on one sheet). Her made-up sheets will copy the quirks of real files, above all CSV (10% right today, against 55% for Excel); she will get 500 or more real examples from several countries, and will say no less often. Then a larger Tulip, so the new tables stop crowding out the old skills. The goal: real sheets from 25% to around half, and non-tables refused at 99%.</p>
                 </div>
               </section>
               <section class="module" id="jasmine" style="--c:#a06fc2">
