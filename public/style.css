@@ -405,6 +405,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 }
 .markdown .version-lead { margin: 12px 0 0; color: var(--fg-muted); font-size: 13px; }
 .markdown .version-new { font-size: 14px; }
+.scores span small { color: var(--fg-muted); font-size: 12px; }   /* a comparison beside a score's label */
 .markdown .versions + .version-new { margin-top: 16px; }   /* a card's line after its version tabs */
 .nowrap { white-space: nowrap; }
 .stats dd small { color: var(--fg-muted); font-size: 12px; font-weight: 400; }
