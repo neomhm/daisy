@@ -7,7 +7,7 @@
   <meta name="description" content="D.AI.SY by AKIKI.AI. A kinder Kind of AI.">
   <meta name="theme-color" content="#f6f8fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=39">
+  <link rel="stylesheet" href="style.css?v=40">
   <script src="versions.js?v=1" defer></script>
 </head>
 <body>
@@ -445,7 +445,7 @@
               <section class="module" id="iris" style="--c:#7c8acb">
                 <img class="sway" src="iris.svg" width="120" height="120" alt="Iris logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Iris</h3><span class="chip status">Iris &middot; in preparation</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Iris</h3><span class="chip status">Iris &middot; first round, not in use yet</span></div>
                   <p class="module-role">Watches every site PLAN puts online, tests what matters most, and gets any problem fixed</p>
                   <p>When a site goes live, Iris goes over all of it, the way a careful customer would, and again every day after that:</p>
                   <ul>
@@ -458,11 +458,19 @@
                     <li><strong>Backups exist, and one really restores.</strong></li>
                     <li><strong>Anyone can use the site:</strong> readable contrast, keyboard use and speed.</li>
                   </ul>
-                  <p class="version-lead">Not trained or live yet. Named and approved on 30 September 2026: her first hand-written checks and her training preparation start now.</p>
-                  <dl class="stats"><div><dt>Checks</dt><dd>by hand</dd></div><div><dt>Model</dt><dd>in-house</dd></div><div><dt>Runs on</dt><dd>your PC</dd></div><div><dt>Writes code</dt><dd>never</dd></div></dl>
+                  <p class="version-lead">Her eyes, IRIS-look, finished a first training round on 30 September 2026. Most of her checks are written by hand in code, but a few problems can only be seen on the page, so a small model of her own looks at the rendered page the way a visitor would. Measured on pages she never trained on. She is not in use yet: IRIS as a whole must meet her targets first.</p>
+                  <dl class="stats"><div><dt>Parameters</dt><dd>3.4M</dd></div><div><dt>Per page, 1 CPU core</dt><dd>0.012 s</dd></div><div><dt>Page photos</dt><dd>26,021</dd></div><div><dt>Outside weights</dt><dd>none</dd></div></dl>
+                  <ul class="scores">
+                    <li><span>Text that cannot be seen <small>(hand-written checks: 36.6%)</small></span><b>100%</b><i style="--v:100%" aria-hidden="true"></i></li>
+                    <li><span>Text in the wrong language <small>(hand-written checks: 59.9%)</small></span><b>73.2%</b><i style="--v:73.2%" aria-hidden="true"></i></li>
+                    <li><span>Placeholder text left in <small>(hand-written checks: 46.7%)</small></span><b>66.3%</b><i style="--v:66.3%" aria-hidden="true"></i></li>
+                    <li><span>A section with nothing in it <small>(hand-written checks: 71.1%)</small></span><b>70.6%</b><i style="--v:70.6%" aria-hidden="true"></i></li>
+                    <li><span>The same block shown twice <small>(hand-written checks: 35.9%)</small></span><b>15.3%</b><i style="--v:15.3%" aria-hidden="true"></i></li>
+                    <li class="note">Share of problems found, on 1,092 correct pages and about 3,000 pages each carrying one problem. Problems found overall: 58.5% for IRIS-look, 79.1% for IRIS as a whole (checks and model), against a target of 90%. False alarms on correct pages: 2.7% for the model and 8.4% for IRIS as a whole, against at most 2%; most of them (60 of the 1,092 correct pages) come from one hand-written check, the wrong-language one. On PLAN&rsquo;s own five example businesses, run end to end, she found every case of invisible text (14 of 14) and raised a false alarm on 2 of 56 correct pages.</li>
+                  </ul>
                   <p class="version-new"><strong>When she finds a problem,</strong> she reports it to Bouquet with the evidence, and Bouquet calls the right teammate: Orchid for a fact read wrong, Tulip for a table imported wrong, Jasmine for a design that fails its checks, Daisy or Magnolia for a wrong answer or a wrong reading of a database. Or Bouquet simply has the site rebuilt. Every fix is checked again by Iris before it goes live. If something critical breaks on the live site (orders not working, a wrong price, the site down), the last good version comes back at once, then the repair begins. The owner decides anything about their own data, prices or legal texts: Iris never changes those on her own. After a few failed repairs, the owner is told plainly what is wrong, and always sees a simple health line: all green, or what was fixed and when.</p>
-                  <p class="version-new"><strong>What she will learn from:</strong> PLAN's own generated sites, rendered as phones and computers see them, with faults planted on purpose: garbled text, a wrong language, text cut off or overlapping, empty sections, missing pictures, prices written for the wrong country. Faults and businesses she never saw in training are held out for her test, frozen before training starts. Never used: owners' real sites, or other companies' websites.</p>
-                  <p class="version-new"><strong>Her targets, before she is used:</strong> the hand-written checks catch every planted fault of the kinds they cover, with no false alarm on a correct site; the model finds at least 90% of the held-out faults, with at most 2% false alarms on correct pages, on one ordinary computer core. <strong>Next:</strong> the repair loop through Bouquet, and the test order once PLAN's back end (orders, bookings, the owner's login) is built.</p>
+                  <p class="version-new"><strong>How she was trained:</strong> the hand-written checks were measured first, and every kind of problem they already catch well stayed with them: broken pictures, garbled characters, overlapping text, sideways scrolling, squashed layouts and number formats. The five they miss went to the model. She learned from 800 made-up businesses in 11 languages, their sites built by PLAN&rsquo;s own tools and photographed on a phone screen and a laptop screen: 26,021 page photos, about a quarter left correct, the rest with one problem planted and its place on the page measured. 15% of the businesses, and some variants of each problem, were kept out of training entirely and used only for her report card. Never used: owners&rsquo; real sites, or other companies&rsquo; websites.</p>
+                  <p class="version-new"><strong>Her targets, before she is used:</strong> at least 90% of problems found on pages she never trained on, at most 2% false alarms on correct pages, and at most 1 s a page on one CPU core; she meets only the last. <strong>Next round:</strong> let the model overrule the wrong-language check when it sees no problem, since that check alone causes most false alarms; hand &ldquo;the same block shown twice&rdquo; back to code, since comparing blocks directly works better than the model&rsquo;s guess; and add more kinds of placeholder text to her training pages. Then the repair loop through Bouquet, and the test order once PLAN&rsquo;s back end is built.</p>
                   <p class="arch">Mostly checks written by hand, one list per feature of the site, each tested like the site's own components. Independent of whatever built the site: she compares the live site with what the owner approved, never with the builder's own output, so a mistake cannot hide by agreeing with itself. A small in-house model only for what code cannot judge: whether a page reads right (garbled characters, the wrong language, placeholder text left behind, text cut off or overlapping, a section drawn empty). She never writes code: her repairs are re-running a step, rebuilding, publishing again, or putting the last good version back.</p>
                 </div>
               </section>
