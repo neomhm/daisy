@@ -7,7 +7,7 @@
   <meta name="description" content="D.AI.SY by AKIKI.AI. A kinder Kind of AI.">
   <meta name="theme-color" content="#f6f8fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=38">
+  <link rel="stylesheet" href="style.css?v=39">
   <script src="versions.js?v=1" defer></script>
 </head>
 <body>
@@ -156,73 +156,62 @@
               <section class="module" id="orchid" style="--c:#c2549e">
                 <img class="sway" src="orchid.svg" width="120" height="120" alt="Orchid logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Orchid</h3><span class="chip status">Orchid 1.1 &middot; trained</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Orchid</h3><span class="chip status">Orchid 1.2 &middot; trained</span></div>
                   <p class="module-role">Finds the facts in your documents</p>
                   <p>Hand Orchid your documents, such as invoices, brochures, price lists, web pages or registration papers. She reads them one chunk at a time and marks the facts: your business's name, address, phone, e-mail, website, opening hours, founding date and more, 25 kinds in all. She also says what kind of document it is and what language it's in. Orchid never writes a word: she only marks what is already there, so every value she returns is a slice of your own document. Code then checks each value and keeps its source.</p>
                   <div class="versions">
-                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-1" checked>
-                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-small">
-                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-large">
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-2" checked>
+                    <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-1">
                     <input class="version-pick" type="radio" name="orchid-version" id="orchid-1-0">
                     <p class="version-tabs">
+                      <label for="orchid-1-2"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.2</label>
                       <label for="orchid-1-1"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.1</label>
-                      <label for="orchid-small"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>small</label>
-                      <label for="orchid-large"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>large</label>
                       <label for="orchid-1-0"><svg class="icon" aria-hidden="true"><use href="#i-orchid"/></svg><span class="sr-only">Orchid </span>1.0</label>
                       <span class="version-ink" aria-hidden="true"></span>
                     </p>
                     <div class="version-panels">
                       <div class="version">
-                        <p class="version-lead">Final results. Trained further on real web pages of 196 businesses in the US and France, then tested on real pages she never saw.</p>
+                        <p class="version-lead">Trained further from 1.1 with the large Orchid as her teacher, then tested on real pages she never saw.</p>
+                        <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
+                        <ul class="scores">
+                          <li><span>Real web pages of US small businesses (F1)</span><b>0.699</b><i style="--v:69.9%" aria-hidden="true"></i></li>
+                          <li><span>Real web pages of French small businesses (F1)</span><b>0.763</b><i style="--v:76.3%" aria-hidden="true"></i></li>
+                          <li><span>Business name found, where the name is on their pages</span><b>67.9%</b><i style="--v:67.9%" aria-hidden="true"></i></li>
+                          <li><span>Hand-written documents (F1)</span><b>0.641</b><i style="--v:64.1%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. Held out whole: Oregon 0.639, Occitanie 0.713, Toulouse 0.722, and the French cities added on 29 September (Rennes, Strasbourg, Metz) 0.792. Website field on US pages 0.822; address field on French pages 0.926, on target. Her targets: 0.80 on real pages, the business name for 95% of businesses, and 0.90 on each contact field.</li>
+                        </ul>
+                        <p class="version-new"><strong>New in 1.2:</strong> she learned from a much larger Orchid, which labelled 5,196 pieces of real pages for her. That helped most on French pages (+5 to +9 points): she reads French addresses to target (0.93) and finds more US websites. She started from 1.1, so nothing 1.1 knew was thrown away.</p>
+                        <p class="version-new"><strong>Honest note:</strong> her score on US pages is unchanged, and she is still under her targets. Business names are the next thing to teach her specifically: when she misses one, she usually picks another name from the page.</p>
+                        <p class="arch">Same design as 1.0 and 1.1: transformer encoder, 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. Trained further from 1.1 in 66 minutes, with the large Orchid as teacher.</p>
+                      </div>
+                      <div class="version">
+                        <p class="version-lead">Trained further on real web pages of 196 businesses in the US and France, then tested on real pages she never saw.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
                         <ul class="scores">
                           <li><span>Real web pages of US small businesses (F1)</span><b>0.700</b><i style="--v:70%" aria-hidden="true"></i></li>
                           <li><span>Real web pages of French small businesses (F1)</span><b>0.715</b><i style="--v:71.5%" aria-hidden="true"></i></li>
-                          <li><span>Business name found on real pages, per business</span><b>62.7%</b><i style="--v:62.7%" aria-hidden="true"></i></li>
-                          <li><span>Made-up documents in layouts she never saw (F1)</span><b>0.938</b><i style="--v:93.8%" aria-hidden="true"></i></li>
-                          <li class="note">Invented values: 0, on every test. On real US pages her precision doubled, from 0.370 to 0.732: she marks far fewer wrong facts. Not there yet: her targets are the business name for 95% of businesses and 0.80 overall.</li>
+                          <li><span>Business name found, where the name is on their pages</span><b>65.4%</b><i style="--v:65.4%" aria-hidden="true"></i></li>
+                          <li><span>Hand-written documents (F1)</span><b>0.640</b><i style="--v:64%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. Held out whole: Oregon 0.619, Occitanie 0.658, Toulouse 0.657, and the French cities added on 29 September 0.700. Website field on US pages 0.740; address field on French pages 0.855. Her targets: 0.80 on real pages, the business name for 95% of businesses, and 0.90 on each contact field.</li>
                         </ul>
+                        <p class="version-new"><strong>New in 1.1:</strong> real web pages among her lessons. On real US pages her precision doubled, from 0.370 to 0.732: she marks far fewer wrong facts.</p>
                         <p class="arch">Same design as 1.0: transformer encoder, 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. Trained further from 1.0 for 1,140 steps, about nine minutes, replaying her made-up documents so she forgets nothing; she stopped by herself once her real-page score stopped improving.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Experiment, not the version in use. A smaller, faster candidate: the same real US and French pages as 1.1, on multilingual-e5-small, a small pretrained multilingual encoder (MIT licence), then tested on real pages she never trained on.</p>
-                        <dl class="stats"><div><dt>Parameters</dt><dd>117.5M</dd></div><div><dt>Tensors</dt><dd>203</dd></div><div><dt>Weights</dt><dd>479 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>98 ms</dd></div></dl>
-                        <ul class="scores">
-                          <li><span>Real web pages of US small businesses (F1)</span><b>0.808</b><i style="--v:80.8%" aria-hidden="true"></i></li>
-                          <li><span>Real web pages of French small businesses (F1)</span><b>0.747</b><i style="--v:74.7%" aria-hidden="true"></i></li>
-                          <li><span>Business name found on real pages, per business</span><b>70.3%</b><i style="--v:70.3%" aria-hidden="true"></i></li>
-                          <li><span>Hand-written documents (F1)</span><b>0.683</b><i style="--v:68.3%" aria-hidden="true"></i></li>
-                          <li class="note">Invented values: 0, on every test. Held out whole, Oregon 0.737 and Occitanie 0.775 (1.1: 0.619 and 0.658). Contact fields on real US pages: phone 0.976, e-mail 0.993, address 0.923, website 0.836. A larger version (xlm-roberta, 278M parameters) was retrained on twice as many French businesses. It is the most accurate Orchid so far, on real pages it never saw: 0.88 on US pages, 0.85 on French pages. It is too heavy for a laptop, so it will teach a small, fast Orchid instead of being used directly.</li>
-                        </ul>
-                        <p class="arch">BERT-style encoder: 12 blocks &times; 384, 12 attention heads, 512-token context, 250,037-piece vocabulary. Trained on Google Colab (A100) in 2 h 38 min, of which 26 minutes were training.</p>
-                      </div>
-                      <div class="version">
-                        <p class="version-lead">Experiment, round 3: the large version, on a pretrained multilingual encoder, retrained on twice as many French businesses and tested on real pages she never saw. Too heavy for a laptop, so she will teach a small, fast Orchid instead of being used directly.</p>
-                        <dl class="stats"><div><dt>Parameters</dt><dd>277.5M</dd></div><div><dt>Tensors</dt><dd>203</dd></div><div><dt>Weights</dt><dd>1.0 GB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>293 ms</dd></div></dl>
-                        <ul class="scores">
-                          <li><span>Real web pages of US small businesses (F1)</span><b>0.882</b><i style="--v:88.2%" aria-hidden="true"></i></li>
-                          <li><span>Real web pages of French small businesses (F1)</span><b>0.849</b><i style="--v:84.9%" aria-hidden="true"></i></li>
-                          <li><span>Business name found on real pages, per business</span><b>75.9%</b><i style="--v:75.9%" aria-hidden="true"></i></li>
-                          <li><span>Business name found, where the name is on their pages</span><b>80.1%</b><i style="--v:80.1%" aria-hidden="true"></i></li>
-                          <li class="note">Invented values: 0, on every test. Held out whole, Oregon 0.799 and Occitanie 0.859. Contact fields on real US pages: phone 0.993, e-mail 1.000, address 0.954, website 0.757; on French pages all four reach the 0.90 target (website 0.978). Round 2 of the same version: 0.869 US, 0.827 France, business name 75.0%. Speed measured on 2 CPU threads.</li>
-                        </ul>
-                        <p class="version-new"><strong>Honest note:</strong> the target for the business name is 95%, and she is at 80%. When she misses, she almost always picks another name from the page (155 of 162 misses) rather than finding none. That is the next thing to teach her.</p>
-                        <p class="arch">Pretrained multilingual transformer encoder (xlm-roberta-base, MIT licence): 12 blocks &times; 768, 12 attention heads, 512-token context, 250,002-piece vocabulary.</p>
-                      </div>
-                      <div class="version">
-                        <p class="version-lead">Final test results. Trained on Wikipedia and made-up business documents only.</p>
+                        <p class="version-lead">Trained on Wikipedia and made-up business documents only, then tested on real pages she never saw.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
                         <ul class="scores">
                           <li><span>Real web pages of US small businesses (F1)</span><b>0.455</b><i style="--v:45.5%" aria-hidden="true"></i></li>
                           <li><span>Real web pages of French small businesses (F1)</span><b>0.523</b><i style="--v:52.3%" aria-hidden="true"></i></li>
-                          <li><span>Business name found on real pages, per business</span><b>48.0%</b><i style="--v:48%" aria-hidden="true"></i></li>
-                          <li><span>Made-up documents in layouts she never saw (F1)</span><b>0.935</b><i style="--v:93.5%" aria-hidden="true"></i></li>
-                          <li class="note">Invented values: 0, on every test, real pages included.</li>
+                          <li><span>Business name found, where the name is on their pages</span><b>not measured</b><i style="--v:0%" aria-hidden="true"></i></li>
+                          <li><span>Hand-written documents (F1)</span><b>0.622</b><i style="--v:62.2%" aria-hidden="true"></i></li>
+                          <li class="note">Invented values: 0, on every test. Held out whole: Oregon 0.388 and Occitanie 0.519. The cities added later and the single fields were not measured for 1.0. Her targets: 0.80 on real pages, the business name for 95% of businesses, and 0.90 on each contact field.</li>
                         </ul>
                         <p class="arch">Transformer encoder, trained from scratch: 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. First trained on Wikipedia in ten languages, then on made-up business documents. She labels words and never writes text. Runs on any PC processor, no GPU.</p>
                       </div>
                     </div>
                   </div>
+                  <p class="version-new"><strong>Next:</strong> the large Orchid, trained further, now reads 0.89 of US and 0.85 of French real pages. Too heavy for a laptop, she teaches the small, fast Orchid instead: 1.2 is her first pupil.</p>
                 </div>
               </section>
               <section class="module" id="tulip" style="--c:#3aa56f">
