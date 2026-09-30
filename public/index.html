@@ -116,7 +116,7 @@
             </a>
             <a class="stack-box stack-magnolia" href="#magnolia">
               <svg class="stack-icon" aria-hidden="true"><use href="#px-magnolia"/></svg>
-              <span class="stack-spec">1&ndash;3M params</span>
+              <span class="stack-spec">0.9M params</span>
               <span class="stack-name">magnolia</span>
               <span class="stack-text">Reads any database, and tells Daisy what it means.</span>
               <span class="stack-handles" aria-hidden="true"></span>
@@ -415,12 +415,13 @@
                       </div>
                     </div>
                   </div>
+                  <p class="version-new"><strong>Next, Daisy 2.0, in progress:</strong> her own backbone, built entirely in-house, trained to completion and passed its gate on 1 October 2026. It is 53.0 million numbers (12 blocks &times; 576), twice Daisy 1.4, with her own 16,000-piece vocabulary, and reads 1,024 pieces at once, enough for a database&rsquo;s layout with sample values. It read 2.5 billion pieces (English Wikipedia 84%, our generated schema-and-question text 10%, Wikipedia in other languages 5%, open SQL 0.9%) in 3 h 35 min on one Colab A100, and its loss on text it never saw fell on every kind: SQL from 3.35 to 0.64, our schema-and-question text from 0.94 to 0.22. The questions of her deciding tests were removed from everything she read. She cannot answer questions yet: next she is taught the task on this backbone, naming columns by position and listing the ones a question needs before answering, with Magnolia beside her. Her deciding gate: at least 65% right with at most 5% wrong, on the way to 75% right and at most 3% wrong.</p>
                 </div>
               </section>
               <section class="module" id="magnolia" style="--c:#de7c95">
                 <img class="sway" src="magnolia.svg" width="120" height="120" alt="Magnolia logo">
                 <div class="module-body">
-                  <div class="module-head"><h3 class="pixel-name">Magnolia</h3><span class="chip status">Magnolia &middot; in preparation</span></div>
+                  <div class="module-head"><h3 class="pixel-name">Magnolia</h3><span class="chip status">Magnolia &middot; gate passed, not in use yet</span></div>
                   <p class="module-role">Reads a database she has never seen, and tells Daisy what everything in it means</p>
                   <p>Every business keeps its data its own way. One calls its customers &ldquo;clients&rdquo;, another &ldquo;Kunden&rdquo;, another <code>CUSTNO</code>; a price may sit in a column called <code>montant_ttc</code>, <code>prix</code> or <code>fld_07</code>. Magnolia reads a database once, when it is connected: the names of its tables and columns, their types and a few sample values. For each table she says which kind of business record it holds (products, bookings, invoices, customers, opening hours and so on), and for each column what it contains, such as &ldquo;the price, tax included&rdquo; or &ldquo;the date the booking was made&rdquo;, each with her confidence. Daisy then answers the owner's questions using that reading.</p>
                   <ul>
@@ -429,17 +430,19 @@
                     <li><strong>When she is not sure, she leaves a column unread</strong> rather than guess: a wrong reading would repeat on every question.</li>
                     <li><strong>She works for the whole team:</strong> Bouquet and Tulip use the same reading.</li>
                   </ul>
-                  <p class="version-lead">Not trained yet. Her design was approved on 30 September 2026, and her training follows Daisy 2.0's pretraining, which she is built on. The bars below are plain code with no model: the gap she is trained to close.</p>
-                  <dl class="stats"><div><dt>Parameters</dt><dd>1&ndash;3M</dd></div><div><dt>Built on</dt><dd>Daisy 2.0</dd></div><div><dt>Outside weights</dt><dd>none</dd></div><div><dt>Reads a database</dt><dd>once</dd></div></dl>
+                  <p class="version-lead">Her first trained version, the database translator, passed her gate on 1 October 2026. Measured on 3,280 databases whose names never appeared in training (136,983 columns). Not in use yet: she is measured on real databases first.</p>
+                  <dl class="stats"><div><dt>Her reader</dt><dd>0.9M</dd></div><div><dt>With Daisy 2.0&rsquo;s backbone</dt><dd>53.9M</dd></div><div><dt>Per database, 1 CPU core</dt><dd>1.8 s</dd></div><div><dt>Outside weights</dt><dd>none</dd></div></dl>
                   <ul class="scores">
-                    <li><span>Plain code: columns read right, when it knows the word</span><b>99%</b><i style="--v:99%" aria-hidden="true"></i></li>
-                    <li><span>Plain code: columns read right, names never seen</span><b>28%</b><i style="--v:28%" aria-hidden="true"></i></li>
-                    <li><span>Plain code: columns read right, names in other languages</span><b>15%</b><i style="--v:15%" aria-hidden="true"></i></li>
-                    <li class="note">On names never seen, plain code also reads 7% of columns wrong. That gap is what Magnolia is trained to close. Her targets, before she is used: on databases whose names she never saw, at least 90% of columns read right and at most 2% read wrong; with her readings, Daisy's score on the fresh &ldquo;any database&rdquo; test must rise, and must not move on PLAN's own tables.</li>
+                    <li><span>Columns read right, names never seen <small>(gate: 90%)</small></span><b>95.7%</b><i style="--v:95.7%" aria-hidden="true"></i></li>
+                    <li><span>Business tables recognised</span><b>99.8%</b><i style="--v:99.8%" aria-hidden="true"></i></li>
+                    <li><span>Real databases: Spider, columns read right</span><b>66.9%</b><i style="--v:66.9%" aria-hidden="true"></i></li>
+                    <li><span>Real databases: BIRD, columns read right</span><b>40.2%</b><i style="--v:40.2%" aria-hidden="true"></i></li>
+                    <li class="note">Columns read wrong: 1.1%, against a gate of at most 2%; unrelated tables wrongly taken for a business table: 0.1%. When she is not sure she leaves a column unread, so right and wrong do not add up to 100%. On the same databases, the old code-only matching read 54.9% of columns right and 8.5% wrong; Magnolia reads 98.2% right and 1.0% wrong. By kind of naming: synonyms 98.8%, capitalisation 97.6%, abbreviations 97.1%, another language 96.2% (Spanish 97.0%, Italian 96.5%, German 96.1%, French 95.1%), old system names such as <code>fld_07</code> 89.1% right and 3.0% wrong. On the real databases she is still weak: 2.3% of Spider&rsquo;s columns and 5.1% of BIRD&rsquo;s read wrong. 90% of databases are read within 3.0 s.</li>
                   </ul>
                   <p class="version-new"><strong>Why she is needed:</strong> today Daisy reads PLAN's own standard tables only. On a fresh test of 10 businesses whose databases use other names (French, German, Italian, Spanish and legacy codes), Daisy 1.4 could not answer any question: she stopped at the unknown table names before reading a single one. Magnolia removes that wall.</p>
-                  <p class="version-new"><strong>What she will learn from:</strong> the schemas of Spider and BIRD, two open research collections (CC BY-SA 4.0) whose columns come with plain-English names and descriptions, credited in her model file; and our own generated business databases (bakeries, restaurants, salons, trades and shops) with every table and column renamed at random: abbreviations (<code>cust_nm</code>), other languages (<code>Kunde</code>, <code>importe</code>, <code>fatturato</code>), capitals and separators (<code>CUSTOMER_NAME</code>) and legacy codes (<code>ZZ_CUSTNO</code>), so she reads a name and its values instead of memorising names. A column called <code>fld_07</code> holding <code>2024-03-01</code> is clearly a date. Never used: an owner's own data, or anything from the frozen tests that judge her and Daisy; a leak check refuses them automatically.</p>
-                  <p class="arch">In-house, no outside model weights: about 1 to 3 million parameters as extra layers on Daisy 2.0's own backbone. One pretraining and one vocabulary serve both, within Daisy's size limit of about 55M parameters. Code checks types and value shapes around her, and a reading below her confidence threshold is not used.</p>
+                  <p class="version-new"><strong>How she was trained:</strong> a small reader of 888,217 numbers placed on top of Daisy 2.0&rsquo;s backbone, which stays frozen: one backbone and one vocabulary serve both, 53.9 million numbers together, inside Daisy&rsquo;s cap of 55M. She learned from 29,681 databases in 5,568 steps on the MEGA9: the open schemas of Spider and BIRD (CC BY-SA 4.0, credited in her model file) and our own generated business databases, with every table and column renamed at random. Daisy&rsquo;s deciding tests were checked for leaks and kept out.</p>
+                  <p class="version-new"><strong>Next:</strong> measure her on real databases, the ones Daisy 2.0&rsquo;s deciding test uses, next to Daisy 2.0 once Daisy has been taught her task; put more real and old-style names in her lessons, where she is weakest; and only then wire her into PLAN, where the owner sees her reading of the database and can correct it once, for good. Her other roles (an answer checker, a question rewriter) are built only if Daisy 2.0 needs them.</p>
+                  <p class="arch">In-house, no outside model weights: 888,217 numbers as extra layers on Daisy 2.0&rsquo;s own frozen backbone. Code checks types and value shapes around her, and a reading below her confidence threshold is not used.</p>
                 </div>
               </section>
               <section class="module" id="iris" style="--c:#7c8acb">
