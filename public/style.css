@@ -342,6 +342,38 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   background: linear-gradient(var(--c), var(--c)) 0 0 / var(--v) 100% no-repeat, color-mix(in srgb, var(--c) 18%, var(--bg));
 }
 .markdown .scores .note { display: block; color: var(--fg-muted); }
+
+/* Version notes: a version's details, folded away under its results. The arrow turns as it opens;
+   versions.js animates the height, and keeps the notes of a card's tabs open or shut together.
+   Without a script they still open and shut, just without the motion. */
+.vnotes { margin: 4px 0 0; }
+.vnotes > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  list-style: none;
+  cursor: pointer;
+  color: var(--c, var(--fg));
+  font: 600 13px/1.2 var(--mono);
+}
+.vnotes > summary::-webkit-details-marker { display: none; }
+.vnotes > summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1);
+}
+.vnotes[open] > summary::before, .vnotes.is-opening > summary::before { transform: rotate(45deg); }
+.vnotes.is-closing > summary::before { transform: rotate(-45deg); }
+.vnotes > summary:hover { text-decoration: underline; text-underline-offset: 3px; }
+.vnotes-body { padding-top: 8px; overflow: hidden; }
+.markdown .scores-note { color: var(--fg-muted); font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .vnotes > summary::before { transition: none; } }
 .markdown .module .arch { color: var(--fg-muted); font: 12px/1.5 var(--mono); }
 
 /* Version tabs on a model card: one radio button per version, newest first and open. Each tab

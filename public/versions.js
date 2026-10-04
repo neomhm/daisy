@@ -102,3 +102,42 @@
     }).observe(wrap);
   }
 })();
+
+/* Version notes ("Version notes" in style.css): open and shut with the height animated, and the
+   notes of all of a card's tabs follow together. Without this script they work as plain details. */
+(() => {
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const set = (d, open) => {
+    const body = d.querySelector('.vnotes-body');
+    if (d.open === open && !d.classList.contains('is-closing')) return;
+    if (still.matches || !body.animate || d.offsetParent === null) { d.open = open; return; }
+    d.getAnimations({ subtree: true }).forEach(a => a.cancel());
+    d.classList.remove('is-opening', 'is-closing');
+    if (open) {
+      d.open = true;
+      d.classList.add('is-opening');
+      const h = body.scrollHeight;
+      body.animate([{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }],
+                   { duration: 380, easing: 'cubic-bezier(.2, .8, .2, 1)' })
+        .finished.then(() => d.classList.remove('is-opening'), () => {});
+    } else {
+      d.classList.add('is-closing');
+      const h = body.offsetHeight;
+      body.animate([{ height: h + 'px', opacity: 1 }, { height: '0px', opacity: 0 }],
+                   { duration: 300, easing: 'cubic-bezier(.4, 0, .6, 1)' })
+        .finished.then(() => { d.open = false; d.classList.remove('is-closing'); }, () => {});
+    }
+  };
+  for (const d of document.querySelectorAll('.vnotes')) {
+    d.querySelector('summary').addEventListener('click', e => {
+      e.preventDefault();
+      const open = !d.open || d.classList.contains('is-closing');
+      const card = d.closest('.versions');
+      const all = card ? card.querySelectorAll('.vnotes') : [d];
+      for (const x of all) {
+        if (x === d) set(x, open);
+        else x.open = open;           // the other tabs' notes, hidden now, simply follow
+      }
+    });
+  }
+})();
