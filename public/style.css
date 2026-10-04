@@ -566,8 +566,10 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   height: var(--u);
 }
 .stack-slot { background: #eef1f4; box-shadow: 0 0 0 var(--hairline) var(--border); }
-.stack-frame > .stack-gears { left: 0; top: 0; width: 100%; height: 100%; opacity: .5; pointer-events: none; }
-.stack-gears img { display: block; width: 100%; height: 100%; }
+.stack-frame > .stack-gears { left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; opacity: .5; pointer-events: none; }
+.stack-gears img { display: block; width: 100%; height: auto; }   /* drawn 4.3 boxes tall; a 3.3-box frame shows its top */
+.stack-frame-4 { height: calc(4.3 * var(--u)); }   /* Daisy's page: an eleventh box, centred under the rest */
+.stack-frame:not(.stack-frame-4) > .stack-gears { height: calc(3.15 * var(--u)); }   /* the Butterfly page: no eleventh slot */
 .stack-diamond {
   width: calc(.42 * var(--u));
   height: calc(.42 * var(--u));
@@ -631,6 +633,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .stack-lily { --x: .5; --y: .15; --i: 9; --my: -.2; }
 .stack-data { --x: .5; --y: 2.15; --i: 5; --mx: -.2; }
 .stack-computer { --x: 1.5; --y: 2.15; --w: 2; --i: 6; --my: .2; }
+.stack-thistle { --x: 2; --y: 3.15; --i: 10; --my: .2; }
 
 @keyframes stack-in { from { opacity: 0; } }
 
@@ -639,7 +642,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   .stack-frame { --u: 150px; display: grid; grid-template-columns: 1fr 1fr; width: auto; height: auto; }
   .stack-frame > * { position: relative; left: auto; top: auto; width: auto; }
   .stack-slot, .stack-frame > .stack-gears, .stack-diamond, .stack-handles { display: none; }
-  .stack-bouquet, .stack-computer, .stack-wide { grid-column: span 2; }
+  .stack-bouquet, .stack-computer, .stack-thistle, .stack-wide { grid-column: span 2; }
   .stack-box.stack-box { transform: none; }
 }
 

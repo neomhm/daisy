@@ -2,7 +2,7 @@
 
 Each icon is a 5x5 glyph of the AKIKI logo's rounded pixels. The models get a white glyph (the
 bouquet, a moth orchid, Tulip's flower head, Jasmine's star, Magnolia's cup, the iris of an eye,
-a lily's trumpet, the one-byte daisy) on a tile in their card's colour; "your data" is a bare
+a lily's trumpet, a thistle's tuft, the one-byte daisy) on a tile in their card's colour; "your data" is a bare
 glyph in ink. "Your computer" is a little farm, 15 pixels wide: a barn, a silo and a row of
 flowers in the colours of the small models that grow there. H marks a
 golden pixel; m, g, p and o mark Orchid magenta, Tulip green, Jasmine purple and Daisy orange.
@@ -28,6 +28,7 @@ ICONS = {
     'magnolia': ('#de7c95', ['.X.X.', 'XX.XX', '.XXX.', '.XHX.', '..X..']),  # a cup of petals on a stem
     'iris': ('#7c8acb', ['.XXX.', 'X...X', 'X.H.X', 'X...X', '.XXX.']),      # an eye's iris: she watches the sites
     'lily': ('#e65b56', ['X...X', 'XX.XX', '.XHX.', '..X..', '..X..']),       # a lily's trumpet on its stem
+    'thistle': ('#94549f', ['X.X.X', '.XXX.', '.XHX.', 'XXXXX', '.XXX.']),   # a tuft of florets on a round spiny head
     'daisy': ('#ec8e4a', ['..X..', '.X.X.', 'X.H.X', '.X.X.', '..X..']),       # the one-byte flower
     'data': (None, ['XXXXX', 'X.H.X', 'XXXXX', 'X.X.X', 'XXXXX']),             # a spreadsheet
     'farm': (None, ['.XXX...........',                                          # your computer

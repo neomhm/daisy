@@ -1,8 +1,8 @@
-"""Draw the Tulip, Jasmine, Orchid, Bouquet, Magnolia, Iris and Lily logos in the same network-of-nodes style as the Daisy logo.
+"""Draw the Tulip, Jasmine, Orchid, Bouquet, Magnolia, Iris, Lily and Thistle logos in the same network-of-nodes style as the Daisy logo.
 
 Usage: python3 tools/make_flowers.py OUTPUT_DIR
 Writes OUTPUT_DIR/tulip.svg, OUTPUT_DIR/jasmine.svg, OUTPUT_DIR/orchid.svg, OUTPUT_DIR/bouquet.svg,
-OUTPUT_DIR/magnolia.svg, OUTPUT_DIR/iris.svg and OUTPUT_DIR/lily.svg.
+OUTPUT_DIR/magnolia.svg, OUTPUT_DIR/iris.svg, OUTPUT_DIR/lily.svg and OUTPUT_DIR/thistle.svg.
 """
 import math
 import os
@@ -175,8 +175,8 @@ def tulip():
 
 
 def bouquet():
-    """Bouquet: the team's flowers, a daisy, a tulip, a jasmine, an orchid, a magnolia, an iris and
-    a lily, tied together with a golden bow."""
+    """Bouquet: the team's flowers, a daisy, a tulip, a jasmine, an orchid, a magnolia, an iris, a
+    lily and a thistle, tied together with a golden bow."""
     d = Drawing()
     GREEN = '#3aa56f'
     tie = (0, 56)
@@ -284,6 +284,13 @@ def bouquet():
     op = lambda x, y: (ocentre[0] + oscale * (math.cos(oturn) * x - math.sin(oturn) * (y + 8)),
                        ocentre[1] + oscale * (math.sin(oturn) * x + math.cos(oturn) * (y + 8)))
     stem([op(0, 60), (17, 30), (7, 46), tie], 'bos')
+
+    # The thistle, low on the right, leaning out under the jasmine: the guardian at the edge.
+    hsc, hheart, ht = 0.33, (68, 76), math.radians(24)
+    hp = lambda x, y: (hheart[0] + hsc * (math.cos(ht) * x - math.sin(ht) * (y - 28)),   # the Thistle logo's
+                       hheart[1] + hsc * (math.sin(ht) * x + math.cos(ht) * (y - 28)))   # head is at (0, 28)
+    stem([hp(0, 56), (34, 70), tie], 'bhs')
+    draw_thistle(d, hp, hsc, dot=0.55, prefix='bh')
 
     # Below the bow the three stems fan out again.
     for end in ((-14, 98), (0, 100), (14, 98)):
@@ -504,6 +511,90 @@ def lily():
     return d.svg('Lily')
 
 
+THISTLE = '#94549f'
+
+
+def draw_thistle(d, place=lambda x, y: (x, y), scale=1.0, dot=1.0, prefix=''):
+    """Thistle's flower: a tuft of florets fanning up out of a round head of spiny green bracts.
+    The head's centre is (0, 28). place, scale and dot work as in draw_orchid."""
+    P = lambda p: place(*p)
+    green, teal = '#3aa56f', '#2fb39a'
+    pink, violet = '#c06aa8', '#7b4fa8'
+    cx, cy, rx, ry = 0, 28, 30, 30
+    # the head: rings of nodes, linked across like the scales of a pine cone
+    rings = []
+    for j, t in enumerate((-0.82, -0.45, 0.0, 0.45, 0.82)):
+        y = cy + ry * t
+        w = rx * math.sqrt(1 - t * t)
+        n = 5 if abs(t) > 0.6 else 6
+        rings.append([(cx + w * (-1 + 2 * (k + 0.5 * (j % 2)) / n), y) for k in range(n + 1 - j % 2)])
+    col = lambda p: mix(green, teal, min(1, max(0, (p[1] - cy + ry) / (2 * ry))))
+    for ring in rings:
+        for p, q in zip(ring, ring[1:]):
+            d.line(P(p), P(q), col(p), 0.7, 0.9)
+    for a, b in zip(rings, rings[1:]):
+        for p in a:
+            for q in sorted(b, key=lambda q: abs(q[0] - p[0]))[:2]:
+                d.line(P(p), P(q), col(q), 0.6, 0.85)
+    # spines on the bracts at the head's edge
+    for k in range(10):
+        a = math.radians(-20 + 22 * k)
+        p = (cx + rx * math.cos(a), cy + ry * 0.92 * math.sin(a))
+        q = (cx + (rx + 10) * math.cos(a), cy + (ry * 0.92 + 10) * math.sin(a))
+        if p[1] < cy - ry * 0.7:
+            continue
+        d.line(P(p), P(q), teal, 0.7)
+        d.node(P(q), 1.3 * dot, teal)
+        d.node(P(p), 2.0 * dot, col(p))
+    for ring in rings:
+        for p in ring:
+            d.node(P(p), 2.2 * dot, col(p))
+    # the tuft: florets fanning out of the top of the head
+    top = (cx, cy - ry * 0.82)
+    rays = []
+    for k in range(11):
+        a = math.radians(-90 + (k - 5) * 15)
+        length = 100 - abs(k - 5) * 6
+        pts = [(top[0] + length * u * math.cos(a), top[1] + length * u * math.sin(a)) for u in (0.12, 0.45, 0.75, 1.0)]
+        rays.append(pts)
+        gid = f'{prefix}tr{k}'
+        d.gradient(gid, P(pts[0]), P(pts[-1]), pink, violet, 0.5)
+        chain = [top] + pts
+        for p, q in zip(chain, chain[1:]):
+            d.line(P(p), P(q), f'url(#{gid})', 0.7)
+    for a, b in zip(rays, rays[1:]):            # cross links between neighbouring florets
+        for i in (1, 2):
+            d.line(P(a[i]), P(b[i]), mix(pink, violet, 0.3 * i), 0.5, 0.75)
+    for pts in rays:
+        for i, (p, r) in enumerate(zip(pts, (1.4, 1.9, 2.3, 3.6))):
+            d.node(P(p), r * dot, mix(pink, violet, i / 3))
+    d.node(P(top), 4.4 * dot, YELLOW)
+
+
+def thistle():
+    """Thistle: a thistle flower on a straight stem with one spiky leaf. She is the guardian."""
+    d = Drawing()
+    stem = [(0, 58), (0, 72), (0, 86), (0, 99)]
+    d.gradient('ts', stem[0], stem[-1], '#3aa56f', '#2fb39a', 0.5)
+    for p, q in zip(stem, stem[1:]):
+        d.line(p, q, 'url(#ts)', 1.1)
+    d.gradient('tl', (0, 88), (-66, 52), '#3aa56f', '#2fb39a', 0.5)
+    b, left, right = lattice(d, 'tl', (0, 88), (-66, 52), 12, lambda t: mix('#3aa56f', '#2fb39a', t),
+                             sizes=(1.8, 2.3), tip_r=3.4, shear=0.05, steps=5)
+    for p in left[1:-1] + right[1:-1]:        # the leaf's spines
+        side = 1 if p in right else -1
+        ang = math.atan2(52 - 88, -66 - 0) + side * math.pi / 2
+        q = (p[0] + 7 * math.cos(ang), p[1] + 7 * math.sin(ang))
+        d.line(p, q, '#2fb39a', 0.6)
+        d.node(q, 1.2, '#2fb39a')
+    for p in stem[1:-1]:
+        d.node(p, 2.2, '#3aa56f')
+    d.node(stem[-1], 3.0, '#3aa56f')
+    d.front()
+    draw_thistle(d)
+    return d.svg('Thistle')
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -515,3 +606,4 @@ if __name__ == '__main__':
     open(os.path.join(out, 'magnolia.svg'), 'w').write(magnolia())
     open(os.path.join(out, 'iris.svg'), 'w').write(iris())
     open(os.path.join(out, 'lily.svg'), 'w').write(lily())
+    open(os.path.join(out, 'thistle.svg'), 'w').write(thistle())
