@@ -516,18 +516,18 @@
                     <li><strong>When she is not sure, she leaves a column unread</strong> rather than guess: a wrong reading would repeat on every question.</li>
                     <li><strong>She works for the whole team:</strong> Bouquet and Tulip use the same reading.</li>
                   </ul>
+                  <dl class="stats"><div><dt>Her reader</dt><dd>0.9M</dd></div><div><dt>With Daisy 2.0&rsquo;s backbone</dt><dd>53.9M</dd></div><div><dt>Per database, 1 CPU core</dt><dd>1.8 s</dd></div><div><dt>Outside weights</dt><dd>none</dd></div></dl>
+                  <ul class="scores">
+                    <li><span>Columns read right, names never seen <small>(gate: 90%)</small></span><b>95.7%</b><i style="--v:95.7%" aria-hidden="true"></i></li>
+                    <li><span>Business tables recognised</span><b>99.8%</b><i style="--v:99.8%" aria-hidden="true"></i></li>
+                    <li><span>Real databases: Spider, columns read right</span><b>66.9%</b><i style="--v:66.9%" aria-hidden="true"></i></li>
+                    <li><span>Real databases: BIRD, columns read right</span><b>40.2%</b><i style="--v:40.2%" aria-hidden="true"></i></li>
+                  </ul>
                   <details class="vnotes">
                     <summary>Version notes</summary>
                     <div class="vnotes-body">
                     <p class="scores-note">Columns read wrong: 1.1%, against a gate of at most 2%; unrelated tables wrongly taken for a business table: 0.1%. When she is not sure she leaves a column unread, so right and wrong do not add up to 100%. On the same databases, the old code-only matching read 54.9% of columns right and 8.5% wrong; Magnolia reads 98.2% right and 1.0% wrong. By kind of naming: synonyms 98.8%, capitalisation 97.6%, abbreviations 97.1%, another language 96.2% (Spanish 97.0%, Italian 96.5%, German 96.1%, French 95.1%), old system names such as <code>fld_07</code> 89.1% right and 3.0% wrong. On the real databases she is still weak: 2.3% of Spider&rsquo;s columns and 5.1% of BIRD&rsquo;s read wrong. 90% of databases are read within 3.0 s.</p>
                     <p class="version-lead">Her first trained version, the database translator, passed her gate on 1 October 2026. Measured on 3,280 databases whose names never appeared in training (136,983 columns). Not in use yet: she is measured on real databases first.</p>
-                    <dl class="stats"><div><dt>Her reader</dt><dd>0.9M</dd></div><div><dt>With Daisy 2.0&rsquo;s backbone</dt><dd>53.9M</dd></div><div><dt>Per database, 1 CPU core</dt><dd>1.8 s</dd></div><div><dt>Outside weights</dt><dd>none</dd></div></dl>
-                    <ul class="scores">
-                      <li><span>Columns read right, names never seen <small>(gate: 90%)</small></span><b>95.7%</b><i style="--v:95.7%" aria-hidden="true"></i></li>
-                      <li><span>Business tables recognised</span><b>99.8%</b><i style="--v:99.8%" aria-hidden="true"></i></li>
-                      <li><span>Real databases: Spider, columns read right</span><b>66.9%</b><i style="--v:66.9%" aria-hidden="true"></i></li>
-                      <li><span>Real databases: BIRD, columns read right</span><b>40.2%</b><i style="--v:40.2%" aria-hidden="true"></i></li>
-                    </ul>
                     <p class="version-new"><strong>Why she is needed:</strong> today Daisy reads PLAN's own standard tables only. On a fresh test of 10 businesses whose databases use other names (French, German, Italian, Spanish and legacy codes), Daisy 1.4 could not answer any question: she stopped at the unknown table names before reading a single one. Magnolia removes that wall.</p>
                     <p class="version-new"><strong>How she was trained:</strong> a small reader of 888,217 numbers placed on top of Daisy 2.0&rsquo;s backbone, which stays frozen: one backbone and one vocabulary serve both, 53.9 million numbers together, inside Daisy&rsquo;s cap of 55M. She learned from 29,681 databases in 5,568 steps on the MEGA9: the open schemas of Spider and BIRD (CC BY-SA 4.0, credited in her model file) and our own generated business databases, with every table and column renamed at random. Daisy&rsquo;s deciding tests were checked for leaks and kept out.</p>
                     <p class="version-new"><strong>Next:</strong> measure her on real databases, the ones Daisy 2.0&rsquo;s deciding test uses, next to Daisy 2.0 once Daisy has been taught her task; put more real and old-style names in her lessons, where she is weakest; and only then wire her into PLAN, where the owner sees her reading of the database and can correct it once, for good. Her other roles (an answer checker, a question rewriter) are built only if Daisy 2.0 needs them.</p>
