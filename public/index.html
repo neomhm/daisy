@@ -7,7 +7,8 @@
   <meta name="description" content="D.AI.SY by AKIKI.AI. A kinder Kind of AI.">
   <meta name="theme-color" content="#f6f8fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=43">
+  <script src="switch.js?v=1" defer></script>
+  <link rel="stylesheet" href="style.css?v=44">
   <script src="versions.js?v=2" defer></script>
 </head>
 <body>
@@ -38,10 +39,20 @@
 
   <header class="appheader">
     <div class="container appheader-top">
-      <a class="brand page-switch" href="butterfly.html" aria-label="Switch to PLAN 2, Butterfly&rsquo;s team" title="Switch to PLAN 2, Butterfly&rsquo;s team">
-        <img class="spin" src="daisy-grey.svg" width="32" height="32" alt="">
-      </a>
-      <div class="crumbs"><span class="logo-word">akiki<span class="cursor" aria-hidden="true">_</span></span><span class="sep">/</span><a class="page-switch" href="butterfly.html" title="Switch to PLAN 2, Butterfly&rsquo;s team"><strong>daisy</strong></a></div>
+      <details class="switch">
+        <summary aria-label="Choose a page" title="Choose a page">
+          <span class="brand"><img class="spin" src="daisy-grey.svg" width="32" height="32" alt=""></span>
+          <span class="crumbs"><span class="logo-word">akiki<span class="cursor" aria-hidden="true">_</span></span><span class="sep">/</span><strong>daisy</strong></span>
+          <svg class="switch-caret" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </summary>
+        <div class="switch-menu">
+          <div class="switch-head">Switch page</div>
+          <input class="switch-filter" type="search" placeholder="Find a page&hellip;" aria-label="Find a page" autocomplete="off">
+          <a class="switch-item" href="./" aria-current="page"><img src="daisy-grey.svg" width="20" height="20" alt=""><span class="switch-text"><span class="switch-name">akiki / <strong>daisy</strong></span><span class="switch-desc">A team of flowers that builds a small business its website.</span></span><svg class="switch-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          <a class="switch-item" href="butterfly.html"><img src="butterfly-grey.svg" width="20" height="20" alt=""><span class="switch-text"><span class="switch-name">akiki / <strong>butterfly</strong></span><span class="switch-desc">A team of insects that writes software, on your own machines.</span></span><svg class="switch-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          <p class="switch-none" hidden>No page matches.</p>
+        </div>
+      </details>
       <span class="label">Coming soon</span>
     </div>
     <nav class="container tabs" aria-label="Sections">

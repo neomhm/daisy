@@ -5,7 +5,7 @@ Website source code for AKIKI.AI.
 ## What's where
 
 - `public/`: the website itself. Everything in this folder is copied to the live site.
-  - `public/index.html`: PLAN, Daisy's team of flowers. `public/butterfly.html`: PLAN 2, Butterfly's team of insects. Clicking the daisy or the butterfly in the header switches between the two pages.
+  - `public/index.html`: Daisy's team of flowers. `public/butterfly.html`: Butterfly's team of insects. The logo and name in the header open a page switcher (`public/switch.js`) to move between the two.
   - `public/butterfly.svg`, `public/butterfly-grey.svg`: Butterfly's logo and its header version. Drawn by `tools/make_butterfly.py`; the insects' pixel icons come from `tools/make_pixel_icons.py --insects`.
   - `public/fonts/akiki-pixel.woff2`: the AKIKI Pixel colour font (the whole alphabet), used for the logo word in the header, the motto headline, the model names and the box titles. Typing "akiki" in it draws the logo word. Built by `tools/make_akiki_font.py`.
   - `public/pixel-band.svg`: the pixel stripe that leads into the models. Drawn by `tools/make_pixel_band.py`.
