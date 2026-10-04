@@ -8,6 +8,7 @@ flowers in the colours of the small models that grow there. H marks a
 golden pixel; m, g, p and o mark Orchid magenta, Tulip green, Jasmine purple and Daisy orange.
 
 Usage: python3 tools/make_pixel_icons.py > symbols.txt   (paste into the sprite in index.html)
+       python3 tools/make_pixel_icons.py --insects > symbols.txt   (the sprite in butterfly.html)
 """
 import os
 import sys
@@ -35,6 +36,20 @@ ICONS = {
                     'XX.XX.X.g.g.g.g',
                     'XXXXXXXXXXXXXXX']),
 }
+
+# PLAN 2's team, on the Butterfly page: insects instead of flowers.
+INSECTS = {
+    'butterfly': ('#2fb39a', ['X...X', 'XX.XX', 'XXHXX', 'XX.XX', 'X...X']),     # wings and a golden body
+    'cricket': ('#3aa56f', ['X...X', '.X.X.', '.XHX.', 'XXXXX', 'X.X.X']),       # long feelers, jumping legs
+    'bees': ('#f0a444', ['X.X.X', '.XXX.', 'XHHHX', '.XXX.', '..X..']),          # wings, golden stripes, sting
+    'ants': ('#a0452e', ['X...X', '.XXX.', '..H..', '.XXX.', 'X.X.X']),          # three body parts, legs
+    'mantis': ('#7fae3e', ['.XX..', '..XH.', '.XX.X', '.X...', 'X.X..']),        # head, folded arms
+    'ladybug': ('#e65b56', ['..X..', '.XXX.', 'XHXHX', 'XXXXX', '.X.X.']),       # a round shell with spots
+    'cicada': ('#8a80cf', ['XX.XX', 'XXHXX', '.XXX.', '.XXX.', '..X..']),        # broad wings, stout body
+    'dragonfly': ('#6592b4', ['XX.XX', '..H..', 'XXXXX', '..X..', '..X..']),     # two pairs of wings, long tail
+    'firefly': ('#ec8e4a', ['.X.X.', '..X..', '.XXX.', '.XXX.', '.HHH.']),       # its tail alight
+    'code': (None, ['XX.XX', 'X...X', 'X.H.X', 'X...X', 'XX.XX']),               # your code, in brackets
+}
 FLOWERS = {'m': '#c2549e', 'g': '#3aa56f', 'p': '#a06fc2', 'o': '#ec8e4a'}
 
 
@@ -53,5 +68,6 @@ def symbol(name, tile, rows):
 
 
 if __name__ == '__main__':
-    for name, (tile, rows) in ICONS.items():
+    icons = INSECTS if sys.argv[1:] == ['--insects'] else ICONS
+    for name, (tile, rows) in icons.items():
         print('    ' + symbol(name, tile, rows))
