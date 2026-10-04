@@ -639,7 +639,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   .stack-frame { --u: 150px; display: grid; grid-template-columns: 1fr 1fr; width: auto; height: auto; }
   .stack-frame > * { position: relative; left: auto; top: auto; width: auto; }
   .stack-slot, .stack-frame > .stack-gears, .stack-diamond, .stack-handles { display: none; }
-  .stack-bouquet, .stack-iris, .stack-lily, .stack-computer, .stack-wide { grid-column: span 2; }
+  .stack-bouquet, .stack-computer, .stack-wide { grid-column: span 2; }
   .stack-box.stack-box { transform: none; }
 }
 
@@ -717,3 +717,192 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .flutter { animation: flutter 3.2s ease-in-out infinite; transform-origin: 50% 50%; }
 @keyframes flutter { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.8); } }
 @media (prefers-reduced-motion: reduce) { .flutter { animation: none; } }
+
+/* Section bar: Overview, one chip per model in its colour, Status. switch.js marks the section
+   being read and keeps its chip in view. */
+.tabs .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--fg-muted)); }
+.tabs a[style] { --tab-line: var(--c); }
+
+/* Phones. The header stays at hand: the brand row tucks away while reading down and comes back
+   on the way up; the section bar stays. The page switcher opens as a sheet from the bottom.
+   The box stack becomes compact cards; a button brings the reader back to the top. */
+.to-top { display: none; }
+@media (max-width: 700px) {
+  html { scroll-padding-top: calc(var(--head, 96px) - var(--tuck, 0px) + 12px); }
+  .markdown h2, .module, .hero, .dna-frame { scroll-margin-top: 0; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  .appheader {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    border-bottom: 0;
+    transition: top .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s;
+  }
+  .appheader::before {   /* frosted glass, on a layer of its own so the sheet can still be fixed */
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: color-mix(in srgb, var(--bg-subtle) 82%, transparent);
+    -webkit-backdrop-filter: saturate(1.8) blur(14px);
+    backdrop-filter: saturate(1.8) blur(14px);
+    border-bottom: var(--hairline) solid var(--border);
+  }
+  .appheader.is-tucked { top: calc(-1 * var(--tuck)); }   /* moved by top, not transform, so the sheet inside stays fixed to the screen */
+  .appheader.is-scrolled { box-shadow: 0 6px 18px -10px rgba(31, 35, 40, .3); }
+  .appheader-top {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    padding-top: calc(10px + env(safe-area-inset-top));
+    padding-bottom: 6px;
+    transition: opacity .2s;
+  }
+  .appheader.is-tucked .appheader-top { opacity: 0; }
+  .appheader-top .brand img { width: 28px; height: 28px; }
+  .logo-word { font-size: 25px; }
+  .crumbs { font-size: 15px; white-space: nowrap; }
+  .appheader-top .label { flex: none; font-size: 11px; }
+
+  .tabs {
+    gap: 6px;
+    padding-top: 4px;
+    padding-bottom: 10px;
+    scroll-snap-type: x proximity;
+    scroll-padding: 0 var(--gutter);
+    -webkit-mask: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 24px), transparent);
+    mask: linear-gradient(90deg, transparent, #000 12px, #000 calc(100% - 24px), transparent);
+  }
+  .tabs a {
+    flex: none;
+    gap: 6px;
+    height: 34px;
+    padding: 0 13px;
+    border: var(--hairline) solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+    font-size: 14px;
+    scroll-snap-align: start;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color .25s, border-color .25s, color .25s, transform .15s;
+  }
+  .tabs a:hover { border-bottom-color: var(--border); }
+  .tabs a:active { transform: scale(.95); }
+  .tabs a .icon { width: 14px; height: 14px; }
+  .tabs a[aria-current] {
+    border-color: color-mix(in srgb, var(--c, var(--fg)) 55%, transparent);
+    background: color-mix(in srgb, var(--c, var(--fg)) 14%, var(--bg));
+    font-weight: 600;
+  }
+
+  /* The page switcher as a bottom sheet */
+  .switch > summary { padding: 4px 6px 4px 0; -webkit-tap-highlight-color: transparent; }
+  .switch[open] > summary::after {   /* the dimmed page behind; a tap on it closes the sheet */
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(15, 23, 30, .42);
+    animation: sheet-dim .25s ease-out;
+    cursor: default;
+  }
+  .switch-menu {
+    position: fixed;
+    z-index: 41;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 6px 12px calc(16px + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 40px rgba(15, 23, 30, .25);
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+  .switch-menu::before {   /* the drag handle */
+    content: "";
+    display: block;
+    width: 40px;
+    height: 5px;
+    margin: 4px auto 10px;
+    border-radius: 3px;
+    background: var(--border);
+  }
+  .switch[open] .switch-menu { animation: sheet-up .38s cubic-bezier(.2, .9, .25, 1); }
+  .switch-menu.is-dragging { transition: none; }
+  .switch-menu.is-leaving { transition: transform .25s ease-in; }
+  .switch-head { padding: 0 8px 10px; font-size: 13px; text-align: center; }
+  .switch-filter { padding: 10px 12px; border-radius: 10px; font-size: 16px; margin-bottom: 8px; }
+  .switch-item { gap: 14px; padding: 14px 12px; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
+  .switch-item + .switch-item { margin-top: 2px; }
+  .switch-item img { width: 36px; height: 36px; padding: 6px; border-radius: 10px; background: var(--bg-subtle); }
+  .switch-item[aria-current] { background: color-mix(in srgb, var(--link) 9%, var(--bg)); }
+  .switch-item:active { background: var(--bg-subtle); }
+  .switch-name { font-size: 15px; }
+  .switch-desc { font-size: 13px; }
+  .switch-check { width: 20px; height: 20px; }
+  body:has(.switch[open]) { overflow: hidden; }
+
+  /* Room for the cards: the README frame steps back on phones */
+  .readme.box { border-left: 0; border-right: 0; border-radius: 0; margin-left: calc(-1 * var(--gutter)); margin-right: calc(-1 * var(--gutter)); }
+  .module { border-radius: 14px; }
+
+  .to-top {
+    position: fixed;
+    z-index: 25;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border: var(--hairline) solid var(--border);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 6px 20px rgba(31, 35, 40, .18);
+    color: var(--fg);
+    opacity: 0;
+    transform: translateY(12px) scale(.9);
+    pointer-events: none;
+    transition: opacity .25s, transform .25s cubic-bezier(.2, .8, .2, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .to-top.is-shown { opacity: 1; transform: none; pointer-events: auto; }
+  .to-top svg { width: 20px; height: 20px; }
+}
+@keyframes sheet-up { from { transform: translateY(100%); } }
+@keyframes sheet-dim { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .appheader, .tabs a, .to-top { transition: none; }
+  .switch[open] .switch-menu, .switch[open] > summary::after { animation: none; }
+}
+
+/* The stack on phones: compact cards, the icon beside the name, two to a row. */
+@container (max-width: 719px) {
+  .stack-frame { gap: 8px; }
+  .stack-frame > .stack-box {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    align-content: start;
+    column-gap: 10px;
+    row-gap: 6px;
+    height: auto;
+    padding: 12px;
+    border-radius: 12px;
+    animation-delay: calc(var(--i) * .04s);
+  }
+  .stack-box .stack-icon { width: 30px; height: 30px; }
+  .stack-computer .stack-icon { width: 66px; }
+  .stack-box .stack-name { margin: 0; font-size: 20px; }
+  .stack-box .stack-text { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--fg-muted); }
+  .stack-box .stack-spec { position: static; grid-row: 3; grid-column: 1 / -1; font-size: 11px; }
+  .stack-box:active { background: var(--bg-subtle); }
+}
