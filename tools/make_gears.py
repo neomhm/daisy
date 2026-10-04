@@ -3,7 +3,8 @@
 Gears of different sizes, all with the same tooth size, mesh tooth to gap: each one drives the
 next, small ones spin faster, neighbours turn opposite ways. Every gear is a sharp vector wheel
 in one of the logo's colours (the page shows the whole machine at half strength). The picture is
-an animated SVG sized like the stack frame: 100 units per box, 5 x 3.3 boxes.
+an animated SVG sized like the stack frame: 100 units per box, 5 x 4.3 boxes (the Butterfly page's
+frame is 3.3 boxes tall and shows only the top).
 
 Usage: python3 tools/make_gears.py OUTPUT.svg [--check]
   Also writes OUTPUT-still.svg, the same picture standing still, for visitors who ask for less motion.
@@ -12,7 +13,7 @@ Usage: python3 tools/make_gears.py OUTPUT.svg [--check]
 import math
 import sys
 
-W, H = 500, 330
+W, H = 500, 430
 M = 2.0                         # module: a gear with N teeth has a pitch radius of N units
 RATE = 1.4                      # teeth per second passing every contact
 TIP, ROOT = 0.9 * M, 1.25 * M   # addendum and dedendum
@@ -23,7 +24,7 @@ BACKLASH = 0.8                  # extra distance between meshing gears
 # The slots of the stack (x, y, width, height): the machine only shows through these.
 SLOTS = [(50, 115, 100, 100), (350, 215, 100, 100), (150, 15, 200, 100), (350, 15, 100, 100),
          (50, 15, 100, 100), (150, 115, 100, 100), (250, 115, 100, 100), (350, 115, 100, 100),
-         (50, 215, 100, 100), (150, 215, 200, 100)]
+         (50, 215, 100, 100), (150, 215, 200, 100), (200, 315, 100, 100)]
 
 # teeth, colour, the gear it meshes with, direction from that gear (degrees clockwise from east)
 TRAIN = [
@@ -47,6 +48,8 @@ TRAIN = [
     (16, '#2fb39a', 5, 80),
     (30, '#7c8acb', 6, -65),            # up into Iris's slot, beside the bouquet
     (36, '#e65b56', 0, -100),           # up into Lily's slot, on the bouquet's other side
+    (20, '#94549f', 15, 125),           # down under "your computer"...
+    (40, '#2fb39a', 20, 125),           # ...to the big wheel in Thistle's slot, below everything
 ]
 
 
