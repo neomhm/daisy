@@ -7,7 +7,7 @@
   <meta name="description" content="D.AI.SY by AKIKI.AI. A kinder Kind of AI.">
   <meta name="theme-color" content="#f6f8fa">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=40">
+  <link rel="stylesheet" href="style.css?v=41">
   <script src="versions.js?v=1" defer></script>
 </head>
 <body>
@@ -171,7 +171,6 @@
                     </p>
                     <div class="version-panels">
                       <div class="version">
-                        <p class="version-lead">Trained further from 1.1 with the large Orchid as her teacher, then tested on real pages she never saw.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
                         <ul class="scores">
                           <li><span>Real web pages of US small businesses (F1)</span><b>0.699</b><i style="--v:69.9%" aria-hidden="true"></i></li>
@@ -180,12 +179,12 @@
                           <li><span>Hand-written documents (F1)</span><b>0.641</b><i style="--v:64.1%" aria-hidden="true"></i></li>
                           <li class="note">Invented values: 0, on every test. Held out whole: Oregon 0.639, Occitanie 0.713, Toulouse 0.722, and the French cities added on 29 September (Rennes, Strasbourg, Metz) 0.792. Website field on US pages 0.822; address field on French pages 0.926, on target. Her targets: 0.80 on real pages, the business name for 95% of businesses, and 0.90 on each contact field.</li>
                         </ul>
+                        <p class="version-lead">Trained further from 1.1 with the large Orchid as her teacher, then tested on real pages she never saw.</p>
                         <p class="version-new"><strong>New in 1.2:</strong> she learned from a much larger Orchid, which labelled 5,196 pieces of real pages for her. That helped most on French pages (+5 to +9 points): she reads French addresses to target (0.93) and finds more US websites. She started from 1.1, so nothing 1.1 knew was thrown away.</p>
                         <p class="version-new"><strong>Honest note:</strong> her score on US pages is unchanged, and she is still under her targets. Business names are the next thing to teach her specifically: when she misses one, she usually picks another name from the page.</p>
                         <p class="arch">Same design as 1.0 and 1.1: transformer encoder, 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. Trained further from 1.1 in 66 minutes, with the large Orchid as teacher.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Trained further on real web pages of 196 businesses in the US and France, then tested on real pages she never saw.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
                         <ul class="scores">
                           <li><span>Real web pages of US small businesses (F1)</span><b>0.700</b><i style="--v:70%" aria-hidden="true"></i></li>
@@ -194,11 +193,11 @@
                           <li><span>Hand-written documents (F1)</span><b>0.640</b><i style="--v:64%" aria-hidden="true"></i></li>
                           <li class="note">Invented values: 0, on every test. Held out whole: Oregon 0.619, Occitanie 0.658, Toulouse 0.657, and the French cities added on 29 September 0.700. Website field on US pages 0.740; address field on French pages 0.855. Her targets: 0.80 on real pages, the business name for 95% of businesses, and 0.90 on each contact field.</li>
                         </ul>
+                        <p class="version-lead">Trained further on real web pages of 196 businesses in the US and France, then tested on real pages she never saw.</p>
                         <p class="version-new"><strong>New in 1.1:</strong> real web pages among her lessons. On real US pages her precision doubled, from 0.370 to 0.732: she marks far fewer wrong facts.</p>
                         <p class="arch">Same design as 1.0: transformer encoder, 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. Trained further from 1.0 for 1,140 steps, about nine minutes, replaying her made-up documents so she forgets nothing; she stopped by herself once her real-page score stopped improving.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Trained on Wikipedia and made-up business documents only, then tested on real pages she never saw.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>32.8M</dd></div><div><dt>Tensors</dt><dd>63</dd></div><div><dt>Weights</dt><dd>131 MB</dd></div><div><dt>Per chunk, on a CPU</dt><dd>77 ms</dd></div></dl>
                         <ul class="scores">
                           <li><span>Real web pages of US small businesses (F1)</span><b>0.455</b><i style="--v:45.5%" aria-hidden="true"></i></li>
@@ -207,6 +206,7 @@
                           <li><span>Hand-written documents (F1)</span><b>0.622</b><i style="--v:62.2%" aria-hidden="true"></i></li>
                           <li class="note">Invented values: 0, on every test. Held out whole: Oregon 0.388 and Occitanie 0.519. The cities added later and the single fields were not measured for 1.0. Her targets: 0.80 on real pages, the business name for 95% of businesses, and 0.90 on each contact field.</li>
                         </ul>
+                        <p class="version-lead">Trained on Wikipedia and made-up business documents only, then tested on real pages she never saw.</p>
                         <p class="arch">Transformer encoder, trained from scratch: 8 blocks &times; 384, 6 attention heads, 1,024-token context, 48,000-piece vocabulary. First trained on Wikipedia in ten languages, then on made-up business documents. She labels words and never writes text. Runs on any PC processor, no GPU.</p>
                       </div>
                     </div>
@@ -234,7 +234,6 @@
                     </p>
                     <div class="version-panels">
                       <div class="version">
-                        <p class="version-lead">Measured on real sheets she never trained on, with 1.2 beside her in the same run, on exactly the same sheets. For 1.3 the real test sheets were labelled again in her richer instruction language, so 65 of the 82 can now be scored, against 47 before.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>61.6M</dd></div><div><dt>Tables she knows</dt><dd>13</dd></div><div><dt>Per sheet, median</dt><dd>0.12 s</dd></div><div><dt>Build targets met</dt><dd>10 of 11</dd></div></dl>
                         <ul class="scores">
                           <li><span>Real small-business sheets imported correctly <small>(1.3&rsquo;s real test)</small></span><b>26.2%</b><i style="--v:26.2%" aria-hidden="true"></i></li>
@@ -243,12 +242,12 @@
                           <li><span>Number and date formats she never saw</span><b>89.4%</b><i style="--v:89.4%" aria-hidden="true"></i></li>
                           <li class="note">Invented values: 0, on every test. Real sheets: 17 of the 65 she can express imported correctly, 17 of all 82 (21%); her instruction language can now express 79% of them, against 57% for 1.2. Wrong table accepted 0.3%, non-tables refused 98.3%, sheets built to trick a careless reader imported by mistake 0.4%, and the slowest 5% of sheets take 0.20 s. By kind: opening hours 7 of 8, service lists 3 of 11, product lists 7 of 43, product variants 0 of 3. In Occitanie, held out whole, 3 of 27 (11%); elsewhere 14 of 38 (37%). Generated sheets: correct imports with the repair loop 97.6%, wrong table accepted 2.0%, weakest trap 99.4%. Her targets on real sheets: 90% imported correctly, at most 1% wrong tables accepted, 99% of non-tables refused.</li>
                         </ul>
+                        <p class="version-lead">Measured on real sheets she never trained on, with 1.2 beside her in the same run, on exactly the same sheets. For 1.3 the real test sheets were labelled again in her richer instruction language, so 65 of the 82 can now be scored, against 47 before.</p>
                         <p class="version-new"><strong>New in 1.3:</strong> her instruction language now says the shapes real owners use and 1.2 could not express: two opening-time ranges in one cell, a price inside the product&rsquo;s name, sizes and prices spread over several columns, a price on the line below the name, a &ldquo;from&rdquo; price. On generated sheets of exactly these shapes, which she never saw, she gets all of them right, against 0% to 32% for 1.2. The six tables added in 1.2 (still taught from generated sheets only) improved: purchase orders 94% right (1.2: 40%), stock 63% (21%), recipes 69% (56%), product variants 65% (52%), allergens 56% (31%), suppliers 59% (67%), and the wrong table chosen for them fell from 38% to 16%. She is also larger: 61.6 million parameters, against 38 million. She is the first Tulip to be ahead on both real and generated sheets.</p>
                         <p class="version-new"><strong>Honest note:</strong> she is still far from 90% on real sheets. Product lists did not improve (7 of 43, against 10 for 1.2), and in a region she never saw she stays at 11%. On 1.1&rsquo;s own hand-written test sheets she gets 33%, against 40% for 1.2 (15 sheets). She is a little slower, 0.12 s a sheet against 0.08 s, still far under the 1 s target. Of 11 build targets she misses one, by a hair: a wrong table chosen in 2.00% of imports of unseen generated sheets, where the bar is at most 2%.</p>
                         <p class="arch">A new, larger Tulip, trained from zero on her own network, no outside weights: 61.6 million parameters. Trained on the desktop&rsquo;s RTX 5060 Ti for 55,907 steps (about nine passes, 27 hours); the version kept is step 52,885. Lessons: 300,000 generated tasks, 59,846 tasks for the six newer tables, 39,999 generated sheets of the real shapes, and 24,963 real sheets from French, Irish and Belgian small businesses and open-data portals, the sheets she should import read five times.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Measured again beside 1.3, in 1.3&rsquo;s run, on exactly the same real sheets. On the test of her own run, where 47 of the 82 real sheets could be scored, she imported 25.5% (12 of 47).</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>38.0M</dd></div><div><dt>Tables she knows</dt><dd>13</dd></div><div><dt>Per sheet, median</dt><dd>0.08 s</dd></div><div><dt>Build targets met</dt><dd>7 of 11</dd></div></dl>
                         <ul class="scores">
                           <li><span>Real small-business sheets imported correctly <small>(1.3&rsquo;s real test)</small></span><b>21.5%</b><i style="--v:21.5%" aria-hidden="true"></i></li>
@@ -257,12 +256,12 @@
                           <li><span>Number and date formats she never saw</span><b>86.0%</b><i style="--v:86.0%" aria-hidden="true"></i></li>
                           <li class="note">Invented values: 0, on every test. Real sheets, on 1.3&rsquo;s test: 14 of the 65 imported correctly, 17% of all 82. Wrong table accepted 0.3%, non-tables refused 97.4%, sheets built to trick a careless reader imported by mistake 1.2%, and the slowest 5% of sheets take 0.14 s. By kind: opening hours 1 of 8, service lists 3 of 11, product lists 10 of 43, product variants 0 of 3. In Occitanie, held out whole, 3 of 27 (11%); elsewhere 11 of 38 (29%). Generated sheets: correct imports with the repair loop 93.5%, wrong table accepted 4.6%, weakest trap 96.3%. Her targets on real sheets: 90% imported correctly, at most 1% wrong tables accepted, 99% of non-tables refused.</li>
                         </ul>
+                        <p class="version-lead">Measured again beside 1.3, in 1.3&rsquo;s run, on exactly the same real sheets. On the test of her own run, where 47 of the 82 real sheets could be scored, she imported 25.5% (12 of 47).</p>
                         <p class="version-new"><strong>New in 1.2:</strong> real sheets among her lessons. On the test of her own run: product lists (17 of 42 right, where 1.1 got none) and service lists (5 of 16). In Occitanie, a region kept out of training entirely, she imports 3 of 19 sheets right (16%), against about 32% elsewhere. She also knows six more tables: stock, suppliers, purchase orders, recipes, allergens and product variants. No real stock, supplier or recipe sheet was found among the 2,830 small businesses crawled, so these were taught from generated sheets only; on generated sheets she has never seen, she gets 16% to 54% of them right, depending on the table.</p>
                         <p class="version-new"><strong>Honest note:</strong> she is still far from 90% on real sheets, and opening hours and product variants are still at 0. On the generated sheets 1.1 was trained on, she is a little behind (93.5% correct imports against 95.0%), and a sheet built to trick a careless reader is imported by mistake 1.2% of the time (9 of 741), against 0.4% for 1.1. The likely reason: she kept the same size while her job nearly doubled.</p>
                         <p class="arch">Same design as 1.0 and 1.1: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 24,000-piece vocabulary. Trained further from 1.1 on Colab&rsquo;s A100 for 5,648 steps: 100,000 of 1.1&rsquo;s generated tasks replayed, 59,846 tasks for the new tables, and 41,870 real sheets from French, Irish and Belgian small businesses and open-data portals.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Measured in 1.2&rsquo;s run on the old real test, and on the generated sheets every Tulip is built on. She was not measured on 1.3&rsquo;s real test.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>38.0M</dd></div><div><dt>Tables she knows</dt><dd>7</dd></div><div><dt>Per sheet, median</dt><dd>0.09 s</dd></div><div><dt>Build targets met</dt><dd>10 of 11</dd></div></dl>
                         <ul class="scores">
                           <li><span>Real small-business sheets imported correctly <small>(1.3&rsquo;s real test)</small></span><b>not measured</b><i style="--v:0%" aria-hidden="true"></i></li>
@@ -271,11 +270,11 @@
                           <li><span>Number and date formats she never saw</span><b>87.3%</b><i style="--v:87.3%" aria-hidden="true"></i></li>
                           <li class="note">Invented values: 0, on every test. Real sheets, on the old test: 0 of 47 imported correctly; wrong table accepted 0.6%, non-tables refused 91.1%, and the slowest 5% of sheets take 1.33 s. Generated sheets: correct imports with the repair loop 95.0%, wrong table accepted 3.9%, weakest trap 98.7%.</li>
                         </ul>
+                        <p class="version-lead">Measured in 1.2&rsquo;s run on the old real test, and on the generated sheets every Tulip is built on. She was not measured on 1.3&rsquo;s real test.</p>
                         <p class="version-new"><strong>New in 1.1:</strong> tables inside PDFs, old .xls and LibreOffice .ods files, several tables on one sheet, and day ranges such as <span class="nowrap">&ldquo;Mon&ndash;Fri 9&ndash;6&rdquo;</span> or <span class="nowrap">&ldquo;Lun&ndash;Ven 9h&ndash;18h&rdquo;</span>.</p>
                         <p class="arch">Same design as 1.0, trained from scratch: 8 blocks &times; 512, 8 attention heads, 24,000-piece vocabulary. No time cap this time: 8.25 passes in 19.7 hours, and she stopped by herself once she stopped improving.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Measured on the generated sheets every Tulip is built on. Real sheets were not measured for 1.0.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>38.0M</dd></div><div><dt>Tables she knows</dt><dd>7</dd></div><div><dt>Per sheet, median</dt><dd>0.53 s</dd></div><div><dt>Build targets met</dt><dd>7 of 11</dd></div></dl>
                         <ul class="scores">
                           <li><span>Real small-business sheets imported correctly <small>(1.3&rsquo;s real test)</small></span><b>not measured</b><i style="--v:0%" aria-hidden="true"></i></li>
@@ -284,6 +283,7 @@
                           <li><span>Number and date formats she never saw</span><b>79.0%</b><i style="--v:79.0%" aria-hidden="true"></i></li>
                           <li class="note">Invented values: 0, on every test. Generated sheets: correct imports with the repair loop 91.9%, wrong table accepted 5.6%, weakest trap 86.2%.</li>
                         </ul>
+                        <p class="version-lead">Measured on the generated sheets every Tulip is built on. Real sheets were not measured for 1.0.</p>
                         <p class="arch">Decoder-only transformer, trained from scratch: 8 blocks &times; 512, 8 attention heads, 4,096-token context, 24,000-piece vocabulary. Training stopped at a 6-hour cap after 2.53 passes, still improving. Runs on any PC processor, no GPU.</p>
                       </div>
                     </div>
@@ -307,7 +307,6 @@
                     </p>
                     <div class="version-panels">
                       <div class="version">
-                        <p class="version-lead">Results on combinations she never saw.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>3.4M</dd></div><div><dt>Tensors</dt><dd>32</dd></div><div><dt>Vocabulary</dt><dd>164 words</dd></div><div><dt>Weights</dt><dd>13.5 MB</dd></div><div><dt>Training</dt><dd>7 minutes</dd></div></dl>
                         <ul class="scores">
                           <li><span>Whole design matches the written rules, unseen business types</span><b>98.5%</b><i style="--v:98.5%" aria-hidden="true"></i></li>
@@ -316,16 +315,17 @@
                           <li><span>&ldquo;Says pizza&rdquo;: the main colour fits what the business sells</span><b>100%</b><i style="--v:100%" aria-hidden="true"></i></li>
                           <li class="note">Contrast failures: 0 of 65,000.</li>
                         </ul>
+                        <p class="version-lead">Results on combinations she never saw.</p>
                         <p class="version-new"><strong>Honest note:</strong> Jasmine 1c learns from design rules written as code. A review of those rules found places where they leaned on clich&eacute;s or misread words. For example, a French shop that &ldquo;closes at 7 pm&rdquo; (ferme &agrave; 19h) was read as rustic, and every Chinese restaurant got red and gold. The rules have been corrected, so Jasmine 1c is being retrained on them. The figures above are from her first training and will be replaced.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Rehearsal model. Proposed a design spec from the business's features, learned from design rules written as code.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>3.4M</dd></div><div><dt>Tensors</dt><dd>32</dd></div><div><dt>Weights</dt><dd>13.8 MB</dd></div><div><dt>Vocabulary</dt><dd>316 words</dd></div></dl>
                         <ul class="scores">
                           <li><span>Rule-made test designs, answered within the rules</span><b>5,000/5,000</b><i style="--v:100%" aria-hidden="true"></i></li>
                           <li><span>Refused when she should</span><b>99.6%</b><i style="--v:99.6%" aria-hidden="true"></i></li>
                           <li><span>Hand-written businesses answered</span><b>32/45</b><i style="--v:71.1%" aria-hidden="true"></i></li>
                         </ul>
+                        <p class="version-lead">Rehearsal model. Proposed a design spec from the business's features, learned from design rules written as code.</p>
                         <p class="arch">Decoder-only transformer on Daisy's design, trained from scratch: 4 blocks &times; 256, 4 attention heads, 256-piece context. Runs on any PC processor.</p>
                       </div>
                     </div>
@@ -354,7 +354,6 @@
                     </p>
                     <div class="version-panels">
                       <div class="version">
-                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.27 s</dd></div></dl>
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>63.4%</b><i style="--v:63.4%" aria-hidden="true"></i></li>
@@ -365,12 +364,12 @@
                           <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
                           <li class="note">Wrong rows shown: 11.9% of owners' questions, and 11.5% on the fresh test. Answerable owners' questions she wrongly refused: 7.5%. Asked back when unsure: 9.7% (the right reading among her choices in 6 of 9). Right rows without the asking-back check: 67.7%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
                         </ul>
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <p class="version-new"><strong>New in 1.4:</strong> she learned more kinds of owners' questions, each taught with its opposite: yes/no questions (&ldquo;did anyone buy the gift box?&rdquo;), days the business is closed, totals per service and month, looking one thing up, averages, whether something is available, and questions that almost match the data but not quite, which she must refuse. She is also more careful: she holds back when she isn't sure, instead of showing a guess. On the fresh test she shows a third fewer wrong answers (11.5%, down from 16.8%) and refuses the right questions for the right reason more often (79.5%, up from 64.1%); she gets about as many right (45.9%). Her weakest spot is still questions phrased in ways she has never seen.</p>
 <p class="version-new"><strong>Honest note:</strong> 1.4 gets fewer owners' questions right than 1.3 (63.4% against 68.8%). Rounds 11 and 12 were both designed from the kinds of mistakes found on those questions, so that test is no longer a fair one for them. The fresh blind test was never used to design any lesson: it is the one that decides. Her confidence check is set strictly: she would rather hold back than show a wrong answer.</p>
                         <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.3.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.27 s</dd></div></dl>
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>68.8%</b><i style="--v:68.8%" aria-hidden="true"></i></li>
@@ -381,11 +380,11 @@
                           <li><span>Her quiz, templated questions</span><b>99.3%</b><i style="--v:99.3%" aria-hidden="true"></i></li>
                           <li class="note">Wrong rows shown: 13.6% of owners' questions, and 16.8% on the fresh test. Answerable owners' questions she wrongly refused: 4.3%. Asked back when unsure: 7.5% (the right reading among her choices in 4 of 7). Right rows without the asking-back check: 69.9%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
                         </ul>
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <p class="version-new"><strong>New in 1.3:</strong> she learned how owners actually phrase things, in 17 families, each taught with its opposite: &ldquo;how many left&rdquo; means the stock; &ldquo;billed&rdquo; and &ldquo;paid us&rdquo; mean invoices; &ldquo;haven't been in since&rdquo; is a NOT; &ldquo;busiest weekday&rdquo; and &ldquo;per trainer&rdquo; are rankings; &ldquo;how much&rdquo; is not &ldquo;how many&rdquo;. More owners' questions answered right (68.8%), on the fresh test too (47.3%), with fewer wrong rows shown and half the wrong refusals. Her weakest spot is still showing wrong rows on questions phrased in new ways.</p>
                         <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.2 for about 3.5 hours.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.27 s</dd></div></dl>
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>47.3%</b><i style="--v:47.3%" aria-hidden="true"></i></li>
@@ -396,11 +395,11 @@
                           <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
                           <li class="note">Wrong rows shown: 19.5% of owners' questions, and 16.8% on the fresh test. Answerable owners' questions she wrongly refused: 8.6%. Asked back when unsure: 17.2% (the right reading among her choices in 8 of 16). Right rows without the asking-back check: 52.7%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
                         </ul>
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <p class="version-new"><strong>New in 1.2:</strong> 109 more varied column names among her lessons. More owners' questions right (47.3%), fewer wrongly refused.</p>
                         <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.1 for 1 h 30 min.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd>0.25 s</dd></div></dl>
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>41.9%</b><i style="--v:41.9%" aria-hidden="true"></i></li>
@@ -411,11 +410,11 @@
                           <li><span>Her quiz, templated questions</span><b>99.1%</b><i style="--v:99.1%" aria-hidden="true"></i></li>
                           <li class="note">Wrong rows shown: 21.2% of owners' questions, and 15.0% on the fresh test. Answerable owners' questions she wrongly refused: 11.8%. Asked back when unsure: 16.1% (the right reading among her choices in 9 of 15). Right rows without the asking-back check: 51.6%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
                         </ul>
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them.</p>
                         <p class="version-new"><strong>New in 1.1:</strong> a confidence check that asks you back instead of guessing, and real people's questions from open datasets (Spider, BIRD and WikiSQL) among her lessons, with their licences and credits kept in her model file.</p>
                         <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary. Trained further from 1.0 for 1 h 33 min.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them. The fresh test was added after 1.0, so 1.0 has no score on it.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>27.1M</dd></div><div><dt>Tensors</dt><dd>60</dd></div><div><dt>Weights</dt><dd>108 MB</dd></div><div><dt>Question to rows</dt><dd class="pending">not measured</dd></div></dl>
                         <ul class="scores">
                           <li><span>Owners' questions she never saw, right rows</span><b>41.9%</b><i style="--v:41.9%" aria-hidden="true"></i></li>
@@ -426,6 +425,7 @@
                           <li><span>Her quiz, templated questions</span><b>99.2%</b><i style="--v:99.2%" aria-hidden="true"></i></li>
                           <li class="note">Wrong rows shown: 36.4% of owners' questions. Answerable owners' questions she wrongly refused: 8.6%. Asked back when unsure: no check yet. Right rows without the asking-back check: 41.9%. Her targets: 75% right and at most 3% wrong rows shown, on questions she never saw.</li>
                         </ul>
+                        <p class="version-lead">Two blind tests of questions she never saw: 118 owners' questions (93 to answer, 25 to refuse), written by an assistant, and a fresh test of 113 other questions (74 to answer, 39 to refuse) for six other businesses, written by a different model. Nothing in her training was shaped by them. The fresh test was added after 1.0, so 1.0 has no score on it.</p>
                         <p class="version-new">The first Daisy that reads an owner's plain English. No asking-back check yet, so every uncertain answer was shown.</p>
                         <p class="arch">Same design in every version: decoder-only transformer, 8 blocks &times; 512, 8 attention heads, 512-piece context, 1,100-piece vocabulary.</p>
                       </div>
@@ -489,7 +489,6 @@
                     </p>
                     <div class="version-panels">
                       <div class="version">
-                        <p class="version-lead">Her third training round, 3 October 2026. In testing, not switched on yet. Measured on the same frozen test as every IRIS version: 1,092 correct pages and about 3,000 pages each carrying one problem, never trained on, so the tabs compare directly.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>3.4M</dd></div><div><dt>Per page, 1 CPU core</dt><dd>0.012 s</dd></div><div><dt>False alarms</dt><dd>2.6%</dd></div><div><dt>Version kept</dt><dd>step 6,000</dd></div></dl>
                         <ul class="scores">
                           <li><span>Problems found, variants never trained on <small>(target: 90%)</small></span><b>92.2%</b><i style="--v:92.2%" aria-hidden="true"></i></li>
@@ -501,13 +500,13 @@
                           <li><span>The same block shown twice <small>(code&rsquo;s job)</small></span><b>100%</b><i style="--v:100%" aria-hidden="true"></i></li>
                           <li class="note">The first two bars are IRIS as a whole, checks and model together; the next three are her model, IRIS-look; the last two belong to code. Her model alone finds 75.0% of the problems never trained on, of her own three kinds, and 85.2% of all; on wrong language it raises 11 false alarms, against 10 for the hand-written check. False alarms on correct pages: 1.3% for the model and 2.6% for IRIS as a whole, above the 2% target. On PLAN&rsquo;s own five example businesses, run end to end: invisible text found 14 of 14, false alarms 4 of 56 (7.1%). On a second test set of made-up businesses never trained on (1,036 correct pages): false alarms 1.4% for the checks, 1.0% for the model, 2.3% for IRIS as a whole. On PLAN&rsquo;s real pages, her model&rsquo;s false alarms: 5.4% on the main design (166 pages), 17.3% on the Booking and Listings designs (214 pages, now part of her training), 0.0% on the taste-panel businesses (128 pages), and 18.1% on deep_haven, PLAN&rsquo;s only dark look, which she never saw (232 pages).</li>
                         </ul>
+                        <p class="version-lead">Her third training round, 3 October 2026. In testing, not switched on yet. Measured on the same frozen test as every IRIS version: 1,092 correct pages and about 3,000 pages each carrying one problem, never trained on, so the tabs compare directly.</p>
                         <p class="version-new"><strong>Every kind of problem, IRIS as a whole:</strong> garbled characters 96.3%, wrong language 83.6%, untranslated buttons and labels 96.6%, placeholder text 84.1%, overlapping or clipped text 98.2%, invisible text 100%, pictures that do not load 100%, empty sections 71.1%, sideways scrolling 94.6%, the same block shown twice 100%, prices and dates written the wrong way for the country 100%, squashed layouts 100%.</p>
                         <p class="version-new"><strong>New in 1.2:</strong> she trained on every PLAN page design (Catalogue, Booking and Listings), with &ldquo;coming soon&rdquo; phrases in every language, dummy contacts, and pages correctly mixing languages. She finds far more placeholder text (84% against 66%), and IRIS as a whole meets her 90% target on problems found for the first time. On a look she never saw, her false alarms fell by two thirds, from 52.6% to 18.1%. Some of her training phrases were written by local AI models and checked by code, as recorded in her credits.</p>
                         <p class="version-new"><strong>Honest note:</strong> to find more, she was kept at a lower alarm level, so she raises more false alarms: 2.6% of correct test pages, above the 2% target, and on PLAN&rsquo;s own example sites she named a wrong-language problem on 4 correct pages, where 1.1 raised none. So she is not in use yet. Her hand-written checks run as before, and her model&rsquo;s findings would only ever be warnings, never a reason to take a site down.</p>
                         <p class="arch">Her model: in-house, from zero, no outside weights, 3.4M parameters, trained on PLAN&rsquo;s own generated sites with faults planted on purpose, on the MEGA9; the version kept is step 6,000 of 13,692. Never trained on owners&rsquo; real sites or other companies&rsquo; websites.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Her second training round, 2 October 2026. Not in use. Measured on the same frozen test as every IRIS version: 1,092 correct pages and about 3,000 pages each carrying one problem, never trained on, so the tabs compare directly.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>3.4M</dd></div><div><dt>Per page, 1 CPU core</dt><dd>0.012 s</dd></div><div><dt>False alarms</dt><dd>1.4%</dd></div><div><dt>Version kept</dt><dd>step 2,400</dd></div></dl>
                         <ul class="scores">
                           <li><span>Problems found, variants never trained on <small>(target: 90%)</small></span><b>88.9%</b><i style="--v:88.9%" aria-hidden="true"></i></li>
@@ -519,13 +518,13 @@
                           <li><span>The same block shown twice <small>(now code&rsquo;s job)</small></span><b>100%</b><i style="--v:100%" aria-hidden="true"></i></li>
                           <li class="note">The first two bars are IRIS as a whole, checks and model together; the next three are her model, IRIS-look; the last two went back to code, which finds them better. Her model alone finds 61.7% of the problems never trained on, of her own three kinds, and 76.4% of all; it raises 0 false alarms on wrong language, against 10 for the hand-written check. False alarms on correct pages: 0.1% for the model and 1.4% for IRIS as a whole, inside the 2% target. On PLAN&rsquo;s own five example businesses, run end to end: invisible text found 14 of 14, false alarms 0 of 56. On a second test set of made-up businesses never trained on (1,036 correct pages): false alarms 1.4% for the checks, 0.1% for the model, 1.5% for IRIS as a whole. On PLAN&rsquo;s real pages, her model&rsquo;s false alarms: 0.6% on the main design (166 pages), 54.7% on the Booking and Listings designs she never saw (214 pages), 0.0% on the taste-panel businesses (128 pages), and 52.6% on a look she never saw, deep_haven, PLAN&rsquo;s only dark look (232 pages).</li>
                         </ul>
+                        <p class="version-lead">Her second training round, 2 October 2026. Not in use. Measured on the same frozen test as every IRIS version: 1,092 correct pages and about 3,000 pages each carrying one problem, never trained on, so the tabs compare directly.</p>
                         <p class="version-new"><strong>Every kind of problem, IRIS as a whole:</strong> garbled characters 96.3%, wrong language 79.9%, untranslated buttons and labels 96.6%, placeholder text 66.3%, overlapping or clipped text 98.2%, invisible text 99.6%, pictures that do not load 100%, empty sections 71.1%, sideways scrolling 94.6%, the same block shown twice 100%, prices and dates written the wrong way for the country 100%, squashed layouts 100%.</p>
                         <p class="version-new"><strong>New in 1.1:</strong> false alarms cut from 8.4% to 1.4%, now inside the target, and none at all on PLAN&rsquo;s own example sites. The model now overrules the wrong-language check when it sees no problem; &ldquo;the same block shown twice&rdquo; went back to code, where comparing blocks directly finds 100%, and so did empty sections, where code already did as well as the model. She trained on the same 800 made-up businesses, plus new kinds of placeholder text, with PLAN&rsquo;s real pages used to set her alarm level.</p>
                         <p class="version-new"><strong>Honest note, at the time:</strong> she was just under her target on problems found, 88.9% against 90%. She finds fewer problems of two kinds than 1.0 did, wrong language (79.9% against 84.0%) and empty sections (71.1% against 76.6%): that is the price of far fewer false alarms. On PLAN designs she has never seen, her model still raises false alarms on half the pages: it has only learned what one family of designs looks like. So she is not in use yet. Her hand-written checks run as before, and her model&rsquo;s findings would only ever be warnings, never a reason to take a site down.</p>
                         <p class="arch">Her model: in-house, from zero, no outside weights, 3.4M parameters, trained on PLAN&rsquo;s own generated sites with faults planted on purpose, on the MEGA9; the version kept is step 2,400 of 10,332. Never trained on owners&rsquo; real sites or other companies&rsquo; websites.</p>
                       </div>
                       <div class="version">
-                        <p class="version-lead">Her first training round, 30 September 2026. Not in use. Measured on the same frozen test as every IRIS version: 1,092 correct pages and about 3,000 pages each carrying one problem, never trained on, so the tabs compare directly.</p>
                         <dl class="stats"><div><dt>Parameters</dt><dd>3.4M</dd></div><div><dt>Per page, 1 CPU core</dt><dd>0.012 s</dd></div><div><dt>False alarms</dt><dd>8.4%</dd></div><div><dt>Version kept</dt><dd>step 6,400</dd></div></dl>
                         <ul class="scores">
                           <li><span>Problems found, variants never trained on <small>(target: 90%)</small></span><b>79.1%</b><i style="--v:79.1%" aria-hidden="true"></i></li>
@@ -537,6 +536,7 @@
                           <li><span>The same block shown twice <small>(hand-written checks: 35.9%)</small></span><b>15.3%</b><i style="--v:15.3%" aria-hidden="true"></i></li>
                           <li class="note">The first two bars are IRIS as a whole, checks and model together; the other five are her model, IRIS-look, on the five kinds she was trained for. Her model alone finds 58.5% of the problems never trained on and 65.4% of all; on wrong language it raises 9 false alarms, against 60 for the hand-written check. False alarms on correct pages: 2.7% for the model and 8.4% for IRIS as a whole, against a target of at most 2%, mostly from the wrong-language check. On PLAN&rsquo;s own five example businesses, run end to end: invisible text found 14 of 14, false alarms 2 of 56. On a second test set of made-up businesses never trained on (1,036 correct pages): false alarms 6.2% for the checks, 2.6% for the model, 8.7% for IRIS as a whole. On PLAN&rsquo;s real pages, measured afterwards with her own alarm level, her model&rsquo;s false alarms: 15.7% on the main design (166 pages), 82.2% on the Booking and Listings designs (214 pages), 3.1% on the taste-panel businesses (128 pages), and 87.1% on deep_haven, the dark look she never saw (232 pages).</li>
                         </ul>
+                        <p class="version-lead">Her first training round, 30 September 2026. Not in use. Measured on the same frozen test as every IRIS version: 1,092 correct pages and about 3,000 pages each carrying one problem, never trained on, so the tabs compare directly.</p>
                         <p class="version-new"><strong>Every kind of problem, IRIS as a whole:</strong> garbled characters 96.3%, wrong language 84.0%, untranslated buttons and labels 76.4%, placeholder text 66.3%, overlapping or clipped text 98.2%, invisible text 100%, pictures that do not load 100%, empty sections 76.6%, sideways scrolling 94.6%, the same block shown twice 40.5%, prices and dates written the wrong way for the country 100%, squashed layouts 100%.</p>
                         <p class="version-new"><strong>How she was trained:</strong> the hand-written checks were measured first, and every kind of problem they already catch well stayed with them. The five they miss went to the model. She learned from 800 made-up businesses in 11 languages, their sites built by PLAN&rsquo;s own tools and photographed on a phone screen and a laptop screen: 26,021 page photos, about a quarter left correct, the rest with one problem planted. 15% of the businesses, and some variants of each problem, were kept out of training for the test. From zero, no outside weights; the version kept is step 6,400 of 9,926.</p>
                         <p class="version-new"><strong>What came next, in 1.1:</strong> the model overrules the wrong-language check when it sees no problem; &ldquo;the same block shown twice&rdquo; went back to code, where comparing blocks directly finds 100%; and more kinds of placeholder text went into her training pages.</p>
