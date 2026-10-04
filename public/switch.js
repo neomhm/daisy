@@ -139,3 +139,42 @@
     mark(a);
   }));
 })();
+
+/* Model descriptions ("Read more" in style.css): each card shows the first two lines of its
+   description, and "Read more" opens the rest. Without this script the full text shows. */
+(() => {
+  const stop = '.versions, .stats, .version-lead, .version-new, .arch, .scores, details, h4';
+  for (const role of document.querySelectorAll('.module .module-role')) {
+    const parts = [];
+    for (let e = role.nextElementSibling; e && !e.matches(stop); e = e.nextElementSibling) parts.push(e);
+    if (!parts.length) continue;
+    const desc = document.createElement('div');
+    desc.className = 'desc';
+    role.after(desc);
+    desc.append(...parts);
+    const shut = () => parseFloat(getComputedStyle(desc.firstElementChild).lineHeight) * 2;
+    if (desc.scrollHeight <= shut() + 24) { desc.className = 'desc is-short'; continue; }
+    desc.classList.add('is-shut');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'desc-more';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = '<span>Read more</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    desc.after(btn);
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+    btn.addEventListener('click', () => {
+      const open = desc.classList.contains('is-shut');
+      const from = desc.offsetHeight;
+      desc.classList.toggle('is-shut', !open);
+      const to = open ? desc.scrollHeight : shut();
+      btn.setAttribute('aria-expanded', String(open));
+      btn.firstChild.textContent = open ? 'Read less' : 'Read more';
+      if (!still.matches) {
+        desc.classList.add('is-moving');
+        desc.animate([{ height: from + 'px' }, { height: to + 'px' }], { duration: 380, easing: 'cubic-bezier(.2, .8, .2, 1)' })
+          .finished.then(() => desc.classList.remove('is-moving'), () => desc.classList.remove('is-moving'));
+      }
+      if (!open && btn.getBoundingClientRect().top < 0) btn.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+  }
+})();
