@@ -11,8 +11,12 @@ ob_start();   // nothing printed by accident (a server warning, say) may stop th
    repository; deleting that file (/home/akiki/.akiki-gate-key) signs everybody out. The password is
    kept here only as a bcrypt hash: to change it, put the output of
    php -r 'echo password_hash("NEW PASSWORD", PASSWORD_BCRYPT, ["cost" => 13]);'
-   in GATE_HASH. The name is checked whatever its capitals; the password exactly. /?signout signs
-   this browser out. */
+   in GATE_HASH. The name is checked whatever its capitals, the password exactly (spaces around
+   either are left out). /?signout signs this browser out.
+
+   When signing in fails, the screen says why: the name, the password, nothing reaching the server,
+   or (right after a good sign-in) the sign-in not being kept by the browser or not read back by the
+   server. */
 
 const GATE_USER = 'Tul1p';
 const GATE_HASH = '$2y$13$n3k3Jytb7kIXmH5IjPkXvOGKar7A9HyTxeS9xl6kKA8lw3zZd.dsm';
@@ -42,17 +46,20 @@ function gate_sign($exp, $key) {
   return hash_hmac('sha256', 'akiki-gate|' . $exp, $key);
 }
 
-function gate_signed_in($key) {
+// The sign-in cookie this request brought: 'ok', 'none', 'old' (expired) or 'bad' (not signed with our key).
+function gate_cookie_state($key) {
   $c = isset($_COOKIE[GATE_COOKIE]) ? (string) $_COOKIE[GATE_COOKIE] : '';
-  if (!preg_match('/^(\d{10})\.([0-9a-f]{64})$/', $c, $m) || (int) $m[1] < time()) return false;
-  return hash_equals(gate_sign($m[1], $key), $m[2]);
+  if ($c === '') return 'none';
+  if (!preg_match('/^(\d{10})\.([0-9a-f]{64})$/', $c, $m)) return 'bad';
+  if ((int) $m[1] < time()) return 'old';
+  return hash_equals(gate_sign($m[1], $key), $m[2]) ? 'ok' : 'bad';
 }
 
 function gate_cookie($value, $exp) {
   $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
   header('Set-Cookie: ' . GATE_COOKIE . '=' . $value . '; Expires=' . gmdate('D, d M Y H:i:s', $exp) . ' GMT; Max-Age='
-    . max(0, $exp - time()) . '; Path=/; HttpOnly; SameSite=Lax' . ($https ? '; Secure' : ''));
+    . max(0, $exp - time()) . '; Path=/; HttpOnly; SameSite=Lax' . ($https ? '; Secure' : ''), false);
 }
 
 // The page asked for, as a file of the site: "/" is index.html, "/daisy" is daisy.html. Null if none.
@@ -88,29 +95,32 @@ if (isset($_GET['signout'])) {
   exit;
 }
 
-$failed = false;
+$failed = '';   // why signing in just failed: 'name', 'password' or 'empty'
+$cookie = gate_cookie_state($key);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $user = strtolower(trim(isset($_POST['user']) ? (string) $_POST['user'] : ''));
-  $pass = isset($_POST['pass']) ? (string) $_POST['pass'] : '';
-  $ok = hash_equals(strtolower(GATE_USER), $user) & password_verify($pass, GATE_HASH);   // both checked, every time
+  $pass = trim(isset($_POST['pass']) ? (string) $_POST['pass'] : '');
+  $name_ok = hash_equals(strtolower(GATE_USER), $user);
+  $pass_ok = password_verify($pass, GATE_HASH);   // checked whatever the name, every time
+  $ok = $name_ok && $pass_ok;
   if ($ok) {
     $exp = time() + GATE_DAYS * 86400;
     gate_cookie($exp . '.' . gate_sign($exp, $key), $exp);
   } else {
     usleep(900000);   // slows down guessing
+    $failed = ($user === '' && $pass === '') ? 'empty' : ($name_ok ? 'password' : 'name');
   }
   if (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) {
     header('Content-Type: application/json');
     header('Cache-Control: no-store');
-    echo json_encode(['ok' => (bool) $ok]);
+    echo json_encode(['ok' => $ok, 'why' => $failed]);
     exit;
   }
   if ($ok) {
     header('Location: ' . gate_here(), true, 303);
     exit;
   }
-  $failed = true;
-} elseif (gate_signed_in($key)) {
+} elseif ($cookie === 'ok') {
   $file = gate_page();
   if ($file === null) {
     http_response_code(404);
@@ -372,7 +382,7 @@ header('X-Frame-Options: DENY');
     <symbol id="px-dragonfly" viewBox="0 0 40 40"><rect width="40" height="40" fill="#6592b4"/><g fill="#ffffff"><rect x="5.48" y="5.48" width="5.04" height="5.04" rx="1.14"/><rect x="11.48" y="5.48" width="5.04" height="5.04" rx="1.14"/><rect x="23.48" y="5.48" width="5.04" height="5.04" rx="1.14"/><rect x="29.48" y="5.48" width="5.04" height="5.04" rx="1.14"/><rect x="5.48" y="17.48" width="5.04" height="5.04" rx="1.14"/><rect x="11.48" y="17.48" width="5.04" height="5.04" rx="1.14"/><rect x="17.48" y="17.48" width="5.04" height="5.04" rx="1.14"/><rect x="23.48" y="17.48" width="5.04" height="5.04" rx="1.14"/><rect x="29.48" y="17.48" width="5.04" height="5.04" rx="1.14"/><rect x="17.48" y="23.48" width="5.04" height="5.04" rx="1.14"/><rect x="17.48" y="29.48" width="5.04" height="5.04" rx="1.14"/></g><g fill="#f2b632"><rect x="17.48" y="11.48" width="5.04" height="5.04" rx="1.14"/></g></symbol>
     <symbol id="px-firefly" viewBox="0 0 40 40"><rect width="40" height="40" fill="#ec8e4a"/><g fill="#ffffff"><rect x="11.48" y="5.48" width="5.04" height="5.04" rx="1.14"/><rect x="23.48" y="5.48" width="5.04" height="5.04" rx="1.14"/><rect x="17.48" y="11.48" width="5.04" height="5.04" rx="1.14"/><rect x="11.48" y="17.48" width="5.04" height="5.04" rx="1.14"/><rect x="17.48" y="17.48" width="5.04" height="5.04" rx="1.14"/><rect x="23.48" y="17.48" width="5.04" height="5.04" rx="1.14"/><rect x="11.48" y="23.48" width="5.04" height="5.04" rx="1.14"/><rect x="17.48" y="23.48" width="5.04" height="5.04" rx="1.14"/><rect x="23.48" y="23.48" width="5.04" height="5.04" rx="1.14"/></g><g fill="#f2b632"><rect x="11.48" y="29.48" width="5.04" height="5.04" rx="1.14"/><rect x="17.48" y="29.48" width="5.04" height="5.04" rx="1.14"/><rect x="23.48" y="29.48" width="5.04" height="5.04" rx="1.14"/></g></symbol>
   </svg>
-  <main class="gate<?php if ($failed) echo ' is-wrong'; ?>">
+  <main class="gate<?php if ($failed) echo ' is-wrong'; ?>" data-cookie="<?php echo $cookie; ?>">
     <div class="ring" aria-hidden="true">
       <i class="t" style="--sx:0;--sy:0;--px:0;--py:0;--lx:0;--ly:0;--i:0;--tc:#c2549e"><svg viewBox="0 0 40 40" aria-hidden="true"><use href="#px-orchid"/></svg></i>
       <i class="t" style="--sx:1;--sy:0;--px:1;--py:0;--lx:1;--ly:0;--i:1;--tc:#2fb39a"><svg viewBox="0 0 40 40" aria-hidden="true"><use href="#px-butterfly"/></svg></i>
@@ -420,7 +430,11 @@ header('X-Frame-Options: DENY');
         </div>
       </div>
       <button class="key" type="submit" aria-label="Open"><span class="key-face"><svg viewBox="0 0 23 7" aria-hidden="true"><path class="off" d="M0.5 0.5h0M4.5 0.5h0M1.5 1.5h0M2.5 1.5h0M3.5 1.5h0M1.5 2.5h0M2.5 2.5h0M3.5 2.5h0M1.5 3.5h0M2.5 3.5h0M3.5 3.5h0M1.5 4.5h0M2.5 4.5h0M3.5 4.5h0M1.5 5.5h0M2.5 5.5h0M3.5 5.5h0M0.5 6.5h0M4.5 6.5h0M6.5 0.5h0M7.5 0.5h0M8.5 0.5h0M9.5 0.5h0M10.5 0.5h0M6.5 1.5h0M7.5 1.5h0M8.5 1.5h0M9.5 1.5h0M10.5 1.5h0M10.5 2.5h0M7.5 3.5h0M8.5 3.5h0M9.5 3.5h0M10.5 4.5h0M7.5 5.5h0M8.5 5.5h0M9.5 5.5h0M10.5 5.5h0M7.5 6.5h0M8.5 6.5h0M9.5 6.5h0M10.5 6.5h0M12.5 0.5h0M13.5 0.5h0M14.5 0.5h0M15.5 0.5h0M16.5 0.5h0M12.5 1.5h0M13.5 1.5h0M14.5 1.5h0M15.5 1.5h0M16.5 1.5h0M12.5 2.5h0M16.5 2.5h0M13.5 3.5h0M14.5 3.5h0M15.5 3.5h0M13.5 5.5h0M14.5 5.5h0M15.5 5.5h0M16.5 5.5h0M12.5 6.5h0M16.5 6.5h0M18.5 0.5h0M19.5 0.5h0M20.5 0.5h0M21.5 0.5h0M22.5 0.5h0M18.5 1.5h0M19.5 1.5h0M20.5 1.5h0M21.5 1.5h0M22.5 1.5h0M19.5 2.5h0M22.5 2.5h0M20.5 3.5h0M21.5 3.5h0M19.5 4.5h0M20.5 4.5h0M21.5 4.5h0M19.5 5.5h0M20.5 5.5h0M21.5 5.5h0M19.5 6.5h0M20.5 6.5h0M21.5 6.5h0"/><path d="M1.5 0.5h0M2.5 0.5h0M3.5 0.5h0M0.5 1.5h0M4.5 1.5h0M0.5 2.5h0M4.5 2.5h0M0.5 3.5h0M4.5 3.5h0M0.5 4.5h0M4.5 4.5h0M0.5 5.5h0M4.5 5.5h0M1.5 6.5h0M2.5 6.5h0M3.5 6.5h0M6.5 2.5h0M7.5 2.5h0M8.5 2.5h0M9.5 2.5h0M6.5 3.5h0M10.5 3.5h0M6.5 4.5h0M7.5 4.5h0M8.5 4.5h0M9.5 4.5h0M6.5 5.5h0M6.5 6.5h0M13.5 2.5h0M14.5 2.5h0M15.5 2.5h0M12.5 3.5h0M16.5 3.5h0M12.5 4.5h0M13.5 4.5h0M14.5 4.5h0M15.5 4.5h0M16.5 4.5h0M12.5 5.5h0M13.5 6.5h0M14.5 6.5h0M15.5 6.5h0M18.5 2.5h0M20.5 2.5h0M21.5 2.5h0M18.5 3.5h0M19.5 3.5h0M22.5 3.5h0M18.5 4.5h0M22.5 4.5h0M18.5 5.5h0M22.5 5.5h0M18.5 6.5h0M22.5 6.5h0"/></svg></span></button>
-      <p class="msg" role="status"><?php if ($failed) echo 'That is not it. Try again.'; ?></p>
+      <p class="msg" role="status"><?php
+        $why = ['name' => 'That is not the name.', 'password' => 'That is not the password.',
+                'empty' => 'The name and password did not reach the server.'];
+        if ($failed) echo $why[$failed];
+      ?></p>
     </form>
   </main>
   <script>
@@ -441,6 +455,21 @@ header('X-Frame-Options: DENY');
       };
       form.addEventListener('input', light);
       light();
+      const WHY = {
+        name: 'That is not the name.',
+        password: 'That is not the password.',
+        empty: 'The name and password did not reach the server.',
+      };
+      // Signed in a moment ago, yet back here: the sign-in was not kept, or not read back.
+      try {
+        const just = +sessionStorage.getItem('akiki-gate-in') || 0;
+        sessionStorage.removeItem('akiki-gate-in');
+        if (Date.now() - just < 20000) {
+          msg.textContent = gate.dataset.cookie === 'none'
+            ? 'The password was right, but this browser did not keep the sign-in. Are cookies blocked for this site?'
+            : 'The password was right, but the server could not read the sign-in back.';
+        }
+      } catch (err) { /* no storage: nothing to tell */ }
       (failed => { if (failed) setTimeout(() => gate.classList.remove('is-wrong'), 900); })(gate.classList.contains('is-wrong'));
       user.focus();
 
@@ -460,10 +489,12 @@ header('X-Frame-Options: DENY');
         gate.classList.remove('is-wrong');
         gate.classList.add('is-checking');
         const t0 = performance.now();
-        let ok = false;
+        let ok = false, why = '';
         try {
           const r = await fetch(location.href, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' }, credentials: 'same-origin' });
-          ok = (await r.json()).ok === true;
+          const answer = await r.json();
+          ok = answer.ok === true;
+          why = answer.why || '';
         } catch (err) {
           form.submit();   // the plain way, without the show
           return;
@@ -478,13 +509,14 @@ header('X-Frame-Options: DENY');
           await wait(still.matches ? 150 : 560);
           document.body.classList.add('is-leaving');
           await wait(still.matches ? 150 : 480);
+          try { sessionStorage.setItem('akiki-gate-in', String(Date.now())); } catch (err) { /* fine */ }
           location.replace(location.href);
           return;
         }
         void gate.offsetWidth;
         gate.classList.add('is-wrong');
-        msg.textContent = 'That is not it. Try again.';
-        pass.value = '';
+        msg.textContent = WHY[why] || 'That did not work. Try again.';
+        if (why !== 'name') pass.value = '';
         light();
         pass.focus();
         await wait(900);
