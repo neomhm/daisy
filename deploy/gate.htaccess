@@ -1,0 +1,14 @@
+# BEGIN akiki gate
+# The password gate (public/gate.php): every page of the site goes through gate.php, which shows
+# the sign-in screen until the visitor has signed in. Pictures, fonts, styles and scripts are
+# served as usual. deploy/htaccess.sh puts this block here at each deploy (see README.md).
+RewriteEngine On
+RewriteRule ^gate\.php$ - [L]
+RewriteRule (^|/)$ gate.php [L]
+RewriteRule \.html?$ gate.php [L,NC]
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^ gate.php [L]
+<Files ".ht*">
+  Require all denied
+</Files>
+# END akiki gate

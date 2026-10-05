@@ -969,7 +969,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .board-wrap {
   display: grid;
   place-items: center;
-  min-height: calc(100svh - 57px);
+  min-height: calc(100svh - 56px - var(--hairline));   /* the screen under the header */
   padding: 32px var(--gutter) 48px;
 }
 .board {
@@ -1040,7 +1040,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   display: grid;
   place-items: center;
   min-width: 0;
-  padding: 52px 28px 28px;
+  padding: 52px 164px 28px 28px;   /* the keys stand in the right-hand margin */
   overflow: hidden;
   background:
     radial-gradient(ellipse at 22% 18%, rgba(53, 173, 176, .18), transparent 55%),
@@ -1177,6 +1177,121 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cell .wtile:hover, .cell .wtile:focus-visible { z-index: 6; }
 .cell .wtile:hover::after, .cell .wtile:focus-visible::after { opacity: 1; transform: translate(-50%, 7px); }
 
+/* The keys, at the field's right: dark keycaps with amber pixel letters, like the screens. TesT's
+   row of lights, in the rainbow order of the version tabs, runs while a test runs and tells how it
+   ended. Download is not ready yet. */
+.field-keys {
+  position: absolute;
+  top: 50%;
+  right: 28px;
+  z-index: 3;
+  display: grid;
+  gap: 18px;
+  width: 108px;
+  transform: translateY(-50%);
+}
+.key {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 82px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: #06090d;   /* the key's side, seen under its face */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .07), 0 18px 30px -14px rgba(0, 0, 0, .95);
+  color: #ffc14d;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.key-face {
+  position: absolute;
+  inset: 0 0 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  border-radius: 14px;
+  background: linear-gradient(#2e3c4a, #1b252f);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .17), inset 0 0 0 1px rgba(255, 255, 255, .06);
+  transition: transform .09s, filter .2s;
+}
+.key:hover .key-face { filter: brightness(1.16); }
+.key:active .key-face { transform: translateY(5px); }
+.key:focus-visible { outline: 2px solid #7fd6d8; outline-offset: 3px; }
+.key-label { display: block; height: 20px; overflow: visible; filter: drop-shadow(0 0 3px rgba(255, 170, 40, .85)); }   /* dot-matrix letters: capitals stay capitals */
+.key-label path { fill: none; stroke: currentColor; stroke-width: .78; stroke-linecap: round; }
+.key-label .off { opacity: .1; }
+.key-download .key-label { height: 14px; }
+.key-soon, .key-download.is-soon .key-label:not(.key-soon) { display: none; }
+.key-download.is-soon .key-soon { display: block; }
+.key-icon { width: 13px; height: 19px; fill: currentColor; filter: drop-shadow(0 0 4px rgba(255, 170, 40, .8)); }
+.key-leds { display: flex; gap: 5px; }
+.key-leds i { width: 7px; height: 7px; border-radius: 2px; background: var(--c); opacity: .25; transition: opacity .3s, box-shadow .3s; }
+.key-leds i:nth-child(1) { --c: #e65b56; }
+.key-leds i:nth-child(2) { --c: #ec8e4a; animation-delay: .1s; }
+.key-leds i:nth-child(3) { --c: #f2b632; animation-delay: .2s; }
+.key-leds i:nth-child(4) { --c: #3aa56f; animation-delay: .3s; }
+.key-leds i:nth-child(5) { --c: #6592b4; animation-delay: .4s; }
+.key-leds i:nth-child(6) { --c: #7c8acb; animation-delay: .5s; }
+.key-leds i:nth-child(7) { --c: #a06fc2; animation-delay: .6s; }
+.key-test:hover .key-leds i { opacity: .5; }
+.key-test.is-running .key-leds i { animation-name: led-run; animation-duration: .7s; animation-timing-function: linear; animation-iteration-count: infinite; }   /* longhands: each light keeps its delay */
+.key-test.is-pass .key-leds i { opacity: 1; box-shadow: 0 0 9px var(--c); }
+.key-test.is-fail .key-leds i { --c: #ff6b63; opacity: 1; box-shadow: 0 0 9px var(--c); animation: led-fail .36s steps(1) 4; }
+@keyframes led-run { 0%, 32%, 100% { opacity: .25; box-shadow: none; } 10% { opacity: 1; box-shadow: 0 0 9px var(--c); } }
+@keyframes led-fail { 50% { opacity: .15; box-shadow: none; } }
+
+/* The test (workbench.js). A spark leaves the TesT key for the nearest tile, and the signal runs
+   from tile to tile along the magnet bars, lighting each tile it reaches. If it reaches every tile
+   on the field, one line is drawn round them all: they make one model. Tiles it cannot reach turn
+   red. */
+.test-plate, .test-layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.test-plate { z-index: 1; }
+.test-plate path { fill: rgba(255, 193, 77, .14); }
+.test-layer { z-index: 4; }
+.test-layer > svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.test-line { fill: none; stroke: #ffd98a; stroke-width: 2.5; stroke-linejoin: round; filter: drop-shadow(0 0 5px rgba(255, 176, 50, .95)); }
+.test-line.is-loose { stroke: #ff8077; stroke-dasharray: 7 6; filter: drop-shadow(0 0 4px rgba(255, 80, 70, .85)); }
+.spark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px 2px #ffd98a, 0 0 18px 7px rgba(255, 170, 40, .7);
+}
+.spark.is-trail { width: 6px; height: 6px; margin: -3px 0 0 -3px; box-shadow: 0 0 8px 3px rgba(255, 170, 40, .6); }
+.current { position: absolute; border-radius: 4px; background: linear-gradient(var(--dir), #fff6df, #ffc14d); box-shadow: 0 0 12px 2px rgba(255, 186, 70, .85); }
+.ring { position: absolute; border: 2px solid #ffd98a; border-radius: 14px; box-shadow: 0 0 16px rgba(255, 186, 70, .75), inset 0 0 12px rgba(255, 186, 70, .45); }
+.test-x { position: absolute; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px; fill: #ff6b63; filter: drop-shadow(0 0 5px rgba(255, 80, 70, .9)); }
+.cell .wtile.is-live { box-shadow: 0 0 0 2px #ffe6b0, 0 0 30px 6px color-mix(in srgb, var(--tc) 55%, #ffb733); }
+.cell .wtile.is-dead { filter: saturate(.3) brightness(.7); box-shadow: 0 0 0 2px #ff6b63, 0 0 22px 4px rgba(255, 90, 80, .55); }
+.verdict {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 15px 9px 12px;
+  border-radius: 12px;
+  background: rgba(9, 13, 18, .9);
+  box-shadow: 0 0 0 1px rgba(255, 193, 77, .6), 0 0 26px rgba(255, 170, 40, .35), 0 14px 30px -12px #000;
+  color: #ffc14d;
+  white-space: nowrap;
+  translate: -50% -100%;
+  transform-origin: 50% 100%;
+}
+.verdict.is-below { translate: -50% 0; transform-origin: 50% 0; }
+.verdict svg { flex: none; width: 15px; height: 15px; fill: currentColor; filter: drop-shadow(0 0 4px currentColor); }
+.verdict b { display: block; font: 400 19px/1 "AKIKI Pixel", var(--mono); text-shadow: 0 0 10px rgba(255, 170, 40, .7); }
+.verdict span { display: block; margin-top: 5px; color: rgba(255, 228, 180, .72); font: 11px/1.2 var(--mono); }
+.verdict.is-fail { color: #ff8a80; box-shadow: 0 0 0 1px rgba(255, 110, 100, .65), 0 0 26px rgba(255, 90, 80, .3), 0 14px 30px -12px #000; }
+.verdict.is-fail b { text-shadow: 0 0 10px rgba(255, 90, 80, .7); }
+
 .splitter {
   position: relative;
   background: var(--bg-subtle);
@@ -1249,10 +1364,40 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   .bench-page { overflow: auto; }
   .bench { grid-template-columns: minmax(0, 1fr); height: auto; }
   .splitter { display: none; }
-  .field { padding: 48px 12px 16px; }
+  .field { padding: 48px 12px 16px; row-gap: 18px; }
+  .field-keys { position: static; grid-template-columns: repeat(2, 120px); width: auto; transform: none; }   /* under the squares, side by side */
+  .key { height: 72px; }
   .tray-scroll { overflow: visible; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing { animation: none; }
+  .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing, .key-test .key-leds i { animation: none; }
   .wtile.is-dragging { transition: none; }
 }
+
+/* Home, second screen: the workbench, under the board. A little scroll either way settles the
+   page on one or the other, the workbench filling the screen under the shrunk header. */
+html:has(> body.home) { scroll-snap-type: y mandatory; scroll-padding-top: calc(37px + var(--hairline)); }
+.home .board-wrap { position: relative; scroll-snap-align: start; scroll-margin-top: 100px; }   /* the margin reaches past the header: the board snaps to the very top */
+.home .bench { height: calc(100svh - 37px - var(--hairline)); scroll-snap-align: start; }
+.board-next {   /* the way down to the workbench */
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 32px;
+  margin-left: -22px;
+  border-radius: 8px;
+  color: #8c959f;
+  animation: next-bob 2.4s ease-in-out infinite;
+}
+.board-next svg { width: 19px; height: 11px; fill: currentColor; }
+.board-next:hover { color: var(--link); }
+@keyframes next-bob { 50% { transform: translateY(5px); } }
+@media (max-width: 700px) {
+  html:has(> body.home) { scroll-snap-type: y proximity; scroll-padding-top: calc(30px + env(safe-area-inset-top)); }   /* the workbench is taller than a phone: no forced stops */
+  .home .board-wrap { min-height: calc(100svh - 44px - env(safe-area-inset-top)); }   /* the phone header draws its line outside its height */
+  .home .bench { height: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .board-next { animation: none; } }

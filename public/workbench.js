@@ -5,8 +5,10 @@
    and a field tile back to the panel). A tile's few words show only while it sits in the panel.
    On the field, a tile dropped near another one is pulled into the square beside it, and a magnet
    bar joins every two tiles side by side. The two screens add up the size and the latency of the
-   group the last moved tile belongs to; tiles with no figures yet are named under them. The panel
-   can be resized by dragging its left edge, or with the arrow keys on it. */
+   group the last moved tile belongs to, and a third the weights' size on disk; tiles with no figures
+   yet are named under them. The TesT key, on the field, sends a signal through the tiles to show
+   whether they make one model. The panel can be resized by dragging its left edge, or with the arrow
+   keys on it. */
 (() => {
   const bench = document.querySelector('.bench');
   if (!bench) return;
@@ -18,6 +20,7 @@
   const still = window.matchMedia('(prefers-reduced-motion: reduce)');
   const phone = window.matchMedia('(max-width: 700px)');
   const tiles = [...tray.querySelectorAll('.wtile')];
+  let test = null;   // the test running, if any (see "The keys" below)
   const home = new Map(tiles.map(t => [t, t.parentElement]));
   const squares = [...tray.querySelectorAll('.tray-slot .sq')];
 
@@ -50,6 +53,7 @@
     const byW = w / (COLS + (COLS - 1) * g);
     const byH = phone.matches ? Infinity : h / (ROWS + (ROWS - 1) * g);
     const cell = Math.max(30, Math.min(118, byW, byH));
+    if (test && cell.toFixed(1) + 'px' !== grid.style.getPropertyValue('--cell')) stopTest();
     grid.style.setProperty('--cell', cell.toFixed(1) + 'px');
     grid.style.setProperty('--gap', (cell * g).toFixed(1) + 'px');
     joints();
@@ -140,6 +144,11 @@
       : { text: m.toFixed(1), unit: 'M', spoken: m.toFixed(1) + ' million parameters' }));
   const msMeter = new Meter(tray.querySelector('[data-meter="latency"]'), v => (
     { text: String(Math.round(v)), unit: 'ms', spoken: Math.round(v) + ' milliseconds' }));
+  const mbMeter = new Meter(tray.querySelector('[data-meter="weights"]'), mb => (
+    mb > 10000
+      ? { text: (mb / 1000).toFixed(2), unit: 'GB', spoken: (mb / 1000).toFixed(2) + ' gigabytes' }
+      : { text: mb.toFixed(1), unit: 'MB', spoken: mb.toFixed(1) + ' megabytes' }));
+  const meters = [sizeMeter, msMeter, mbMeter];
   const note = tray.querySelector('.meter-note');
 
   // ---- Groups of joined tiles, the magnet bars, and the counting. ----
@@ -197,20 +206,24 @@
     let group = (last && onField(last) && all.find(g => g.includes(last))) || null;
     if (!group) group = all.sort((a, b) => b.length - a.length)[0] || [];
     tiles.forEach(t => t.classList.toggle('is-active', group.includes(t)));
-    let size = 0, ms = 0;
-    const none = [], timeOnly = [];
+    let size = 0, ms = 0, mb = 0;
+    const none = [], timeOnly = [], noFile = [];
     for (const t of group) {
-      const p = t.dataset.params, l = t.dataset.ms;
+      const p = t.dataset.params, l = t.dataset.ms, w = t.dataset.mb || '';
       if (p !== '') size += +p;
       if (l !== '') ms += +l;
+      if (w !== '') mb += +w;
       if (p === '' && l === '') none.push(t.dataset.name);
       else if (p === '') timeOnly.push(t.dataset.name);
+      else if (w === '') noFile.push(t.dataset.name);
     }
     sizeMeter.set(Math.round(size * 10) / 10);
     msMeter.set(ms);
+    mbMeter.set(Math.round(mb * 10) / 10);
     const parts = [];
     if (none.length) parts.push(`No figures yet for ${list(none)}.`);
     if (timeOnly.length) parts.push(`${list(timeOnly)} ${timeOnly.length > 1 ? 'add' : 'adds'} time but no size.`);
+    if (noFile.length) parts.push(`No size on disk measured yet for ${list(noFile)}.`);
     note.textContent = parts.join(' ');
     note.hidden = !parts.length;
     activeGroup = group;
@@ -310,6 +323,7 @@
     drag.ox = (e.clientX - r.left) / r.width;
     drag.oy = (e.clientY - r.top) / r.height;
     drag.size = r.width;
+    resetTest();
     document.body.append(tile);
     if (drag.from.classList.contains('sq')) setCaption(caption(drag.from), null);
     tile.classList.add('is-dragging');
@@ -383,6 +397,7 @@
     tile.addEventListener('dragstart', e => e.preventDefault());
     tile.addEventListener('click', () => {
       if (swallowClick || drag) return;
+      resetTest();
       if (onField(tile)) {
         place(tile, backToPanel(tile));
         if (last === tile) last = null;
@@ -398,8 +413,309 @@
   });
 
   bench.querySelector('.field-clear').addEventListener('click', () => {
+    resetTest();
     tiles.filter(onField).forEach((t, i) => setTimeout(() => { place(t, backToPanel(t)); count(); }, i * 60));
     last = null;
+  });
+
+  // ---- The keys. TesT sends a signal into the field: a spark leaves the key for the nearest tile
+  // of the largest group, then runs from tile to tile along the magnet bars, lighting each tile it
+  // reaches. If it reaches every tile on the field, one line is drawn round them all: they make one
+  // model. Tiles it cannot reach turn red. Download is not ready yet. ----
+  const keyTest = bench.querySelector('.key-test');
+  const keyDownload = bench.querySelector('.key-download');
+  const said = bench.querySelector('.field-said');
+  const SVG = 'http://www.w3.org/2000/svg';
+  const pixels = cells => cells.map(([c, r]) => `<rect x="${c * 3}" y="${r * 3}" width="2.6" height="2.6" rx=".6"/>`).join('');
+  const CHECK = pixels([[4, 1], [3, 2], [0, 3], [2, 3], [1, 4]]);
+  const CROSS = pixels([[0, 0], [4, 0], [1, 1], [3, 1], [2, 2], [1, 3], [3, 3], [0, 4], [4, 4]]);
+  const el = (tag, cls, parent) => { const e = document.createElement(tag); e.className = cls; parent.append(e); return e; };
+
+  function stopTest() {
+    if (!test) return;
+    test.timers.forEach(clearTimeout);
+    test.layer.remove();
+    test.plate.remove();
+    tiles.forEach(t => t.classList.remove('is-live', 'is-dead'));
+    keyTest.classList.remove('is-running');
+    test = null;
+  }
+  function resetTest() { stopTest(); keyTest.classList.remove('is-pass', 'is-fail'); }
+
+  // The outline of a group: its squares, with the gaps between joined tiles filled in, traced into
+  // closed loops going clockwise, pushed out by d pixels and rounded at the corners.
+  const outline = (group, m, d, round) => {
+    const at = new Set(group.map(t => posOf(t.parentElement).join()));
+    const has = (c, r) => at.has(c + ',' + r);
+    // a finer grid: its even columns and rows are the squares, its odd ones the gaps after them
+    const full = (i, j) => {
+      if (i < 0 || j < 0) return false;
+      const c = i >> 1, r = j >> 1;
+      if (i % 2 === 0 && j % 2 === 0) return has(c, r);
+      if (j % 2 === 0) return has(c, r) && has(c + 1, r);
+      if (i % 2 === 0) return has(c, r) && has(c, r + 1);
+      return has(c, r) && has(c + 1, r) && has(c, r + 1) && has(c + 1, r + 1);
+    };
+    const px = k => (k >> 1) * m.step + (k % 2 ? m.S : 0);
+    const next = new Map();   // each corner of the fine grid on the line -> the next one, clockwise
+    for (let j = 0; j < 2 * ROWS; j++) for (let i = 0; i < 2 * COLS; i++) {
+      if (!full(i, j)) continue;
+      if (!full(i, j - 1)) next.set(`${i},${j}`, [i + 1, j]);
+      if (!full(i + 1, j)) next.set(`${i + 1},${j}`, [i + 1, j + 1]);
+      if (!full(i, j + 1)) next.set(`${i + 1},${j + 1}`, [i, j + 1]);
+      if (!full(i - 1, j)) next.set(`${i},${j + 1}`, [i, j]);
+    }
+    const seen = new Set();
+    let path = '';
+    for (const key of next.keys()) {
+      if (seen.has(key)) continue;
+      const loop = [];
+      for (let k = key; !seen.has(k); k = next.get(k).join()) { seen.add(k); loop.push(k.split(',').map(Number)); }
+      const n = loop.length;
+      const corners = [];
+      loop.forEach((p, q) => {
+        const a = loop[(q + n - 1) % n], b = loop[(q + 1) % n];
+        const din = [Math.sign(p[0] - a[0]), Math.sign(p[1] - a[1])], dout = [Math.sign(b[0] - p[0]), Math.sign(b[1] - p[1])];
+        if (din[0] === dout[0] && din[1] === dout[1]) return;   // not a corner
+        // pushed out along both sides' outward normals (a side going (x, y) has its outside at (y, -x))
+        corners.push([px(p[0]) + d * (din[1] + dout[1]), px(p[1]) - d * (din[0] + dout[0])]);
+      });
+      const toward = (p, q, r) => {
+        const L = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
+        return (p[0] + (q[0] - p[0]) * r / L).toFixed(1) + ' ' + (p[1] + (q[1] - p[1]) * r / L).toFixed(1);
+      };
+      corners.forEach((p, q) => {
+        const a = corners[(q + corners.length - 1) % corners.length], b = corners[(q + 1) % corners.length];
+        const r = Math.min(round, Math.hypot(p[0] - a[0], p[1] - a[1]) / 2, Math.hypot(b[0] - p[0], b[1] - p[1]) / 2);
+        path += (q ? 'L' : 'M') + toward(p, a, r) + 'Q' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' ' + toward(p, b, r);
+      });
+      path += 'Z';
+    }
+    return path;
+  };
+
+  const runTest = () => {
+    resetTest();
+    const S = parseFloat(grid.style.getPropertyValue('--cell')) || 96;
+    const G = parseFloat(grid.style.getPropertyValue('--gap')) || 12;
+    const m = { S, G, step: S + G };
+    const slow = !still.matches;
+    const layer = el('div', 'test-layer', grid);
+    const plate = document.createElementNS(SVG, 'svg');
+    plate.setAttribute('class', 'test-plate');
+    grid.prepend(plate);
+    test = { layer, plate, timers: [] };
+    const run = test;
+    const later = (ms, fn) => run.timers.push(setTimeout(fn, slow ? ms : 0));
+    keyTest.classList.add('is-running');
+
+    const centre = t => { const [c, r] = posOf(t.parentElement); return [c * m.step + S / 2, r * m.step + S / 2]; };
+    const box = group => {
+      const at = group.map(t => posOf(t.parentElement));
+      const c0 = Math.min(...at.map(p => p[0])), c1 = Math.max(...at.map(p => p[0]));
+      const r0 = Math.min(...at.map(p => p[1])), r1 = Math.max(...at.map(p => p[1]));
+      return { x: c0 * m.step, y: r0 * m.step, w: (c1 - c0 + 1) * m.step - G, h: (r1 - r0 + 1) * m.step - G };
+    };
+    const g = grid.getBoundingClientRect(), k = keyTest.getBoundingClientRect();
+    const from = [k.left + k.width / 2 - g.left, k.top + k.height / 2 - g.top];
+
+    // A spark, with a short tail, along a few points.
+    const fly = (pts, ms, delay) => {
+      const frames = pts.map(([x, y]) => ({ transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)` }));
+      [0, 1, 2, 3].forEach(i => {
+        const s = el('i', i ? 'spark is-trail' : 'spark', layer);
+        s.animate(frames.map(f => ({ ...f, opacity: i ? 0.6 - i * 0.14 : 1 })),
+                  { duration: ms, delay: delay + i * 26, easing: 'cubic-bezier(.45, 0, .55, 1)', fill: 'both' })
+          .finished.then(() => s.remove(), () => {});
+      });
+    };
+    const arc = (a, b, bend) => {   // points along a gentle curve from a to b
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      let nx = a[1] - b[1], ny = b[0] - a[0];
+      if (ny > 0) { nx = -nx; ny = -ny; }
+      const c = [mx + nx * bend, my + ny * bend];
+      return Array.from({ length: 15 }, (_, i) => {
+        const t = i / 14, u = 1 - t;
+        return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
+      });
+    };
+    // A tile coming alive: it flashes, and a ring the shape of its square spreads out from it.
+    const boot = t => {
+      t.classList.add('is-live');
+      if (!slow) return;
+      t.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.75)', transform: 'scale(1.08)', offset: 0.3 }, { filter: 'brightness(1)', transform: 'none' }],
+                { duration: 480, easing: 'ease-out' });
+      const [x, y] = centre(t);
+      const ring = el('i', 'ring', layer);
+      Object.assign(ring.style, { left: x - S / 2 + 'px', top: y - S / 2 + 'px', width: S + 'px', height: S + 'px' });
+      ring.animate([{ transform: 'scale(.75)', opacity: 1 }, { transform: 'scale(1.5)', opacity: 0 }],
+                   { duration: 700, easing: 'cubic-bezier(.2, .8, .2, 1)', fill: 'forwards' });
+    };
+    // The signal filling the magnet bar between two tiles, from a to b.
+    const current = (a, b, ms, delay) => {
+      const [c1, r1] = posOf(a.parentElement), [c2, r2] = posOf(b.parentElement);
+      const across = r1 === r2, c = Math.min(c1, c2), r = Math.min(r1, r2);
+      const thick = Math.max(3, S * 0.13), tuck = Math.min(10, S * 0.12);
+      const j = el('i', 'current', layer);
+      if (across) Object.assign(j.style, { left: c * m.step + S - tuck + 'px', top: r * m.step + (S - thick) / 2 + 'px', width: G + 2 * tuck + 'px', height: thick + 'px' });
+      else Object.assign(j.style, { left: c * m.step + (S - thick) / 2 + 'px', top: r * m.step + S - tuck + 'px', width: thick + 'px', height: G + 2 * tuck + 'px' });
+      const ahead = across ? c2 > c1 : r2 > r1;
+      j.style.setProperty('--dir', across ? (ahead ? 'to right' : 'to left') : (ahead ? 'to bottom' : 'to top'));
+      j.style.transformOrigin = across ? (ahead ? 'left' : 'right') : (ahead ? 'top' : 'bottom');
+      if (slow) j.animate([{ transform: across ? 'scaleX(0)' : 'scaleY(0)' }, { transform: 'none' }], { duration: ms, delay, easing: 'ease-in', fill: 'both' });
+    };
+    const line = (group, cls, ms) => {
+      const svg = document.createElementNS(SVG, 'svg');
+      layer.prepend(svg);
+      const p = document.createElementNS(SVG, 'path');
+      p.setAttribute('class', cls);
+      p.setAttribute('d', outline(group, m, Math.min(7, G * 0.55), Math.min(14, S * 0.16)));
+      svg.append(p);
+      if (slow && ms) {
+        const len = p.getTotalLength();
+        p.style.strokeDasharray = len;
+        p.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: ms, easing: 'cubic-bezier(.6, 0, .4, 1)', fill: 'both' });
+        const head = el('i', 'spark', layer);   // a spark runs ahead of the line as it is drawn
+        head.animate(Array.from({ length: 41 }, (_, i) => {
+          const pt = p.getPointAtLength(len * i / 40);
+          return { transform: `translate(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px)` };
+        }), { duration: ms, easing: 'cubic-bezier(.6, 0, .4, 1)', fill: 'both' }).finished.then(() => head.remove(), () => {});
+      } else if (slow) p.animate([{ opacity: 0 }, { opacity: 1 }], 400);
+      return p;
+    };
+    const verdict = (b, fail, big, small) => {
+      const below = b.y < 70;
+      const v = el('div', 'verdict' + (fail ? ' is-fail' : '') + (below ? ' is-below' : ''), layer);
+      v.innerHTML = `<svg viewBox="0 0 15 15" aria-hidden="true">${fail ? CROSS : CHECK}</svg><div><b></b><span></span></div>`;
+      v.querySelector('b').textContent = big;
+      v.querySelector('span').textContent = small;
+      Object.assign(v.style, { left: b.x + b.w / 2 + 'px', top: (below ? b.y + b.h + 16 : b.y - 16) + 'px' });
+      if (slow) v.animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1.07)', opacity: 1, offset: 0.6 }, { transform: 'none', opacity: 1 }], { duration: 440, easing: 'ease-out' });
+    };
+    const flash = () => meters.forEach(mt => {
+      mt.screen.classList.remove('is-changing');
+      void mt.screen.offsetWidth;
+      mt.screen.classList.add('is-changing');
+    });
+    const finish = hold => run.timers.push(setTimeout(() => {   // the verdict stays a while, then all fades
+      tiles.forEach(t => t.classList.remove('is-live', 'is-dead'));
+      keyTest.classList.remove('is-running');
+      if (!slow) { stopTest(); return; }
+      plate.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' });
+      layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards' })
+        .finished.then(() => { if (test === run) stopTest(); }, () => {});
+    }, slow ? hold : 3000));
+
+    const pieces = groups().sort((a, b) => b.length - a.length);
+    if (!pieces.length) {   // nothing to test
+      const W = COLS * m.step - G, H = ROWS * m.step - G;
+      later(380, () => {
+        keyTest.classList.replace('is-running', 'is-fail');
+        verdict({ x: 0, y: H / 2 + 30, w: W, h: 0 }, true, 'no tiles', 'put some on the field first');
+        said.textContent = 'Test: there are no tiles on the field yet.';
+      });
+      finish(2600);
+      return;
+    }
+    const main = pieces[0], loose = pieces.slice(1);
+    const dist = t => { const [x, y] = centre(t); return Math.hypot(x - from[0], y - from[1]); };
+    const first = main.reduce((a, b) => (dist(b) < dist(a) ? b : a));
+    // From the first tile, outward: when each tile is reached, and from which tile.
+    const level = new Map([[first, 0]]), via = new Map(), queue = [first];
+    while (queue.length) {
+      const t = queue.shift();
+      for (const n of neighbours(t.parentElement)) {
+        const u = tileIn(n);
+        if (u && !level.has(u)) { level.set(u, level.get(t) + 1); via.set(u, t); queue.push(u); }
+      }
+    }
+    const depth = Math.max(...level.values());
+    const FLY = 560, HOP = Math.max(110, Math.min(260, 1500 / Math.max(1, depth)));
+    if (slow) fly(arc(from, centre(first), 0.22), FLY, 0);
+    later(FLY, () => boot(first));
+    for (const [u, lv] of level) {
+      if (u === first) continue;
+      const a = via.get(u), start = FLY + (lv - 1) * HOP + 40;
+      later(start, () => {
+        current(a, u, HOP - 40, 0);
+        if (slow) fly([centre(a), centre(u)], HOP - 40, 0);
+      });
+      later(FLY + lv * HOP, () => boot(u));
+    }
+    const lit = FLY + depth * HOP + 140;
+    const n = main.length, DRAW = 700;
+
+    if (!loose.length) {   // one model: drawn round, the bars between them all lit, a pulse
+      later(lit, () => {
+        line(main, 'test-line', DRAW);
+        const fill = document.createElementNS(SVG, 'path');
+        fill.setAttribute('d', outline(main, m, Math.min(7, G * 0.55), Math.min(14, S * 0.16)));
+        plate.append(fill);
+        if (slow) plate.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DRAW, fill: 'both' });
+        for (const t of main) for (const nb of neighbours(t.parentElement)) {
+          const u = tileIn(nb);
+          if (u && via.get(u) !== t && via.get(t) !== u && centre(t)[0] + centre(t)[1] < centre(u)[0] + centre(u)[1]) current(t, u, 300, 0);
+        }
+      });
+      later(lit + DRAW, () => {
+        keyTest.classList.replace('is-running', 'is-pass');
+        flash();
+        const b = box(main);
+        if (slow) {
+          main.forEach(t => t.animate([{ transform: 'none' }, { transform: 'scale(1.06)', filter: 'brightness(1.5)', offset: 0.35 }, { transform: 'none' }], { duration: 560, easing: 'ease-out' }));
+          const wave = el('i', 'ring', layer);
+          Object.assign(wave.style, { left: b.x - 8 + 'px', top: b.y - 8 + 'px', width: b.w + 16 + 'px', height: b.h + 16 + 'px', borderRadius: '18px' });
+          wave.animate([{ transform: 'scale(1)', opacity: 0.9 }, { transform: 'scale(1.25)', opacity: 0 }], { duration: 950, easing: 'cubic-bezier(.2, .8, .2, 1)', fill: 'forwards' });
+        }
+        verdict(b, false, '1 model', n === 1 ? '1 tile' : `${n} tiles joined`);
+        said.textContent = n === 1 ? 'Test: the one tile on the field is one model.' : `Test: the ${n} tiles on the field are joined into one model.`;
+      });
+      finish(lit + DRAW + 2800);
+    } else {   // more than one piece: the signal reaches for each loose piece and fizzles at the gap
+      const mainAt = main.map(centre);
+      loose.slice(0, 4).forEach((piece, i) => {
+        let best = null;
+        for (const t of piece) {
+          const q = centre(t);
+          mainAt.forEach(p => { const d = Math.hypot(q[0] - p[0], q[1] - p[1]); if (!best || d < best.d) best = { d, p, q }; });
+        }
+        const stop = [best.p[0] + (best.q[0] - best.p[0]) * 0.5, best.p[1] + (best.q[1] - best.p[1]) * 0.5];
+        later(lit + i * 90, () => { if (slow) fly([best.p, stop], 360, 0); });
+        later(lit + i * 90 + 360, () => {
+          const x = document.createElementNS(SVG, 'svg');
+          x.setAttribute('class', 'test-x');
+          x.setAttribute('viewBox', '0 0 15 15');
+          x.innerHTML = CROSS;
+          Object.assign(x.style, { left: stop[0] + 'px', top: stop[1] + 'px', position: 'absolute' });
+          layer.append(x);
+          if (slow) x.animate([{ transform: 'scale(2.4)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: 'ease-out' });
+        });
+      });
+      later(lit + 460, () => {
+        keyTest.classList.replace('is-running', 'is-fail');
+        line(main, 'test-line', 420);
+        loose.forEach(piece => {
+          piece.forEach(t => {
+            t.classList.add('is-dead');
+            if (slow) t.animate([0, -5, 5, -4, 4, -2, 0].map(dx => ({ transform: `translateX(${dx}px)` })), { duration: 460, easing: 'ease-out' });
+          });
+          line(piece, 'test-line is-loose', 0);
+        });
+        const all = pieces.flat();
+        verdict(box(all), true, `${pieces.length} pieces`, 'not joined as 1 model');
+        said.textContent = `Test: the tiles on the field are in ${pieces.length} pieces, not joined into one model.`;
+      });
+      finish(lit + 460 + 2800);
+    }
+  };
+  keyTest.addEventListener('click', runTest);
+
+  let soon = 0;
+  keyDownload.addEventListener('click', () => {   // not ready yet: the key says "soon" for a moment
+    keyDownload.classList.add('is-soon');
+    said.textContent = 'Download is not ready yet.';
+    clearTimeout(soon);
+    soon = setTimeout(() => keyDownload.classList.remove('is-soon'), 1400);
   });
 
   // ---- The panel's width: a quarter of the page to start with; its left edge can be dragged. ----
@@ -441,7 +757,7 @@
   splitter.addEventListener('dblclick', () => { panel = setPanel(0.25); remember(); });
   window.addEventListener('resize', () => { panel = setPanel(panel); });
 
-  const ro = new ResizeObserver(() => { fit(); sizeMeter.paint(sizeMeter.value); msMeter.paint(msMeter.value); });
+  const ro = new ResizeObserver(() => { fit(); meters.forEach(mt => mt.paint(mt.value)); });
   ro.observe(field);
   ro.observe(tray);
   fit();

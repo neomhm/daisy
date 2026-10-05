@@ -3,3 +3,4 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/akiki/public_html/
     - /bin/cp -R public/. $DEPLOYPATH
+    - /bin/sh deploy/htaccess.sh $DEPLOYPATH
