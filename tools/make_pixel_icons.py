@@ -52,9 +52,17 @@ INSECTS = {
     'firefly': ('#ec8e4a', ['.X.X.', '..X..', '.XXX.', '.XXX.', '.HHH.']),       # its tail alight
     'code': (None, ['XX.XX', 'X...X', 'X.H.X', 'X...X', 'XX.XX']),               # your code, in brackets
 }
-# PLAN 3's team, on the Siren page: sea creatures from mythology. Only Siren is published so far.
+# PLAN 3's team, on the Siren page: sea creatures from mythology. Siren is designed; the others
+# are planned roles.
 SEA = {
     'siren': ('#2b7fd4', ['.XXX.', 'X...X', 'X.HXX', 'X....', '.XXXX']),         # a spiral shell, the sea's voice
+    'leviathan': ('#1e5a8a', ['X.X.X', 'X.X.X', 'XXHXX', '..X..', '..X..']),     # a trident: commands the depths
+    'cetus': ('#4f7f8f', ['...X.', 'X..X.', 'XXXX.', 'XXXHX', '.XXX.']),         # a whale and its spout
+    'kraken': ('#5a4fb0', ['.XXX.', 'XHXHX', 'XXXXX', 'X.X.X', 'X.X.X']),        # a head and many arms
+    'scylla': ('#0f7f7a', ['XXXXX', 'X...X', 'X.H.X', '.X.X.', '..X..']),        # a shield: the guardian
+    'selkie': ('#8a7f72', ['...XX', '..XHX', '.XXX.', 'XXXX.', 'X..XX']),        # a seal, sitting up
+    'hippocampus': ('#3fb7d9', ['..XX.', 'XXHX.', '..XX.', '...X.', '.XX..']),   # a sea-horse, its tail curled
+    'you': (None, ['XXXXX', 'X...X', 'X.H.X', 'XXXXX', '.X...']),                # your words, in a speech bubble
 }
 FLOWERS = {'m': '#c2549e', 'g': '#3aa56f', 'p': '#a06fc2', 'o': '#ec8e4a'}
 
