@@ -23,7 +23,8 @@
   const bench = document.querySelector('.bench');
   const DATA = window.AKIKI_TILES;
   if (!bench || !DATA) return;
-  const COLS = 8, ROWS = 7;
+  const SIZES = [7, 8, 9, 10], GRID_KEY = 'akiki-workbench-grid';
+  let COLS = 7, ROWS = 7;   // the grid size control ("The grid's size" below) changes both
   const field = bench.querySelector('.field');
   const grid = bench.querySelector('.field-grid');
   const tray = bench.querySelector('.tray');
@@ -125,17 +126,22 @@
   const home = new Map(tiles.map(t => [t, t.parentElement]));
   const squares = [...tray.querySelectorAll('.tray-slot .sq')];
 
-  // The field's squares.
+  // The field's squares, COLS x ROWS of them; rebuilt when the grid's size changes.
   const cells = [];
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.dataset.c = c;
-    cell.dataset.r = r;
-    grid.append(cell);
-    cells.push(cell);
-  }
-  grid.style.setProperty('--cols', COLS);
+  const buildCells = () => {
+    cells.length = 0;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.c = c;
+      cell.dataset.r = r;
+      grid.append(cell);
+      cells.push(cell);
+    }
+    grid.style.setProperty('--cols', COLS);
+  };
+  try { const saved = +localStorage.getItem(GRID_KEY); if (SIZES.includes(saved)) COLS = ROWS = saved; } catch (e) { /* no storage: 7 x 7 */ }
+  buildCells();
   const cellAt = (c, r) => (c >= 0 && r >= 0 && c < COLS && r < ROWS ? cells[r * COLS + c] : null);
   const posOf = cell => [+cell.dataset.c, +cell.dataset.r];
   const tileIn = sq => sq && sq.querySelector(':scope > .wtile');   // not the attachments docked on it
@@ -1521,10 +1527,15 @@
     tiles.filter(onField).forEach(t => place(t, backToPanel(t)));
     last = null;
     count();
+    // the team is centred on the grid; a team larger than the grid first grows it to the smallest size that holds it
+    const cs = team.tiles.map(x => x[1]), rs = team.tiles.map(x => x[2]);
+    const w = Math.max(...cs) - Math.min(...cs) + 1, h = Math.max(...rs) - Math.min(...rs) + 1;
+    if (Math.max(w, h) > COLS) resizeGrid(SIZES.find(n => n >= Math.max(w, h)) || SIZES[SIZES.length - 1]);
+    const dc = Math.floor((COLS - w) / 2) - Math.min(...cs), dr = Math.floor((ROWS - h) / 2) - Math.min(...rs);
     const step = still.matches ? 0 : 70, wait = still.matches ? 0 : 300;
     const later = (ms, fn) => { if (ms) placing.push(setTimeout(fn, ms)); else fn(); };
     team.tiles.forEach(([id, c, r, att = []], i) => later(wait + i * step, () => {
-      const t = original(id), cell = cellAt(c, r);
+      const t = original(id), cell = cellAt(c + dc, r + dr);
       if (!t || !cell || tileIn(cell) || onField(t)) return;
       place(t, cell, { magnet: true });
       last = t;
@@ -1583,6 +1594,113 @@
   });
   splitter.addEventListener('dblclick', () => { panel = setPanel(0.25); remember(); });
   window.addEventListener('resize', () => { panel = setPanel(panel); });
+
+  // ---- The grid's size, at the field's top left: 7 x 7 to 10 x 10. A new size rebuilds the squares
+  // inside the same field, so more squares means smaller tiles; every square and tile glides from
+  // where it was to where it now is (instantly with reduced motion). Shrinking never loses a tile:
+  // the tiles on the field move inward together, keeping their arrangement; when they cannot fit,
+  // the size stays, the control shakes and says which size they need. The size is remembered in
+  // this browser. ----
+  const sizeBox = document.createElement('div');
+  sizeBox.className = 'gridsize';
+  sizeBox.innerHTML = '<button class="gridsize-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="gridsize-list">'
+    + '<span class="gridsize-now"></span><svg class="gridsize-caret" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
+    + '<ul class="gridsize-list" id="gridsize-list" role="listbox" tabindex="-1" aria-label="Grid size" hidden></ul>';
+  const sizeBtn = sizeBox.querySelector('.gridsize-btn'), sizeList = sizeBox.querySelector('.gridsize-list');
+  for (const n of SIZES) {
+    const li = document.createElement('li');
+    li.id = 'gridsize-' + n;
+    li.setAttribute('role', 'option');
+    li.dataset.n = n;
+    li.textContent = `${n}x${n}`;
+    sizeList.append(li);
+  }
+  (field.querySelector('.field-title') || field.querySelector('.field-head').firstChild).replaceWith(sizeBox);
+  const options = [...sizeList.children];
+  let hot = 0;
+  const showSize = () => {
+    sizeBox.querySelector('.gridsize-now').textContent = `${COLS}x${ROWS}`;
+    sizeBtn.setAttribute('aria-label', `Grid size: ${COLS} by ${ROWS}`);
+    options.forEach(o => o.setAttribute('aria-selected', String(+o.dataset.n === COLS)));
+  };
+  const point = i => {
+    hot = (i + options.length) % options.length;
+    options.forEach((o, k) => o.classList.toggle('is-hot', k === hot));
+    sizeList.setAttribute('aria-activedescendant', options[hot].id);
+  };
+  const openSizes = open => {
+    if (open === !sizeList.hidden) return;
+    sizeBtn.setAttribute('aria-expanded', String(open));
+    sizeBox.classList.toggle('is-open', open);
+    if (open) {
+      sizeList.hidden = false;
+      point(SIZES.indexOf(COLS));
+      sizeList.focus({ preventScroll: true });
+      if (!still.matches) sizeList.animate([{ opacity: 0, transform: 'translateY(-6px) scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: 'cubic-bezier(.2, .8, .2, 1)' });
+    } else sizeList.hidden = true;
+  };
+  const choose = n => { openSizes(false); sizeBtn.focus({ preventScroll: true }); resizeGrid(n); };
+  sizeBtn.addEventListener('click', () => openSizes(sizeList.hidden));
+  sizeBtn.addEventListener('keydown', e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); openSizes(true); } });
+  sizeList.addEventListener('click', e => { const o = e.target.closest('[role="option"]'); if (o) choose(+o.dataset.n); });
+  sizeList.addEventListener('keydown', e => {
+    const k = e.key;
+    if (k === 'ArrowDown' || k === 'ArrowUp') { e.preventDefault(); point(hot + (k === 'ArrowDown' ? 1 : -1)); }
+    else if (k === 'Home' || k === 'End') { e.preventDefault(); point(k === 'Home' ? 0 : options.length - 1); }
+    else if (k === 'Enter' || k === ' ') { e.preventDefault(); choose(+options[hot].dataset.n); }
+    else if (k === 'Escape') { e.preventDefault(); openSizes(false); sizeBtn.focus({ preventScroll: true }); }
+    else if (k === 'Tab') openSizes(false);
+  });
+  document.addEventListener('pointerdown', e => { if (!sizeBox.contains(e.target)) openSizes(false); });
+
+  function resizeGrid(n) {
+    if (n === COLS && n === ROWS) return true;
+    const placed = cells.filter(tileIn).map(cell => [cell, ...posOf(cell)]);
+    let dc = 0, dr = 0;
+    if (placed.length) {
+      const cs = placed.map(p => p[1]), rs = placed.map(p => p[2]);
+      const need = Math.max(Math.max(...cs) - Math.min(...cs) + 1, Math.max(...rs) - Math.min(...rs) + 1);
+      if (need > n) {   // the tiles cannot fit: keep the size and say which one they need
+        if (!still.matches) sizeBtn.animate([0, -6, 6, -4, 4, -2, 0].map(x => ({ transform: `translateX(${x}px)` })), { duration: 420, easing: 'ease-out' });
+        say(`The tiles on the field need at least ${need}x${need}: take some off to go to ${n}x${n}.`, 3600);
+        return false;
+      }
+      dc = Math.min(0, n - 1 - Math.max(...cs));   // in by as little as needed, the whole team together
+      dr = Math.min(0, n - 1 - Math.max(...rs));
+    }
+    resetTest();
+    endFix();
+    const old = cells.slice(), was = new Map(old.map(c => [posOf(c).join(), c.getBoundingClientRect()]));
+    const from = new Map();
+    COLS = ROWS = n;
+    buildCells();
+    for (const [cell, c, r] of placed) {   // each tile, with what is docked on it, to its new square
+      const to = cellAt(c + dc, r + dr);
+      [...cell.children].forEach(ch => to.append(ch));
+      from.set(to, cell.getBoundingClientRect());
+    }
+    old.forEach(c => c.remove());
+    fit();
+    count();
+    showSize();
+    try { localStorage.setItem(GRID_KEY, String(n)); } catch (e) { /* fine */ }
+    if (still.matches) return true;
+    for (const cell of cells) {   // FLIP: from the old square's place and size to the new one's
+      const a = from.get(cell) || was.get(posOf(cell).join()), b = cell.getBoundingClientRect();
+      cell.style.transformOrigin = '0 0';
+      const [c, r] = posOf(cell);
+      if (a && a.width) {
+        cell.animate([{ transform: `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(${a.width / b.width})` }, { transform: 'none' }],
+                     { duration: 560, easing: 'cubic-bezier(.3, .9, .25, 1)' });
+      } else {
+        cell.animate([{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'none' }],
+                     { duration: 420, delay: 140 + (c + r) * 22, easing: 'cubic-bezier(.2, .8, .2, 1)', fill: 'backwards' });
+      }
+    }
+    grid.querySelectorAll('.joint').forEach(j => j.animate([{ opacity: 0 }, { opacity: getComputedStyle(j).opacity }], { duration: 300, delay: 420, fill: 'backwards' }));
+    return true;
+  }
+  showSize();
 
   const ro = new ResizeObserver(() => { fit(); meters.forEach(mt => mt.paint(mt.value)); });
   ro.observe(field);
