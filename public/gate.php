@@ -1,4 +1,5 @@
 <?php
+ob_start();   // nothing printed by accident (a server warning, say) may stop the sign-in cookie being set
 /* The password gate for the whole site.
 
    .htaccess sends every page of the site here (the rules are in deploy/gate.htaccess; deploying
@@ -10,10 +11,11 @@
    repository; deleting that file (/home/akiki/.akiki-gate-key) signs everybody out. The password is
    kept here only as a bcrypt hash: to change it, put the output of
    php -r 'echo password_hash("NEW PASSWORD", PASSWORD_BCRYPT, ["cost" => 13]);'
-   in GATE_HASH. /?signout signs this browser out. */
+   in GATE_HASH. The name is checked whatever its capitals; the password exactly. /?signout signs
+   this browser out. */
 
-const GATE_USER = 'tul1p';
-const GATE_HASH = '$2y$13$87mJpMj/DT2CSJaxqlwGIe2jW.cgQAOoGqXcDhaIJp1AaAPvQvEQ2';
+const GATE_USER = 'Tul1p';
+const GATE_HASH = '$2y$13$n3k3Jytb7kIXmH5IjPkXvOGKar7A9HyTxeS9xl6kKA8lw3zZd.dsm';
 const GATE_DAYS = 30;
 const GATE_COOKIE = 'akiki_gate';
 
@@ -21,8 +23,8 @@ const GATE_COOKIE = 'akiki_gate';
 function gate_key() {
   $places = [dirname(__DIR__) . '/.akiki-gate-key', __DIR__ . '/.ht-akiki-gate-key'];
   foreach ($places as $f) {
-    if (is_file($f) && is_readable($f)) {
-      $k = trim((string) file_get_contents($f));
+    if (@is_file($f) && @is_readable($f)) {
+      $k = trim((string) @file_get_contents($f));
       if (strlen($k) >= 64) return $k;
     }
   }
@@ -90,7 +92,7 @@ $failed = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $user = strtolower(trim(isset($_POST['user']) ? (string) $_POST['user'] : ''));
   $pass = isset($_POST['pass']) ? (string) $_POST['pass'] : '';
-  $ok = hash_equals(GATE_USER, $user) & password_verify($pass, GATE_HASH);   // both checked, every time
+  $ok = hash_equals(strtolower(GATE_USER), $user) & password_verify($pass, GATE_HASH);   // both checked, every time
   if ($ok) {
     $exp = time() + GATE_DAYS * 86400;
     gate_cookie($exp . '.' . gate_sign($exp, $key), $exp);
