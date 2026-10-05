@@ -14,9 +14,13 @@ ob_start();   // nothing printed by accident (a server warning, say) may stop th
    in GATE_HASH. The name is checked whatever its capitals, the password exactly (spaces around
    either are left out). /?signout signs this browser out.
 
-   When signing in fails, the screen says why: the name, the password, nothing reaching the server,
-   or (right after a good sign-in) the sign-in not being kept by the browser or not read back by the
-   server. */
+   The sign-in form is sent to /gate.php itself, never to a page's address: some servers drop what a
+   form carries when its address is quietly handed over to a script. The screen also sends the name
+   and password in a header of its own (X-Akiki-Sign-In), which reaches the server either way.
+
+   When signing in fails, the screen says why: the name, the password, nothing reaching the server
+   (with what the server did receive), or (right after a good sign-in) the sign-in not being kept by
+   the browser or not read back by the server. */
 
 const GATE_USER = 'Tul1p';
 const GATE_HASH = '$2y$13$n3k3Jytb7kIXmH5IjPkXvOGKar7A9HyTxeS9xl6kKA8lw3zZd.dsm';
@@ -73,10 +77,45 @@ function gate_page() {
   return $file;
 }
 
-// Where to send the browser back to: this same address (never another site's).
+// An address on this site to send the browser back to (never another site's, nor the gate itself).
+function gate_local($uri) {
+  $uri = (string) $uri;
+  if ($uri === '' || $uri[0] !== '/' || substr($uri, 0, 2) === '//' || strpos($uri, '\\') !== false
+      || preg_match('/[\x00-\x1f]/', $uri) || strpos($uri, '/gate.php') === 0) return '/';
+  return $uri;
+}
 function gate_here() {
-  $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/';
-  return ($uri === '' || $uri[0] !== '/' || substr($uri, 0, 2) === '//') ? '/' : $uri;
+  return gate_local(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/');
+}
+
+// The name and password sent: from the form's fields; else from the request's body, read
+// directly; else from the X-Akiki-Sign-In header (base64 of "name", a new line, "password").
+function gate_credentials() {
+  $user = isset($_POST['user']) ? (string) $_POST['user'] : '';
+  $pass = isset($_POST['pass']) ? (string) $_POST['pass'] : '';
+  if ($user === '' && $pass === '') {
+    $body = [];
+    parse_str((string) @file_get_contents('php://input'), $body);
+    $user = isset($body['user']) ? (string) $body['user'] : '';
+    $pass = isset($body['pass']) ? (string) $body['pass'] : '';
+  }
+  if ($user === '' && $pass === '' && isset($_SERVER['HTTP_X_AKIKI_SIGN_IN'])) {
+    $pair = explode("\n", (string) base64_decode((string) $_SERVER['HTTP_X_AKIKI_SIGN_IN'], true), 2);
+    if (count($pair) === 2) list($user, $pass) = $pair;
+  }
+  return [strtolower(trim($user)), trim($pass)];
+}
+
+// What the server received, when the name and password did not get through (no secrets in it).
+function gate_saw() {
+  $type = isset($_SERVER['CONTENT_TYPE']) ? (string) $_SERVER['CONTENT_TYPE'] : '';
+  return 'got ' . $_SERVER['REQUEST_METHOD'] . ' ' . (preg_replace('/;.*/', '', $type) ?: 'no type')
+    . ', ' . strlen((string) @file_get_contents('php://input')) . ' of '
+    . (isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : '?') . ' bytes, '
+    . (isset($_SERVER['HTTP_X_AKIKI_SIGN_IN']) ? 'header' : 'no header') . ', '
+    . (count($_POST) ? count($_POST) . ' fields' : 'no fields') . ', '
+    . substr(isset($_SERVER['SERVER_SOFTWARE']) ? (string) $_SERVER['SERVER_SOFTWARE'] : 'server', 0, 24)
+    . ', PHP ' . PHP_VERSION;
 }
 
 header('X-Robots-Tag: noindex, nofollow');
@@ -96,10 +135,11 @@ if (isset($_GET['signout'])) {
 }
 
 $failed = '';   // why signing in just failed: 'name', 'password' or 'empty'
+$saw = '';
 $cookie = gate_cookie_state($key);
+$to = gate_local(isset($_POST['to']) ? $_POST['to'] : gate_here());   // the page to go on to
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $user = strtolower(trim(isset($_POST['user']) ? (string) $_POST['user'] : ''));
-  $pass = trim(isset($_POST['pass']) ? (string) $_POST['pass'] : '');
+  list($user, $pass) = gate_credentials();
   $name_ok = hash_equals(strtolower(GATE_USER), $user);
   $pass_ok = password_verify($pass, GATE_HASH);   // checked whatever the name, every time
   $ok = $name_ok && $pass_ok;
@@ -109,18 +149,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   } else {
     usleep(900000);   // slows down guessing
     $failed = ($user === '' && $pass === '') ? 'empty' : ($name_ok ? 'password' : 'name');
+    if ($failed === 'empty') $saw = gate_saw();
   }
   if (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) {
     header('Content-Type: application/json');
     header('Cache-Control: no-store');
-    echo json_encode(['ok' => $ok, 'why' => $failed]);
+    echo json_encode(['ok' => $ok, 'why' => $failed, 'saw' => $saw]);
     exit;
   }
   if ($ok) {
-    header('Location: ' . gate_here(), true, 303);
+    header('Location: ' . $to, true, 303);
     exit;
   }
 } elseif ($cookie === 'ok') {
+  if (strpos((string) parse_url(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/', PHP_URL_PATH), '/gate.php') === 0) {
+    header('Location: /', true, 303);   // signed in already: on to the site
+    exit;
+  }
   $file = gate_page();
   if ($file === null) {
     http_response_code(404);
@@ -355,6 +400,8 @@ header('X-Frame-Options: DENY');
     .key svg path { fill: none; stroke: currentColor; stroke-width: .78; stroke-linecap: round; }
     .key svg .off { opacity: .1; }
     .msg { min-height: 1.3em; margin: 0; color: #ff8a80; font: max(11px, calc(var(--u) * 2.3))/1.3 var(--mono); text-align: center; }
+    .saw { display: block; margin-top: 4px; color: rgba(255, 255, 255, .45); font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; user-select: all; }
+    .saw:empty { display: none; }
     @media (prefers-reduced-motion: reduce) {
       .t, .t.is-on, .is-checking .t, .is-wrong .t::after, .is-wrong .panel { animation: none; transition: none; }
       .is-leaving .t, .is-leaving .panel { transition: opacity .3s; transform: none; }
@@ -417,7 +464,8 @@ header('X-Frame-Options: DENY');
       <i class="e ls" style="--lx:0;--ly:4"></i>
       <i class="e ls" style="--lx:0;--ly:1"></i>
     </div>
-    <form class="panel" method="post" autocomplete="on">
+    <form class="panel" method="post" action="/gate.php" autocomplete="on">
+      <input type="hidden" name="to" value="<?php echo htmlspecialchars($to, ENT_QUOTES, 'UTF-8'); ?>">
       <div class="head"><span class="logo">akiki</span><span class="sub">private preview</span></div>
       <div class="fields">
         <div>
@@ -434,7 +482,7 @@ header('X-Frame-Options: DENY');
         $why = ['name' => 'That is not the name.', 'password' => 'That is not the password.',
                 'empty' => 'The name and password did not reach the server.'];
         if ($failed) echo $why[$failed];
-      ?></p>
+      ?><small class="saw"><?php echo htmlspecialchars($saw, ENT_QUOTES, 'UTF-8'); ?></small></p>
     </form>
   </main>
   <script>
@@ -443,6 +491,14 @@ header('X-Frame-Options: DENY');
       const form = gate.querySelector('form');
       const user = form.querySelector('#user'), pass = form.querySelector('#pass');
       const msg = form.querySelector('.msg');
+      const tell = (text, saw) => {   // the message under the key, and what the server received, if told
+        msg.textContent = text;
+        if (!saw) return;
+        const small = document.createElement('small');
+        small.className = 'saw';
+        small.textContent = saw;
+        msg.append(small);
+      };
       const tiles = [...gate.querySelectorAll('.t')].sort((a, b) => a.style.getPropertyValue('--i') - b.style.getPropertyValue('--i'));
       const still = window.matchMedia('(prefers-reduced-motion: reduce)');
       const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -465,9 +521,9 @@ header('X-Frame-Options: DENY');
         const just = +sessionStorage.getItem('akiki-gate-in') || 0;
         sessionStorage.removeItem('akiki-gate-in');
         if (Date.now() - just < 20000) {
-          msg.textContent = gate.dataset.cookie === 'none'
+          tell(gate.dataset.cookie === 'none'
             ? 'The password was right, but this browser did not keep the sign-in. Are cookies blocked for this site?'
-            : 'The password was right, but the server could not read the sign-in back.';
+            : 'The password was right, but the server could not read the sign-in back.');
         }
       } catch (err) { /* no storage: nothing to tell */ }
       (failed => { if (failed) setTimeout(() => gate.classList.remove('is-wrong'), 900); })(gate.classList.contains('is-wrong'));
@@ -489,12 +545,20 @@ header('X-Frame-Options: DENY');
         gate.classList.remove('is-wrong');
         gate.classList.add('is-checking');
         const t0 = performance.now();
-        let ok = false, why = '';
+        let ok = false, why = '', saw = '';
         try {
-          const r = await fetch(location.href, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+          // To /gate.php itself, as a plain form, with the name and password in a header as well.
+          const pair = new TextEncoder().encode(user.value + '\n' + pass.value);
+          const r = await fetch('/gate.php', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(form)),
+            headers: { Accept: 'application/json', 'X-Akiki-Sign-In': btoa(String.fromCharCode(...pair)) },
+            credentials: 'same-origin',
+          });
           const answer = await r.json();
           ok = answer.ok === true;
           why = answer.why || '';
+          saw = answer.saw || '';
         } catch (err) {
           form.submit();   // the plain way, without the show
           return;
@@ -515,7 +579,7 @@ header('X-Frame-Options: DENY');
         }
         void gate.offsetWidth;
         gate.classList.add('is-wrong');
-        msg.textContent = WHY[why] || 'That did not work. Try again.';
+        tell(WHY[why] || 'That did not work. Try again.', saw);
         if (why !== 'name') pass.value = '';
         light();
         pass.focus();
