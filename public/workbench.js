@@ -745,6 +745,7 @@
     daisy: ['question', 'answer', 2], jasmine: ['signals', 'design', 2], bees: ['step', 'code', 2],
     ants: ['step', 'parts', 2], mantis: ['work', 'audit', 3], ladybug: ['work', 'bugs', 3],
     thistle: ['site', 'findings', 3], iris: ['site', 'report', 3], firefly: ['problem', 'advice', 4],
+    siren: ['message', 'reply', 0],
   };
   const role = t => ROLES[t.dataset.id] || ['data', t.dataset.id + '_out', 2];
   const colour = id => { const t = tiles.find(x => x.dataset.id === id); return t ? t.style.getPropertyValue('--tc') : ''; };
@@ -944,7 +945,7 @@
   // tiles' own tags (data-tags), and Ready for the tiles that have measured figures. Only kinds
   // some tile has are offered, each with how many tiles it holds. The tiles that do not fit the
   // chosen kind leave the panel, and the rest close up. ----
-  const KINDS = [['all', 'All'], ['ready', 'Ready'], ['brains', 'Brains'], ['database', 'Database'],
+  const KINDS = [['all', 'All'], ['ready', 'Ready'], ['brains', 'Brains'], ['voice', 'Voice'], ['database', 'Database'],
     ['documents', 'Documents'], ['website', 'Website'], ['code', 'Code'], ['checks', 'Checks']];
   const filterBar = tray.querySelector('.filters');
   const filterNone = tray.querySelector('.filter-none');

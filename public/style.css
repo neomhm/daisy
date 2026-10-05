@@ -743,6 +743,17 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .flutter { animation: flutter 3.2s ease-in-out infinite; transform-origin: 50% 50%; }
 @keyframes flutter { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.8); } }
 @media (prefers-reduced-motion: reduce) { .flutter { animation: none; } }
+/* Siren's shell rides a gentle swell. */
+.float { animation: float 7s ease-in-out infinite; transform-origin: 50% 60%; }
+@keyframes float { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-5px) rotate(2deg); } }
+@media (prefers-reduced-motion: reduce) { .float { animation: none; } }
+
+/* Tables in a card's text, as a code repository shows them; wide ones scroll on their own. */
+.table-wrap { margin: 0 0 16px; overflow-x: auto; }
+.markdown table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.markdown th, .markdown td { padding: 7px 12px; border: var(--hairline) solid var(--border); text-align: left; vertical-align: top; }
+.markdown th { background: var(--bg-subtle); font-weight: 600; }
+.markdown tbody tr:nth-child(2n) { background: #fbfcfd; }
 
 /* Section bar: Overview, one chip per model in its colour, Status. switch.js marks the section
    being read and keeps its chip in view. */

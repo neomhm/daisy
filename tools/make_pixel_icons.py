@@ -9,6 +9,7 @@ golden pixel; m, g, p and o mark Orchid magenta, Tulip green, Jasmine purple and
 
 Usage: python3 tools/make_pixel_icons.py > symbols.txt   (paste into the sprite in daisy.html)
        python3 tools/make_pixel_icons.py --insects > symbols.txt   (the sprite in butterfly.html)
+       python3 tools/make_pixel_icons.py --sea > symbols.txt       (the sprite in siren.html)
 """
 import os
 import sys
@@ -51,6 +52,10 @@ INSECTS = {
     'firefly': ('#ec8e4a', ['.X.X.', '..X..', '.XXX.', '.XXX.', '.HHH.']),       # its tail alight
     'code': (None, ['XX.XX', 'X...X', 'X.H.X', 'X...X', 'XX.XX']),               # your code, in brackets
 }
+# PLAN 3's team, on the Siren page: sea creatures from mythology. Only Siren is published so far.
+SEA = {
+    'siren': ('#2b7fd4', ['.XXX.', 'X...X', 'X.HXX', 'X....', '.XXXX']),         # a spiral shell, the sea's voice
+}
 FLOWERS = {'m': '#c2549e', 'g': '#3aa56f', 'p': '#a06fc2', 'o': '#ec8e4a'}
 
 
@@ -69,6 +74,6 @@ def symbol(name, tile, rows):
 
 
 if __name__ == '__main__':
-    icons = INSECTS if sys.argv[1:] == ['--insects'] else ICONS
+    icons = {'--insects': INSECTS, '--sea': SEA}.get(sys.argv[1] if sys.argv[1:] else '', ICONS)
     for name, (tile, rows) in icons.items():
         print('    ' + symbol(name, tile, rows))
