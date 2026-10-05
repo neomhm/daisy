@@ -1458,6 +1458,31 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 @keyframes screen-flash { from { filter: brightness(1.35); } }
 .unit { flex: none; min-width: 1.7em; color: #2f4d5c; font: 700 22px/1 var(--mono); }   /* M and B, not the pixel font's m, which reads like "milli" */
 .meter-note { margin: 0; color: var(--fg-muted); font-size: 12px; line-height: 1.4; }
+/* The teams (workbench.js; presets in tiles.js): one button per plan, each in its plan's own colour,
+   squarer than the round filter chips, which only show tiles: a team places tiles on the field.
+   The border is the plan's colour darkened to stay above 3:1 on the panel's white; the text is ink. */
+.presets { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 14px 16px 0; }
+.presets-label { margin-right: 2px; color: var(--fg-muted); font: 600 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.preset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px 0 8px;
+  border: 1.5px solid color-mix(in srgb, var(--pc) 78%, #000);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--pc) 14%, #fff);
+  color: #1f2328;
+  font: 600 12px/1 var(--mono);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .15s, transform .09s;
+}
+.preset i { width: 10px; height: 10px; border-radius: 2px; background: var(--pc); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); }
+.preset b { color: #57606a; font-size: 10.5px; font-weight: 400; }
+.preset:hover { background: color-mix(in srgb, var(--pc) 26%, #fff); }
+.preset:active { transform: translateY(1px); }
+.preset:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
 /* The filters (workbench.js): one chip per kind of tile, made from the tiles' own tags (data-tags)
    and, for Ready, from whether a tile has measured figures, each with how many tiles it holds. */
 .filters { display: flex; flex-wrap: wrap; gap: 6px 5px; padding: 12px 16px 2px; }

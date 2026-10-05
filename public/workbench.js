@@ -663,6 +663,8 @@
   tiles.forEach(wire);
 
   bench.querySelector('.field-clear').addEventListener('click', () => {
+    placing.forEach(clearTimeout);   // a team still being placed stops
+    placing = [];
     resetTest();
     endFix();
     tiles.filter(onField).forEach((t, i) => setTimeout(() => { place(t, backToPanel(t)); count(); }, i * 60));
@@ -842,12 +844,15 @@
       else if (d.role !== 'end' && !after && !called) add('order', p, `What ${d.name} gives goes nowhere: ${d.name} hands on ${kinds(d.out)}, and a chain must end in a tile that gives the result.`, 'dead end');
     }
     // (3) every two touching tiles fit
+    const piped = new Set();
     for (const e of edges) {
-      if (e.type === 'pipe') {
-        for (const m of stageOf.get(e.to).members) {
-          const a = D(e.from.id), b = D(m.id);
+      if (e.type === 'pipe') {   // alternatives: whichever of the left stage answers, each of the right stage must take it
+        for (const g of stageOf.get(e.from).members) for (const m of stageOf.get(e.to).members) {
+          if (piped.has(g.id + '|' + m.id)) continue;
+          piped.add(g.id + '|' + m.id);
+          const a = D(g.id), b = D(m.id);
           if (b.role === 'start' || !a.out.length) continue;   // the order check names these
-          if (!fitsKinds(a.out, b.in)) add('kinds', m, `${b.name} cannot follow ${a.name}: ${a.name} gives ${kinds(a.out)}, ${b.name} needs ${kinds(b.in)}.`, 'no fit', { other: [e.from] });
+          if (!fitsKinds(a.out, b.in)) add('kinds', m, `${b.name} cannot follow ${a.name}: ${a.name} gives ${kinds(a.out)}, ${b.name} needs ${kinds(b.in)}.`, 'no fit', { other: [g] });
         }
       } else {
         for (const m of stageOf.get(e.to).members) {
@@ -864,11 +869,30 @@
     const flow = (a, b) => a.p.c - b.p.c || a.p.r - b.p.r;
     const cat = ORDER.find(c => errs.some(e => e.cat === c));
     const faults = cat ? errs.filter(e => e.cat === cat).sort(flow) : [];
-    // the team, as the work goes: "Siren → Daisy → Siren", or "Orchid → Jasmine or Lily → …"
-    const stages = [...new Set(stageOf.values())].sort((a, b) => Math.min(...a.members.map(p => p.c)) - Math.min(...b.members.map(p => p.c)));
-    const says = stages.map(st => orList(st.members.map(nm)));
+    // the team, as the work goes: "Siren → Daisy → Siren" when Siren only calls; otherwise each chain
+    // from its start ("Orchid or Tulip → Bouquet → Jasmine → Iris, Thistle or Lily"), then whom Siren calls
+    const stages = [...new Set(stageOf.values())].sort((a, b) => Math.min(...a.members.map(p => p.c)) - Math.min(...b.members.map(p => p.c)) || Math.min(...a.members.map(p => p.r)) - Math.min(...b.members.map(p => p.r)));
+    const says = st => orList(st.members.map(nm));
     const h = board.find(hub);
-    const path = h ? [nm(h), ...says, ...(says.length ? [nm(h)] : [])].join(' → ') : says.join(' → ');
+    const called = stages.filter(st => st.hubs.size);
+    let path;
+    if (h && stages.every(st => st.hubs.size && !st.preds.size && !st.succs.size)) path = [nm(h), ...stages.map(says), ...(stages.length ? [nm(h)] : [])].join(' \u2192 ');
+    else {
+      const seenSt = new Set(), chains = [];
+      for (const st of stages.filter(x => !x.preds.size)) {
+        const chain = [];
+        for (let cur = st; cur;) {
+          chain.push(says(cur));
+          if (seenSt.has(cur)) break;
+          seenSt.add(cur);
+          const next = [...cur.succs].map(q => stageOf.get(q));
+          cur = next[0] || null;
+        }
+        chains.push(chain.join(' \u2192 '));
+      }
+      if (h && called.length) chains.push(`${nm(h)} calls ${list(called.map(says))}`);
+      path = chains.filter(Boolean).join('; ');
+    }
     return { ok: !cat, cat, faults, all: errs, edges, path };
   };
   const board = () => cells.filter(tileIn).map(cell => {
@@ -1464,6 +1488,56 @@
       }
     }
   }
+  // ---- The teams, above the filters: one button per plan (presets in tiles.js). A press puts every
+  // tile back, then places that plan's tiles in its working order, one after another, with what
+  // they need attached (all at once with reduced motion). The field stays as editable as ever. ----
+  const presetBar = document.createElement('div');
+  presetBar.className = 'presets';
+  presetBar.setAttribute('role', 'group');
+  presetBar.setAttribute('aria-label', 'Place a whole team');
+  presetBar.innerHTML = '<span class="presets-label">Teams</span>';
+  for (const team of DATA.presets || []) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'preset';
+    b.dataset.team = team.id;
+    b.style.setProperty('--pc', team.colour);
+    b.title = team.say;
+    b.innerHTML = '<i></i><span></span><b></b>';
+    b.querySelector('span').textContent = team.name;
+    b.querySelector('b').textContent = team.plan;
+    b.setAttribute('aria-label', `${team.name}: place ${team.plan} on the field`);
+    presetBar.append(b);
+  }
+  filterBar.before(presetBar);
+  let placing = [];
+  const placeTeam = team => {
+    if (drag) return;
+    placing.forEach(clearTimeout);
+    placing = [];
+    resetTest();
+    endFix();
+    if (kind !== 'all') setKind('all');
+    tiles.filter(onField).forEach(t => place(t, backToPanel(t)));
+    last = null;
+    count();
+    const step = still.matches ? 0 : 70, wait = still.matches ? 0 : 300;
+    const later = (ms, fn) => { if (ms) placing.push(setTimeout(fn, ms)); else fn(); };
+    team.tiles.forEach(([id, c, r, att = []], i) => later(wait + i * step, () => {
+      const t = original(id), cell = cellAt(c, r);
+      if (!t || !cell || tileIn(cell) || onField(t)) return;
+      place(t, cell, { magnet: true });
+      last = t;
+      att.forEach(a => { const o = original(a); if (o && canDock(t, o)) dockOnto(copyOf(o), t, false); });
+      count();
+    }));
+    later(wait + team.tiles.length * step + (still.matches ? 0 : 120), () => { count(); say(`${team.name} (${team.plan}) is on the field. Press TesT to check it.`, 4000); });
+  };
+  presetBar.addEventListener('click', e => {
+    const b = e.target.closest('.preset');
+    const team = b && (DATA.presets || []).find(t => t.id === b.dataset.team);
+    if (team) placeTeam(team);
+  });
   filterBar.addEventListener('click', e => {
     const chip = e.target.closest('.chip');
     if (!chip || chip.dataset.kind === kind) return;
