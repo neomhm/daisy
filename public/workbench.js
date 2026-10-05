@@ -6,12 +6,23 @@
    On the field, a tile dropped near another one is pulled into the square beside it, and a magnet
    bar joins every two tiles side by side. The two screens add up the size and the latency of the
    group the last moved tile belongs to, and a third the weights' size on disk; tiles with no figures
-   yet are named under them. The TesT key, on the field, sends a signal through the tiles to show
-   whether they make one model; the CODE key opens, above the screens, the Python that joins them,
-   written live. The panel can be resized by dragging its left edge, or with the arrow keys on it. */
+   yet are named under them. The CODE key opens, above the screens, the Python that joins them,
+   written live. The panel can be resized by dragging its left edge, or with the arrow keys on it.
+
+   Every tile comes from tiles.js, the one file that says what each tile is: its ROLE (a start takes
+   the data in, a middle works on it, an end gives the result; Siren is a start and an end; an
+   attachment such as a brain, a database or a documents folder snaps ONTO a tile that needs it),
+   the kinds of data it accepts and hands on, and what it needs. Tiles are coloured by role. Tiles
+   side by side pass their work left to right; tiles stacked in a column are alternatives; a tile
+   touching Siren is a specialist she calls, whose answer comes back to her. The TesT key checks, in
+   this order: a start and an end; every chain going from a start to an end, in one piece; every
+   two touching tiles fitting; every tile having what it needs. When a check fails, the tile at
+   fault is marked, the reason is said in one sentence, and the panel shows only the tiles that
+   would fit in its place. */
 (() => {
   const bench = document.querySelector('.bench');
-  if (!bench) return;
+  const DATA = window.AKIKI_TILES;
+  if (!bench || !DATA) return;
   const COLS = 8, ROWS = 7;
   const field = bench.querySelector('.field');
   const grid = bench.querySelector('.field-grid');
@@ -19,6 +30,94 @@
   const splitter = bench.querySelector('.splitter');
   const still = window.matchMedia('(prefers-reduced-motion: reduce)');
   const phone = window.matchMedia('(max-width: 700px)');
+  const DEF = new Map(DATA.tiles.map(d => [d.id, d]));
+  const defOf = t => DEF.get(t.dataset.id);
+  const isAtt = t => t.dataset.role === 'attachment';
+  const orList = words => (words.length < 3 ? words.join(' or ') : words.slice(0, -1).join(', ') + ' or ' + words[words.length - 1]);
+
+  // ---- The panel's tiles, built from tiles.js. Each keeps its own pixel drawing, laid over the
+  // colour of its role, with a strip of its own colour along its foot. ----
+  const NS = 'http://www.w3.org/2000/svg';
+  const sprite = (document.querySelector('svg > symbol') || {}).parentNode || document.body.appendChild(document.createElementNS(NS, 'svg'));
+  const drawing = d => {   // a copy of the tile's icon without its coloured square
+    const id = `px-${d.id}-g`;
+    if (document.getElementById(id)) return id;
+    const sym = document.createElementNS(NS, 'symbol');
+    sym.id = id;
+    sym.setAttribute('viewBox', '0 0 40 40');
+    const own = document.getElementById('px-' + d.id);
+    if (own) {
+      [...own.children].forEach((ch, i) => { if (i || ch.tagName.toLowerCase() !== 'rect' || ch.hasAttribute('x')) sym.append(ch.cloneNode(true)); });
+    } else if (d.glyph) {   // the same pixels as tools/make_pixel_icons.py: pitch 6, 5.04 wide, 5 units of margin
+      for (const [mark, fill] of [['X', '#ffffff'], ['H', '#f2b632']]) {
+        const g = document.createElementNS(NS, 'g');
+        g.setAttribute('fill', fill);
+        d.glyph.forEach((row, r) => [...row].forEach((ch, c) => {
+          if (ch !== mark) return;
+          const px = document.createElementNS(NS, 'rect');
+          [['x', 5.48 + c * 6], ['y', 5.48 + r * 6], ['width', 5.04], ['height', 5.04], ['rx', 1.14]].forEach(([k, v]) => px.setAttribute(k, v.toFixed(2)));
+          g.append(px);
+        }));
+        sym.append(g);
+      }
+    }
+    sprite.append(sym);
+    return id;
+  };
+  const roleSay = d => DATA.roles[d.role].say;
+  const makeTile = d => {
+    const b = document.createElement('button');
+    b.className = 'wtile';
+    b.type = 'button';
+    Object.assign(b.dataset, { id: d.id, name: d.name, words: d.words, role: d.role, status: d.status,
+      params: d.params, ms: d.ms, mb: d.mb, tags: d.tags || '', note: d.note || '' });
+    b.style.setProperty('--tc', d.colour);
+    b.setAttribute('aria-label', `${d.name}: ${d.words[0].toLowerCase() + d.words.slice(1)}. ${roleSay(d)[0].toUpperCase() + roleSay(d).slice(1)}. ${d.note}.`);
+    b.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true"><use href="#${drawing(d)}"/></svg>`;
+    return b;
+  };
+  {
+    const scroll = tray.querySelector('.tray-scroll');
+    const level = scroll.dataset.head || '2';
+    scroll.querySelectorAll('.tray-head, .tray-grid').forEach(x => x.remove());
+    for (const g of DATA.groups) {
+      const mine = DATA.tiles.filter(d => d.group === g.id);
+      if (!mine.length) continue;
+      const head = document.createElement('h' + level);
+      head.className = 'tray-head';
+      head.textContent = g.head;
+      const box = document.createElement('div');
+      box.className = 'tray-grid';
+      for (const d of mine) {
+        const slot = document.createElement('div');
+        slot.className = 'tray-slot';
+        slot.dataset.home = d.id;
+        const sq = document.createElement('div');
+        sq.className = 'sq';
+        sq.append(makeTile(d));
+        const cap = document.createElement('p');
+        cap.className = 'cap';
+        cap.innerHTML = '<b></b><span></span>';
+        cap.firstChild.textContent = d.name.toLowerCase();
+        cap.lastChild.textContent = d.words;
+        slot.append(sq, cap);
+        box.append(slot);
+      }
+      scroll.append(head, box);
+    }
+    // The colours' key, on the field.
+    const legend = document.createElement('div');
+    legend.className = 'field-legend';
+    legend.setAttribute('aria-hidden', 'true');
+    for (const [role, r] of Object.entries(DATA.roles)) {
+      const item = document.createElement('span');
+      item.dataset.role = role;
+      item.innerHTML = '<i></i>';
+      item.append(r.label);
+      legend.append(item);
+    }
+    field.append(legend);
+  }
   const tiles = [...tray.querySelectorAll('.wtile')];
   let test = null;   // the test running, if any (see "The keys" below)
   const home = new Map(tiles.map(t => [t, t.parentElement]));
@@ -37,7 +136,7 @@
   grid.style.setProperty('--cols', COLS);
   const cellAt = (c, r) => (c >= 0 && r >= 0 && c < COLS && r < ROWS ? cells[r * COLS + c] : null);
   const posOf = cell => [+cell.dataset.c, +cell.dataset.r];
-  const tileIn = sq => sq && sq.querySelector('.wtile');
+  const tileIn = sq => sq && sq.querySelector(':scope > .wtile');   // not the attachments docked on it
   const onField = t => t.parentElement && t.parentElement.classList.contains('cell');
   const neighbours = cell => {
     const [c, r] = posOf(cell);
@@ -190,8 +289,8 @@
         const tuck = Math.min(10, S * 0.12), thick = S * 0.34;
         if (dc) Object.assign(j.style, { left: (c * (S + G) + S - tuck) + 'px', top: (r * (S + G) + (S - thick) / 2) + 'px', width: (G + 2 * tuck) + 'px', height: thick + 'px' });
         else Object.assign(j.style, { left: (c * (S + G) + (S - thick) / 2) + 'px', top: (r * (S + G) + S - tuck) + 'px', width: thick + 'px', height: (G + 2 * tuck) + 'px' });
-        j.style.setProperty('--a', getComputedStyle(a).getPropertyValue('--tc'));
-        j.style.setProperty('--b', getComputedStyle(b).getPropertyValue('--tc'));
+        j.style.setProperty('--a', getComputedStyle(a).getPropertyValue('--rc'));   // in the colours of their roles
+        j.style.setProperty('--b', getComputedStyle(b).getPropertyValue('--rc'));
         j.style.setProperty('--dir', dc ? 'to right' : 'to bottom');
         if (active.includes(a) && active.includes(b)) j.classList.add('is-active');
         if (!jointKeys.has(key)) j.classList.add('is-new');
@@ -207,8 +306,10 @@
     if (!group) group = all.sort((a, b) => b.length - a.length)[0] || [];
     tiles.forEach(t => t.classList.toggle('is-active', group.includes(t)));
     let size = 0, ms = 0, mb = 0;
-    const none = [], timeOnly = [], noFile = [];
-    for (const t of group) {
+    const none = [], timeOnly = [], noFile = [], counted = new Set();
+    for (const t of [...group, ...group.flatMap(docked)]) {   // a brain serving two tiles is counted once
+      if (counted.has(t.dataset.id) || t.dataset.status === 'yours') continue;
+      counted.add(t.dataset.id);
       const p = t.dataset.params, l = t.dataset.ms, w = t.dataset.mb || '';
       if (p !== '') size += +p;
       if (l !== '') ms += +l;
@@ -232,6 +333,76 @@
     refilter();
   };
 
+  // ---- Attachments. A brain, a database or a documents folder is not a link in the chain: a copy of
+  // it docks ONTO a tile that needs it, in a small strip at the tile's corner, and the one in the
+  // panel stays there, so the same brain can serve several tiles. A tile's attachments go with it;
+  // when it goes back to the panel, they come off. ----
+  const docks = new Map();   // a tile on the field -> its strip of docked attachments
+  const docked = host => (docks.has(host) ? [...docks.get(host).children] : []);
+  const hostOf = chip => { for (const [h, d] of docks) if (d.contains(chip)) return h; return null; };
+  const givesOf = t => defOf(t).gives;
+  const wants = host => { const d = defOf(host); return [...(d.needs || []), ...(d.takes || [])]; };
+  const canDock = (host, att) => !!host && !isAtt(host) && onField(host) && wants(host).includes(givesOf(att))
+    && !docked(host).some(c => c !== att && givesOf(c) === givesOf(att));
+  const original = id => tiles.find(t => t.dataset.id === id);
+  const dockOf = host => {
+    let d = docks.get(host);
+    if (!d) { d = document.createElement('div'); d.className = 'dock'; docks.set(host, d); }
+    if (d.parentElement !== host.parentElement) host.parentElement.append(d);
+    return d;
+  };
+  const copyOf = att => {
+    const c = att.cloneNode(true);
+    c.classList.remove('is-active', 'is-dragging', 'is-fit');
+    ['transform', 'width', 'height'].forEach(k => c.style.removeProperty(k));
+    wire(c);
+    return c;
+  };
+  const dockOnto = (chip, host, magnet = true) => {
+    place(chip, dockOf(host), { magnet });
+    chip.setAttribute('aria-label', `${chip.dataset.name}, attached to ${host.dataset.name}. Press to take it off.`);
+  };
+  const flyHome = (chip, from) => {   // a copy leaving the field flies back to its tile in the panel
+    const to = original(chip.dataset.id);
+    const r = to && to.offsetParent ? to.getBoundingClientRect() : null;
+    if (still.matches || !from.width || !r || !r.width) return;
+    const ghost = chip.cloneNode(true);
+    ghost.className = 'wtile is-ghost';
+    ghost.removeAttribute('aria-label');
+    Object.assign(ghost.style, { width: from.width + 'px', height: from.height + 'px' });
+    document.body.append(ghost);
+    ghost.animate([{ transform: `translate(${from.left}px, ${from.top}px)` },
+                   { transform: `translate(${r.left}px, ${r.top}px) scale(${r.width / from.width})`, opacity: 0.3 }],
+                  { duration: 380, easing: 'cubic-bezier(.2, .8, .2, 1)' }).finished.then(() => ghost.remove(), () => ghost.remove());
+  };
+  const undock = chip => {
+    const host = hostOf(chip);
+    const from = chip.getBoundingClientRect();
+    chip.remove();
+    if (host && !docked(host).length) { docks.get(host).remove(); docks.delete(host); }
+    flyHome(chip, from);
+  };
+  const say = (text, ms = 2600) => {   // a short line on the field, also read out
+    said.textContent = text;
+    tip.textContent = text;
+    tip.hidden = false;
+    clearTimeout(tip.timer);
+    tip.timer = setTimeout(() => { tip.hidden = true; }, ms);
+  };
+  const tip = document.createElement('p');
+  tip.className = 'field-tip';
+  tip.hidden = true;
+  tip.setAttribute('aria-hidden', 'true');
+  field.append(tip);
+  // Where a click sends an attachment: the tile being built that needs it, else any that does.
+  const attachByClick = att => {
+    const want = DATA.needs[givesOf(att)];
+    const pool = [last, ...activeGroup, ...tiles.filter(onField)].filter(Boolean);
+    const host = pool.find(h => canDock(h, att) && (defOf(h).needs || []).includes(givesOf(att))) || pool.find(h => canDock(h, att));
+    if (host) { dockOnto(copyOf(att), host); count(); return; }
+    say(tiles.some(onField) ? `No tile on the field is waiting for ${want}.` : `Put a tile that needs ${want} on the field first.`);
+  };
+
   // ---- Moving a tile: it lands in its new square at once, then glides there from where it was. ----
   const caption = sq => sq.closest('.tray-slot');
   const setCaption = (slot, tile) => {
@@ -248,6 +419,10 @@
     sq.append(tile);
     if (prev && prev.classList.contains('sq')) setCaption(caption(prev), tileIn(prev));
     if (sq.classList.contains('sq')) setCaption(caption(sq), tile);
+    if (docks.has(tile)) {   // its attachments go where it goes; back in the panel, they come off
+      if (sq.classList.contains('cell')) { const d = docks.get(tile); sq.append(d); d.classList.remove('is-away'); }
+      else docked(tile).forEach(undock);
+    }
     if (focused) tile.focus({ preventScroll: true });
     const to = tile.getBoundingClientRect();
     if (still.matches || !from.width || !to.width) return;
@@ -278,23 +453,27 @@
   };
   const backToPanel = tile => (tileIn(home.get(tile)) ? squares.find(sq => !tileIn(sq)) : home.get(tile));
 
-  // ---- Dragging. ----
+  // ---- Dragging. An attachment taken from the panel is dragged as a copy; it can only land on a
+  // tile that needs it, and anywhere else it goes back. ----
   let drag = null, target = null, swallowClick = false;
   const clearTarget = () => {
     if (!target) return;
-    target.el.classList.remove('is-target', 'is-magnet');
+    target.el.classList.remove('is-target', 'is-magnet', 'is-host');
     target.el.style.removeProperty('--tc');
     target = null;
   };
   const findTarget = (x, y) => {
     const f = field.getBoundingClientRect();
+    const att = drag && isAtt(drag.tile);
     if (x >= f.left && x <= f.right && y >= f.top && y <= f.bottom) {
       let best = null;
       for (const cell of cells) {
-        if (tileIn(cell)) continue;
+        const host = tileIn(cell);
+        if (att ? !canDock(host, drag.tile) : host) continue;
         const b = cell.getBoundingClientRect();
         const step = b.width * 1.14;
         const d = Math.hypot(x - (b.left + b.width / 2), y - (b.top + b.height / 2)) / step;
+        if (att) { if (d < 0.8 && (!best || d < best.score)) best = { el: cell, sq: cell, host, magnet: true, score: d }; continue; }
         const magnet = neighbours(cell).some(tileIn);
         const score = magnet && d < 1.25 ? d - 0.5 : d < 0.72 ? d : Infinity;
         if (score < Infinity && (!best || score < best.score)) best = { el: cell, sq: cell, magnet, score };
@@ -303,6 +482,7 @@
     }
     const t = tray.getBoundingClientRect();
     if (x >= t.left && x <= t.right && y >= t.top && y <= t.bottom) {
+      if (att) return { el: trayScroll, sq: null, off: true, magnet: false };   // a copy dropped here comes off
       if (kind !== 'all' && drag) {   // with a filter on, the tile goes back to its own place
         const sq = backToPanel(drag.tile);
         return sq ? { el: trayScroll, sq, magnet: false } : null;
@@ -318,20 +498,25 @@
     }
     return null;
   };
-  const dragSize = overTray => {
-    if (overTray) { const sq = squares.find(x => x.offsetParent); return sq ? sq.getBoundingClientRect().width : 72; }
+  const dragSize = t => {
+    if (t.host) return cells[0].getBoundingClientRect().width * 0.42;
+    if (!t.sq || t.sq.classList.contains('sq')) { const sq = squares.find(x => x.offsetParent); return sq ? sq.getBoundingClientRect().width : 72; }
     return cells[0].getBoundingClientRect().width;
   };
 
   const start = (e, tile) => {
     const r = tile.getBoundingClientRect();
-    drag.from = tile.parentElement;
+    if (isAtt(tile) && !hostOf(tile)) {   // from the panel: the copy is dragged, the tile stays
+      tile = drag.tile = copyOf(tile);
+      drag.from = null;
+    } else drag.from = tile.parentElement;
     drag.ox = (e.clientX - r.left) / r.width;
     drag.oy = (e.clientY - r.top) / r.height;
     drag.size = r.width;
     resetTest();
+    if (docks.has(tile)) docks.get(tile).classList.add('is-away');
     document.body.append(tile);
-    if (drag.from.classList.contains('sq')) setCaption(caption(drag.from), null);
+    if (drag.from && drag.from.classList.contains('sq')) setCaption(caption(drag.from), null);
     tile.classList.add('is-dragging');
     tile.style.width = tile.style.height = r.width + 'px';
     tile.style.transform = `translate(${r.left}px, ${r.top}px)`;
@@ -342,8 +527,7 @@
     const { tile } = drag;
     target && clearTarget();
     const t = findTarget(e.clientX, e.clientY);
-    const overTray = !!t && t.sq.classList.contains('sq');
-    const size = t ? dragSize(overTray) : drag.size;
+    const size = t ? dragSize(t) : drag.size;
     drag.size = size;
     tile.style.width = tile.style.height = size + 'px';
     let x = e.clientX - drag.ox * size, y = e.clientY - drag.oy * size;
@@ -351,8 +535,9 @@
       target = t;
       t.el.classList.add('is-target');
       t.el.classList.toggle('is-magnet', t.magnet);
-      t.el.style.setProperty('--tc', getComputedStyle(tile).getPropertyValue('--tc'));
-      if (t.magnet && !still.matches) {   // the magnet pulls the tile a little toward its square
+      t.el.classList.toggle('is-host', !!t.host);
+      t.el.style.setProperty('--tc', getComputedStyle(tile).getPropertyValue('--rc'));
+      if (t.magnet && t.sq && !still.matches) {   // the magnet pulls the tile a little toward its square
         const b = t.sq.getBoundingClientRect();
         x += (b.left - x) * 0.3;
         y += (b.top - y) * 0.3;
@@ -365,7 +550,18 @@
     const t = target;
     clearTarget();
     drag = null;
-    if (t) {
+    if (isAtt(tile)) {   // an attachment: onto a tile that needs it, back where it was, or off
+      const was = from && from.classList.contains('dock') ? [...docks].find(([, d]) => d === from) : null;
+      if (t && t.host) dockOnto(tile, t.host);
+      else if (was && !t && onField(was[0]) && canDock(was[0], tile)) dockOnto(tile, was[0], false);
+      else {
+        if (was && !docked(was[0]).length) { was[1].remove(); docks.delete(was[0]); }
+        const r = tile.getBoundingClientRect();
+        tile.remove();
+        flyHome(tile, r);
+        if (!t) say(`${tile.dataset.name} goes onto a tile that needs ${DATA.needs[givesOf(tile)]}.`);
+      }
+    } else if (t) {
       place(tile, t.sq, { magnet: t.magnet });
       if (t.sq.classList.contains('cell')) last = tile;
     } else place(tile, from);
@@ -392,7 +588,9 @@
     if (drag.moving) { swallowClick = true; drop(); setTimeout(() => { swallowClick = false; }, 0); }
     else drag = null;
   };
-  tiles.forEach(tile => {
+  // A click: a panel tile goes to the field (when TesT has just named a tile at fault and this one
+  // fits in its place, it takes that place, or docks onto it); a field tile goes back to the panel.
+  function wire(tile) {
     tile.addEventListener('pointerdown', e => {
       if (e.button !== 0 || drag) return;
       drag = { tile, id: e.pointerId, x0: e.clientX, y0: e.clientY, moving: false };
@@ -403,10 +601,19 @@
     tile.addEventListener('dragstart', e => e.preventDefault());
     tile.addEventListener('click', () => {
       if (swallowClick || drag) return;
+      const mend = fix && fix.ids.has(tile.dataset.id) && !onField(tile) && !hostOf(tile) ? fix : null;
       resetTest();
+      if (hostOf(tile)) { undock(tile); count(); return; }
+      if (mend && mend.mode === 'attach' && onField(mend.host)) { dockOnto(copyOf(tile), mend.host); endFix(); count(); return; }
+      if (isAtt(tile)) { attachByClick(tile); return; }
       if (onField(tile)) {
         place(tile, backToPanel(tile));
         if (last === tile) last = null;
+      } else if (mend && mend.mode === 'replace' && (tileIn(mend.cell) === mend.host || !tileIn(mend.cell))) {
+        if (tileIn(mend.cell)) place(mend.host, backToPanel(mend.host));
+        place(tile, mend.cell, { magnet: true });
+        last = tile;
+        endFix();
       } else {
         const cell = nextCell();
         if (!cell) return;
@@ -416,10 +623,17 @@
       }
       count();
     });
-  });
+    const hot = on => () => { if (onField(tile)) glow(tile.dataset.id, on); };
+    tile.addEventListener('pointerenter', hot(true));
+    tile.addEventListener('pointerleave', hot(false));
+    tile.addEventListener('focus', hot(true));
+    tile.addEventListener('blur', hot(false));
+  }
+  tiles.forEach(wire);
 
   bench.querySelector('.field-clear').addEventListener('click', () => {
     resetTest();
+    endFix();
     tiles.filter(onField).forEach((t, i) => setTimeout(() => { place(t, backToPanel(t)); count(); }, i * 60));
     last = null;
   });
@@ -446,7 +660,12 @@
     keyTest.classList.remove('is-running');
     test = null;
   }
-  function resetTest() { stopTest(); keyTest.classList.remove('is-pass', 'is-fail'); }
+  function resetTest() {
+    stopTest();
+    keyTest.classList.remove('is-pass', 'is-fail');
+    tiles.forEach(t => t.classList.remove('is-wrong'));
+    if (fixBox.classList.contains('is-pass')) endFix();   // a pass is about the field as it was
+  }
 
   // The outline of a group: its squares, with the gaps between joined tiles filled in, traced into
   // closed loops going clockwise, pushed out by d pixels and rounded at the corners.
@@ -499,6 +718,195 @@
     }
     return path;
   };
+
+  // ---- The rules TesT applies. A board is the tiles on the field as [{ id, c, r, att }], att being
+  // the needs their docked attachments fill. Tiles side by side pass their work left to right (a
+  // PIPE); tiles stacked in one column are alternatives that all get the same work (a STAGE); a tile
+  // touching Siren (a hub) is a specialist she CALLS, and its answer comes back to her. The checks
+  // run in order and the first that fails is the answer: (1) a start and an end; (2) one piece, and
+  // every start reaching an end, with nothing before a start, nothing after an end, and no middle
+  // tile cut off on either side; (3) every two touching tiles fitting, in the direction the work
+  // goes; (4) every tile having the attachments it needs. Each fault names the tile at fault (p),
+  // and the tile it could not follow (other) when there is one. ----
+  const D = id => DEF.get(id);
+  const isStart = d => d.role === 'start' || d.role === 'both';
+  const isEnd = d => d.role === 'end' || d.role === 'both';
+  const kinds = ks => orList(ks.map(k => (k === '*' ? 'any result' : DATA.kinds[k] || k)));
+  const fitsKinds = (out, inn) => out.length > 0 && (inn.includes('*') || out.some(k => inn.includes(k)));
+  const ORDER = ['ends', 'orphan', 'order', 'kinds', 'needs'];
+  const check = board => {
+    const at = new Map(board.map(p => [p.c + ',' + p.r, p]));
+    const get = (c, r) => at.get(c + ',' + r);
+    const nm = p => D(p.id).name;
+    const names = ps => list([...new Set(ps.map(nm))]);
+    const hub = p => !!(p && D(p.id).hub);
+    const stageOf = new Map();
+    for (const p of board) {
+      if (stageOf.has(p) || hub(p)) continue;
+      const st = { members: [], preds: new Set(), succs: new Set(), hubs: new Set() };
+      let r0 = p.r;
+      while (get(p.c, r0 - 1) && !hub(get(p.c, r0 - 1))) r0--;
+      for (let r = r0; get(p.c, r) && !hub(get(p.c, r)); r++) { st.members.push(get(p.c, r)); stageOf.set(get(p.c, r), st); }
+    }
+    const edges = [];
+    for (const p of board) for (const [dc, dr] of [[1, 0], [0, 1]]) {
+      const q = get(p.c + dc, p.r + dr);
+      if (!q || (hub(p) && hub(q))) continue;
+      if (hub(p) || hub(q)) {
+        const [h, x] = hub(p) ? [p, q] : [q, p];
+        edges.push({ type: 'call', from: h, to: x });
+        stageOf.get(x).hubs.add(h);
+      } else if (dc) {
+        edges.push({ type: 'pipe', from: p, to: q });
+        stageOf.get(p).succs.add(q);
+        stageOf.get(q).preds.add(p);
+      }
+    }
+    const errs = [];
+    const add = (cat, p, sentence, big, more = {}) => errs.push({ cat, p, sentence, big, mode: 'replace', ...more });
+    // (1) a start and an end
+    const sources = board.filter(p => !hub(p) && !stageOf.get(p).preds.size && !stageOf.get(p).hubs.size);
+    const sinks = board.filter(p => !hub(p) && !stageOf.get(p).succs.size && !stageOf.get(p).hubs.size);
+    if (!board.some(p => isStart(D(p.id)))) {
+      for (const p of (sources.length ? sources : board)) {
+        const d = D(p.id);
+        add('ends', p, `Nothing starts this chain: ${d.name} ${d.in.length ? `needs ${kinds(d.in)}, and ` : ''}only a start tile (blue) can begin a chain.`, 'no start');
+      }
+    }
+    if (!board.some(p => isEnd(D(p.id)))) {
+      for (const p of (sinks.length ? sinks : board)) {
+        const d = D(p.id);
+        add('ends', p, `Nothing ends this chain: ${d.name} hands on ${kinds(d.out)}, and only an end tile (teal) can give the result.`, 'no end');
+      }
+    }
+    // (2) one piece; then the order
+    const pieces = [], seen = new Set();
+    for (const p of board) {
+      if (seen.has(p)) continue;
+      const piece = [], todo = [p];
+      seen.add(p);
+      while (todo.length) {
+        const q = todo.pop();
+        piece.push(q);
+        for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const n = get(q.c + dc, q.r + dr);
+          if (n && !seen.has(n)) { seen.add(n); todo.push(n); }
+        }
+      }
+      pieces.push(piece);
+    }
+    pieces.sort((a, b) => b.length - a.length);
+    for (const piece of pieces.slice(1)) {
+      for (const p of piece) {
+        add('orphan', p, `${names(piece)} ${piece.length > 1 ? 'are' : 'is'} not joined to the rest: one model is one piece, so put ${piece.length > 1 ? 'them' : 'it'} beside the chain or back in the panel.`, `${pieces.length} pieces`, { mode: 'none' });
+      }
+    }
+    for (const p of board) {
+      if (hub(p)) continue;
+      const d = D(p.id), st = stageOf.get(p);
+      const before = st.preds.size > 0, after = st.succs.size > 0, called = st.hubs.size > 0;
+      if (d.role === 'start' && before) add('order', p, `${d.name} cannot follow ${names([...st.preds])}: ${d.name} starts a chain, so nothing can come before ${d.name}.`, 'wrong order', { other: [...st.preds] });
+      else if (d.role === 'end' && after) add('order', p, `Nothing can follow ${d.name}: ${d.name} ends a chain, and ${names([...st.succs])} ${st.succs.size > 1 ? 'are' : 'is'} after ${d.name}.`, 'wrong order', { other: [...st.succs] });
+      else if (d.role !== 'start' && !before && !called) add('order', p, `Nothing comes before ${d.name}: ${d.name} needs ${kinds(d.in)}, from a start tile on the left or from Siren beside it.`, 'no start');
+      else if (d.role !== 'end' && !after && !called) add('order', p, `What ${d.name} gives goes nowhere: ${d.name} hands on ${kinds(d.out)}, and a chain must end in a tile that gives the result.`, 'dead end');
+    }
+    // (3) every two touching tiles fit
+    for (const e of edges) {
+      if (e.type === 'pipe') {
+        for (const m of stageOf.get(e.to).members) {
+          const a = D(e.from.id), b = D(m.id);
+          if (b.role === 'start' || !a.out.length) continue;   // the order check names these
+          if (!fitsKinds(a.out, b.in)) add('kinds', m, `${b.name} cannot follow ${a.name}: ${a.name} gives ${kinds(a.out)}, ${b.name} needs ${kinds(b.in)}.`, 'no fit', { other: [e.from] });
+        }
+      } else {
+        for (const m of stageOf.get(e.to).members) {
+          const h = D(e.from.id), x = D(m.id);
+          if (x.role !== 'start' && !fitsKinds(h.out, x.in)) add('kinds', m, `${h.name} cannot call ${x.name}: ${h.name} gives ${kinds(h.out)}, ${x.name} needs ${kinds(x.in)}.`, 'no fit', { other: [e.from] });
+          else if (x.role !== 'end' && !fitsKinds(x.out, h.in)) add('kinds', m, `${x.name} cannot answer ${h.name}: ${x.name} gives ${kinds(x.out)}, ${h.name} needs ${kinds(h.in)}.`, 'no fit', { other: [e.from] });
+        }
+      }
+    }
+    // (4) every tile has what it needs
+    for (const p of board) for (const need of D(p.id).needs || []) {
+      if (!p.att.has(need)) add('needs', p, `${nm(p)} needs ${DATA.needs[need]}: attach one onto ${nm(p)}.`, `needs ${DATA.needs[need].replace(/^an? /, '')}`, { mode: 'attach', need });
+    }
+    const flow = (a, b) => a.p.c - b.p.c || a.p.r - b.p.r;
+    const cat = ORDER.find(c => errs.some(e => e.cat === c));
+    const faults = cat ? errs.filter(e => e.cat === cat).sort(flow) : [];
+    // the team, as the work goes: "Siren → Daisy → Siren", or "Orchid → Jasmine or Lily → …"
+    const stages = [...new Set(stageOf.values())].sort((a, b) => Math.min(...a.members.map(p => p.c)) - Math.min(...b.members.map(p => p.c)));
+    const says = stages.map(st => orList(st.members.map(nm)));
+    const h = board.find(hub);
+    const path = h ? [nm(h), ...says, ...(says.length ? [nm(h)] : [])].join(' → ') : says.join(' → ');
+    return { ok: !cat, cat, faults, all: errs, edges, path };
+  };
+  const board = () => cells.filter(tileIn).map(cell => {
+    const t = tileIn(cell), [c, r] = posOf(cell);
+    return { id: t.dataset.id, c, r, att: new Set(docked(t).map(givesOf)), tile: t };
+  });
+  // The tiles from the panel that could stand where a fault is: put in that square, nothing at that
+  // place breaks the order or the fit any more (what it needs can be attached afterwards).
+  const fitting = (b, fault) => {
+    if (fault.mode === 'attach') return DATA.tiles.filter(d => d.gives === fault.need).map(d => d.id);
+    if (fault.mode !== 'replace') return [];
+    return tiles.filter(t => !isAtt(t) && !onField(t)).map(t => t.dataset.id).filter(id => {
+      const q = { id, c: fault.p.c, r: fault.p.r, att: new Set(D(id).needs || []) };
+      const res = check(b.map(p => (p === fault.p ? q : p)));
+      return !res.all.some(e => (e.cat === 'ends' || e.cat === 'order' || e.cat === 'kinds') && (e.p === q || (e.other || []).includes(q)));
+    });
+  };
+
+  // ---- When TesT names a tile at fault: the sentence, in a box above the panel's tiles, and the
+  // panel showing only the tiles that fit there ("Fits here"), until "Show all tiles". ----
+  let fix = null;   // { host, cell, mode, ids }
+  const fixBox = document.createElement('div');
+  fixBox.className = 'fix';
+  fixBox.hidden = true;
+  fixBox.setAttribute('role', 'status');
+  fixBox.innerHTML = '<p class="fix-say"></p><p class="fix-what"></p><button class="fix-all" type="button">Show all tiles</button>';
+  const filtersEl = tray.querySelector('.filters');
+  filtersEl.after(fixBox);
+  const startFix = (b, fault) => {
+    const ids = new Set(fitting(b, fault));
+    const host = fault.p.tile;
+    fix = { host, cell: host.parentElement, mode: fault.mode, ids };
+    fixBox.classList.remove('is-pass');
+    fixBox.querySelector('.fix-say').textContent = fault.sentence;
+    const what = fixBox.querySelector('.fix-what');
+    if (fault.mode === 'none') what.textContent = '';
+    else if (!ids.size) what.textContent = 'No tile in the panel fits there.';
+    else if (fault.mode === 'attach') what.textContent = `Below: what can go onto ${host.dataset.name}. Press one to attach it.`;
+    else what.textContent = `Below: the ${ids.size === 1 ? 'tile' : `${ids.size} tiles`} that could take ${host.dataset.name}’s place. Press one to swap it in.`;
+    fixBox.hidden = false;
+    if (fault.mode !== 'none' && ids.size) setKind('fix');
+  };
+  const showPass = sentence => {
+    fix = null;
+    fixBox.classList.add('is-pass');
+    fixBox.querySelector('.fix-say').textContent = sentence;
+    fixBox.querySelector('.fix-what').textContent = '';
+    fixBox.hidden = false;
+  };
+  function endFix() {
+    if (!fix && fixBox.hidden) return;
+    fix = null;
+    fixBox.hidden = true;
+    fixBox.classList.remove('is-pass');
+    if (kind === 'fix') setKind('all');
+  }
+  fixBox.querySelector('.fix-all').addEventListener('click', () => { endFix(); });
+
+  // HOOK, for later (not now): once the connector runs on the person's own PC, TesT will also send
+  // a sample through the real models here, with recipe() (POST /v1/recipe/test, see
+  // CONNECTOR-DESIGN), and show each tile's answer and confidence along the bars. Today nothing
+  // leaves the page: sampleRun stays null and no network call is made.
+  const sampleRun = null;
+  const recipe = res => ({
+    schema: 'connector/recipe@1',
+    grid: board().map(p => ({ tile: p.id, at: [p.c, p.r] })),
+    edges: res.edges.map(e => ({ from: e.from.id, to: e.to.id, type: e.type })),
+    bind: Object.fromEntries(board().filter(p => p.att.size).map(p => [p.id, [...p.att]])),
+  });
 
   const runTest = () => {
     resetTest();
@@ -625,6 +1033,8 @@
       return;
     }
     const main = pieces[0], loose = pieces.slice(1);
+    const b0 = board(), res = check(b0);   // the rules decide; the signal below only shows it
+    endFix();
     const dist = t => { const [x, y] = centre(t); return Math.hypot(x - from[0], y - from[1]); };
     const first = main.reduce((a, b) => (dist(b) < dist(a) ? b : a));
     // From the first tile, outward: when each tile is reached, and from which tile.
@@ -652,7 +1062,7 @@
     const lit = FLY + depth * HOP + 140;
     const n = main.length, DRAW = 700;
 
-    if (!loose.length) {   // one model: drawn round, the bars between them all lit, a pulse
+    if (res.ok) {   // one model: drawn round, the bars between them all lit, a pulse
       later(lit, () => {
         line(main, 'test-line', DRAW);
         const fill = document.createElementNS(SVG, 'path');
@@ -674,10 +1084,29 @@
           Object.assign(wave.style, { left: b.x - 8 + 'px', top: b.y - 8 + 'px', width: b.w + 16 + 'px', height: b.h + 16 + 'px', borderRadius: '18px' });
           wave.animate([{ transform: 'scale(1)', opacity: 0.9 }, { transform: 'scale(1.25)', opacity: 0 }], { duration: 950, easing: 'cubic-bezier(.2, .8, .2, 1)', fill: 'forwards' });
         }
-        verdict(b, false, '1 model', n === 1 ? '1 tile' : `${n} tiles joined`);
-        said.textContent = n === 1 ? 'Test: the one tile on the field is one model.' : `Test: the ${n} tiles on the field are joined into one model.`;
+        verdict(b, false, '1 model', res.path.length <= 34 ? res.path : `${n} tiles in order`);
+        const unbuilt = [...new Set([...main, ...main.flatMap(docked)].filter(t => t.dataset.status === 'design' || t.dataset.status === 'notbuilt').map(t => t.dataset.name))];
+        const sentence = `${res.path}: the order is right, every two touching tiles fit and every tile has what it needs, so ${n === 1 ? 'this tile makes' : `these ${n} tiles make`} one model.`
+          + (unbuilt.length ? ` It cannot run yet: ${list(unbuilt)} ${unbuilt.length > 1 ? 'are' : 'is'} not built.` : ' It works as one model.');
+        said.textContent = 'Test: ' + sentence;
+        showPass(sentence);
+        if (sampleRun) sampleRun(recipe(res));   // later: a sample through the real models (see HOOK)
       });
       finish(lit + DRAW + 2800);
+    } else if (res.cat !== 'orphan') {   // a tile at fault: marked, the reason said, and the panel shows what fits there
+      const fault = res.faults[0];
+      const bad = [...new Set(res.faults.map(f => f.p.tile))];
+      later(lit, () => {
+        keyTest.classList.replace('is-running', 'is-fail');
+        bad.forEach(t => {
+          t.classList.add('is-wrong');
+          if (slow) t.animate([0, -5, 5, -4, 4, -2, 0].map(dx => ({ transform: `translateX(${dx}px)` })), { duration: 460, easing: 'ease-out' });
+        });
+        verdict(box(bad), true, fault.big, fault.sentence.split(':')[0]);
+        said.textContent = 'Test: ' + fault.sentence;
+        startFix(b0, fault);
+      });
+      finish(lit + 2800);
     } else {   // more than one piece: the signal reaches for each loose piece and fizzles at the gap
       const mainAt = main.map(centre);
       loose.slice(0, 4).forEach((piece, i) => {
@@ -710,7 +1139,9 @@
         });
         const all = pieces.flat();
         verdict(box(all), true, `${pieces.length} pieces`, 'not joined as 1 model');
-        said.textContent = `Test: the tiles on the field are in ${pieces.length} pieces, not joined into one model.`;
+        said.textContent = `Test: the tiles on the field are in ${pieces.length} pieces, not joined into one model. ${res.faults[0].sentence}`;
+        loose.flat().forEach(t => t.classList.add('is-wrong'));
+        startFix(b0, res.faults[0]);
       });
       finish(lit + 460 + 2800);
     }
@@ -737,17 +1168,13 @@
   const codePos = codeWrap.querySelector('.code-pos');
   const codeCount = codeWrap.querySelector('.code-count');
   // For each model: what it is given when a team starts with it, what it hands on, and how early
-  // in the work it comes.
-  const ROLES = {
-    bouquet: ['brief', 'plan', 0], cricket: ['request', 'questions', 0], cicada: ['project', 'memory', 0],
-    butterfly: ['request', 'steps', 1], orchid: ['files', 'facts', 1], lily: ['files', 'logo', 1],
-    tulip: ['sheets', 'tables', 1], magnolia: ['database', 'meaning', 1], dragonfly: ['query', 'found', 2],
-    daisy: ['question', 'answer', 2], jasmine: ['signals', 'design', 2], bees: ['step', 'code', 2],
-    ants: ['step', 'parts', 2], mantis: ['work', 'audit', 3], ladybug: ['work', 'bugs', 3],
-    thistle: ['site', 'findings', 3], iris: ['site', 'report', 3], firefly: ['problem', 'advice', 4],
-    siren: ['message', 'reply', 0],
+  // in the work it comes, from its role and its kinds in tiles.js.
+  const RANK = { start: 0, both: 0, middle: 1, end: 2 };
+  const role = t => {
+    const d = defOf(t);
+    const given = d.role === 'both' ? 'message' : d.role === 'start' ? (d.needs || [])[0] || 'source' : (d.in || [])[0] || 'data';
+    return [given === '*' ? 'result' : given, (d.out || [])[0] || 'result', RANK[d.role] ?? 1];
   };
-  const role = t => ROLES[t.dataset.id] || ['data', t.dataset.id + '_out', 2];
   const colour = id => { const t = tiles.find(x => x.dataset.id === id); return t ? t.style.getPropertyValue('--tc') : ''; };
 
   // The lines of team.py, each a list of [kind, text] (a model's name also carries its colour).
@@ -778,21 +1205,24 @@
     for (const t of order) {   // squares side by side are always a step apart outward, never level
       const id = t.dataset.id;
       const note = t.dataset.params === '' && t.dataset.note ? t.dataset.note.split(/[,;]/)[0] : '';
-      add(id, mdl(id), ['op', ' = '], ['fn', 'load'], ['op', '('], ['str', `"${id}"`], ['op', ')'], ...(note ? [['com', `  # ${note}`]] : []));
+      const with_ = docked(t).flatMap(c => [['op', ', '], ['prm', givesOf(c)], ['op', '='], ['str', `"${c.dataset.id}"`]]);
+      add(id, mdl(id), ['op', ' = '], ['fn', 'load'], ['op', '('], ['str', `"${id}"`], ...with_, ['op', ')'], ...(note ? [['com', `  # ${note}`]] : []));
     }
     add(null);
     add(null, ['kw', 'def'], ['op', ' '], ['fn', 'team'], ['op', '('], ['prm', role(first)[0]], ['op', '):']);
-    const ends = order.filter(t => !joined(t).some(u => level.get(u) > level.get(t)));
+    const hubT = group.length > 1 ? group.find(t => defOf(t).hub) : null;   // Siren: her specialists answer back to her
+    const ends = order.filter(t => t !== hubT && !joined(t).some(u => level.get(u) > level.get(t)));
     const list = items => items.flatMap((x, i) => (i ? [['op', ', '], x] : [x]));
     for (const t of order) {
       const given = level.get(t) === 0
         ? [['prm', role(first)[0]]]
         : joined(t).filter(u => level.get(u) < level.get(t)).sort(reading).map(u => ['var', role(u)[1]]);
       const call = [mdl(t.dataset.id), ['op', '('], ...list(given), ['op', ')']];
-      if (ends.length === 1 && ends[0] === t) add(t.dataset.id, ['op', '    '], ['kw', 'return'], ['op', ' '], ...call);
+      if (!hubT && ends.length === 1 && ends[0] === t) add(t.dataset.id, ['op', '    '], ['kw', 'return'], ['op', ' '], ...call);
       else add(t.dataset.id, ['op', '    '], ['var', role(t)[1]], ['op', ' = '], ...call);
     }
-    if (ends.length > 1) add(null, ['op', '    '], ['kw', 'return'], ['op', ' '], ...list(ends.map(t => ['var', role(t)[1]])));
+    if (hubT) add(hubT.dataset.id, ['op', '    '], ['kw', 'return'], ['op', ' '], mdl(hubT.dataset.id), ['op', '('], ...list(ends.map(t => ['var', role(t)[1]])), ['op', ')']);
+    else if (ends.length > 1) add(null, ['op', '    '], ['kw', 'return'], ['op', ' '], ...list(ends.map(t => ['var', role(t)[1]])));
     if (loose) {
       add(null);
       add(null, ['com', `# ${loose} more ${loose > 1 ? 'pieces' : 'piece'} on the field, not joined`]);
@@ -923,13 +1353,6 @@
     el.classList.toggle('is-hot', on !== false);
     if (on === undefined) setTimeout(() => el.classList.remove('is-hot'), 650);
   });
-  tiles.forEach(t => {
-    const hot = on => () => { if (onField(t)) glow(t.dataset.id, on); };
-    t.addEventListener('pointerenter', hot(true));
-    t.addEventListener('pointerleave', hot(false));
-    t.addEventListener('focus', hot(true));
-    t.addEventListener('blur', hot(false));
-  });
 
   const openCode = open => {
     keyCode.setAttribute('aria-expanded', String(open));
@@ -952,7 +1375,8 @@
   const trayScroll = tray.querySelector('.tray-scroll');
   const slots = [...tray.querySelectorAll('.tray-slot')];
   const tagsOf = t => (t.dataset.tags || '').split(' ').filter(Boolean);
-  const fits = (t, k) => k === 'all' || (k === 'ready' ? t.dataset.params !== '' || t.dataset.ms !== '' : tagsOf(t).includes(k));
+  const fits = (t, k) => k === 'all' || (k === 'fix' ? !!fix && fix.ids.has(t.dataset.id)
+    : k === 'ready' ? t.dataset.params !== '' || t.dataset.ms !== '' : tagsOf(t).includes(k));
   let kind = 'all';
   const found = [...new Set(tiles.flatMap(tagsOf))].filter(k => !KINDS.some(([x]) => x === k));
   for (const [k, name] of [...KINDS, ...found.map(k => [k, k[0].toUpperCase() + k.slice(1)])]) {
@@ -969,7 +1393,24 @@
     chip.append(count);
     filterBar.append(chip);
   }
+  // "Fits here": shown only after TesT has named a tile at fault, for the tiles that would fit there.
+  const fixChip = document.createElement('button');
+  fixChip.type = 'button';
+  fixChip.className = 'chip chip-fix';
+  fixChip.dataset.kind = 'fix';
+  fixChip.hidden = true;
+  fixChip.setAttribute('aria-pressed', 'false');
+  fixChip.innerHTML = 'Fits here <b>0</b>';
+  filterBar.prepend(fixChip);
   filterBar.hidden = false;
+  function setKind(k) {
+    kind = k;
+    fixChip.hidden = k !== 'fix';
+    fixChip.querySelector('b').textContent = fix ? fix.ids.size : 0;
+    filterBar.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.kind === k)));
+    trayScroll.scrollTop = 0;
+    refilter();
+  }
 
   function refilter(animate = true) {
     const motion = animate && !still.matches;
@@ -995,10 +1436,8 @@
   filterBar.addEventListener('click', e => {
     const chip = e.target.closest('.chip');
     if (!chip || chip.dataset.kind === kind) return;
-    kind = chip.dataset.kind;
-    filterBar.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
-    trayScroll.scrollTop = 0;
-    refilter();
+    endFix();   // another filter: the tiles that fit are no longer the question
+    setKind(chip.dataset.kind);
   });
 
   // ---- The panel's width: a quarter of the page to start with; its left edge can be dragged. ----

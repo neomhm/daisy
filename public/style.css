@@ -1190,6 +1190,75 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cell .wtile:hover, .cell .wtile:focus-visible { z-index: 6; }
 .cell .wtile:hover::after, .cell .wtile:focus-visible::after { opacity: 1; transform: translate(-50%, 7px); }
 
+/* Roles (tiles.js; workbench.js). A tile is coloured by what it does in a chain: a start (blue)
+   takes the data in, a middle (amber) works on it, an end (teal) gives the result; Siren, a start
+   and an end, wears both; an attachment (slate, dashed edge) snaps onto a tile that needs it. Small
+   tabs on a tile's sides show where work comes in (left) and goes out (right). The tile keeps its
+   own pixel drawing, and its own colour runs along its foot. Each role colour stays above 4.5:1
+   under the white drawing and 3:1 against the field and the panel. */
+.bench { --role-start: #1f6fd1; --role-middle: #b35f00; --role-end: #0d7f86; --role-att: #5f6b7a; }
+.wtile { --rc: var(--role-middle); background-color: var(--rc); }
+.wtile[data-role="start"] { --rc: var(--role-start); }
+.wtile[data-role="end"] { --rc: var(--role-end); }
+.wtile[data-role="both"] { --rc: var(--role-start); background-image: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
+.wtile[data-role="attachment"] { --rc: var(--role-att); }
+.wtile[data-status="notbuilt"] { background-image: repeating-linear-gradient(-45deg, rgba(255, 255, 255, .15) 0 3px, transparent 3px 9px); }
+.wtile svg { background: linear-gradient(to top, var(--tc) 0 8%, transparent 8%); }
+.wtile::before {   /* the tabs: in on the left, out on the right */
+  content: "";
+  position: absolute;
+  top: 34%;
+  bottom: 34%;
+  left: -4px;
+  right: -4px;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--in, transparent) 0 4px, transparent 4px calc(100% - 4px), var(--out, transparent) calc(100% - 4px));
+  pointer-events: none;
+}
+.wtile[data-role="start"]::before { --out: var(--rc); }
+.wtile[data-role="middle"]::before { --in: var(--rc); --out: var(--rc); }
+.wtile[data-role="end"]::before { --in: var(--rc); }
+.wtile[data-role="attachment"]::before { inset: 4px; border: 1.5px dashed rgba(255, 255, 255, .7); border-radius: 6px; background: none; }
+.wtile.is-ghost { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; transform-origin: top left; }
+
+/* Attachments docked on a tile of the field: small, at its lower right corner. */
+.dock { position: absolute; right: -9%; bottom: -9%; z-index: 7; display: flex; flex-direction: row-reverse; gap: 3px; pointer-events: none; transition: opacity .2s; }
+.dock .wtile { width: calc(var(--cell) * .4); height: calc(var(--cell) * .4); border-radius: 7px; pointer-events: auto; box-shadow: 0 0 0 2px #151e27, 0 4px 10px rgba(0, 0, 0, .5); }
+.dock .wtile svg { border-radius: 7px; }
+.dock .wtile::before { inset: 2px; border-width: 1px; border-radius: 5px; }
+.dock.is-away { opacity: .25; }
+.cell.is-host > .wtile { box-shadow: 0 0 0 3px #fff, 0 0 26px rgba(255, 255, 255, .55); }
+
+/* TesT's verdict on a tile at fault: a red ring, and its name under it. */
+.cell .wtile.is-wrong { z-index: 5; box-shadow: 0 0 0 3px #ff6b63, 0 0 26px 6px rgba(255, 90, 80, .6); animation: wrong-glow 1.1s ease-in-out infinite alternate; }
+.cell .wtile.is-wrong::after { opacity: 1; transform: translate(-50%, 7px); background: #ff6b63; color: #fff; }
+@keyframes wrong-glow { to { box-shadow: 0 0 0 3px #ff6b63, 0 0 10px 2px rgba(255, 90, 80, .35); } }
+
+/* The colours' key, under the squares; and a short line the field says (an attachment with nowhere to go). */
+.field-legend { position: absolute; left: 164px; right: 24px; bottom: 6px; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; color: rgba(255, 255, 255, .7); font: 11px/1.3 var(--mono); pointer-events: none; }
+.field-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.field-legend i { width: 12px; height: 12px; border-radius: 3px; background: var(--role-middle); }
+.field-legend [data-role="start"] i { background: var(--role-start); }
+.field-legend [data-role="end"] i { background: var(--role-end); }
+.field-legend [data-role="both"] i { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
+.field-legend [data-role="attachment"] i { background: var(--role-att); outline: 1px dashed rgba(255, 255, 255, .75); outline-offset: -3px; }
+.field-tip { position: absolute; left: 50%; top: 46px; z-index: 8; max-width: min(460px, calc(100% - 32px)); margin: 0; padding: 7px 13px; border-radius: 10px; background: rgba(9, 13, 18, .92); box-shadow: 0 0 0 1px rgba(255, 193, 77, .5); color: #ffe2a8; font: 12px/1.4 var(--mono); text-align: center; transform: translateX(-50%); pointer-events: none; }
+.field-tip[hidden] { display: none; }
+
+/* What TesT found, above the panel's tiles: the reason in one sentence and, when a tile is at
+   fault, the "Fits here" filter showing only the tiles that could take its place. */
+.fix { margin: 10px 16px 0; padding: 10px 12px; border: 1px solid #f0b4ae; border-radius: 8px; background: #fff4f3; color: var(--fg); font-size: 12.5px; line-height: 1.45; }
+.fix[hidden], .filters .chip[hidden] { display: none; }
+.fix.is-pass { border-color: #9fd3cf; background: #effaf9; }
+.fix-say { margin: 0; font-weight: 600; }
+.fix-what { margin: 4px 0 0; color: var(--fg-muted); }
+.fix-what:empty { display: none; }
+.fix-all { margin-top: 8px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); color: var(--fg); font: 600 11px/1.4 var(--mono); cursor: pointer; }
+.fix-all:hover { border-color: #afb8c1; }
+.fix-all:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.fix.is-pass .fix-all { display: none; }
+.chip-fix[aria-pressed="true"] { border-color: #b3261e; background: #b3261e; }
+
 /* The keys, at the field's left: dark keycaps with amber pixel letters, like the screens. TesT's
    row of lights, in the rainbow order of the version tabs, runs while a test runs and tells how it
    ended. Download is not ready yet. CODE opens the code that joins the team, above the screens. */
@@ -1509,9 +1578,10 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   .field-keys { position: static; grid-template-columns: repeat(3, minmax(0, 112px)); gap: 12px; width: 100%; justify-content: center; transform: none; }   /* under the squares, side by side */
   .key { height: 72px; }
   .tray-scroll { overflow: visible; }
+  .field-legend { position: static; gap: 4px 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing, .key-test .key-leds i, .is-writing .code-live::before { animation: none; }
+  .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing, .key-test .key-leds i, .is-writing .code-live::before, .cell .wtile.is-wrong { animation: none; }
   .code-wrap { transition: none; }
   .wtile.is-dragging { transition: none; }
 }
