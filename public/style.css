@@ -73,16 +73,39 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 
 /* Header */
 
-.appheader { background: var(--bg-subtle); border-bottom: var(--hairline) solid var(--border); }
+/* The header stays at the top of every page. Once the page scrolls it shrinks by a third
+   (is-compact, set by switch.js): the brand row from --row to --row-c, the section bar from --tab
+   to --tab-c. A margin as tall as what it gives up keeps the page below from jumping. */
+.appheader {
+  --row: 56px;
+  --row-c: 37px;
+  --tab: 48px;
+  --tab-c: 32px;
+  --shrink-ease: cubic-bezier(.2, .8, .2, 1);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--bg-subtle);
+  border-bottom: var(--hairline) solid var(--border);
+  transition: margin-bottom .3s var(--shrink-ease), box-shadow .3s;
+}
+.appheader.is-compact { margin-bottom: calc(var(--row) - var(--row-c)); box-shadow: 0 6px 18px -10px rgba(31, 35, 40, .3); }
+.appheader.is-compact:has(.tabs) { margin-bottom: calc(var(--row) - var(--row-c) + var(--tab) - var(--tab-c)); }
+html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px); }
 
 .appheader-top {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
-  padding-top: 16px;
-  padding-bottom: 8px;
+  height: var(--row);
+  transition: height .3s var(--shrink-ease);
 }
+.appheader.is-compact .appheader-top { height: var(--row-c); }
+.appheader-top .brand img { width: 32px; height: 32px; transition: width .3s var(--shrink-ease), height .3s var(--shrink-ease); }
+.appheader.is-compact .appheader-top .brand img { width: 22px; height: 22px; }
+.appheader-top .logo-word { transition: font-size .3s var(--shrink-ease); }
+.appheader.is-compact .appheader-top .logo-word { font-size: 21px; }
 
 .brand { display: block; line-height: 0; }
 
@@ -120,14 +143,16 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   align-items: center;
   gap: 8px;
   padding: 0 8px;
-  height: 48px;
+  height: var(--tab);
   border-bottom: 1px solid transparent;
+  transition: height .3s var(--shrink-ease);
   color: var(--fg);
   white-space: nowrap;
 }
 .tabs a:hover { text-decoration: none; border-bottom-color: var(--border); }
 .tabs a .icon { color: var(--fg-muted); }
 .tabs a[aria-current] { border-bottom-color: var(--tab-line); font-weight: 600; }
+.appheader.is-compact .tabs a { height: var(--tab-c); }
 
 .label {
   display: inline-block;
@@ -724,12 +749,11 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .tabs .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--fg-muted)); }
 .tabs a[style] { --tab-line: var(--c); }
 
-/* Phones. The header stays at hand: the brand row tucks away while reading down and comes back
-   on the way up; the section bar stays. The page switcher opens as a sheet from the bottom.
+/* Phones. The header stays at hand and shrinks by a third once the page scrolls, like on a
+   larger screen. The page switcher opens as a sheet from the bottom.
    The box stack becomes compact cards; a button brings the reader back to the top. */
 .to-top { display: none; }
 @media (max-width: 700px) {
-  html { scroll-padding-top: calc(var(--head, 96px) - var(--tuck, 0px) + 12px); }
   .markdown h2, .module, .hero, .dna-frame { scroll-margin-top: 0; }
   body { padding-bottom: env(safe-area-inset-bottom); }
   html, body { overflow-x: clip; }   /* nothing may widen the page, or the phone zooms out and leaves a white strip */
@@ -738,11 +762,11 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
   .crumbs { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
   .appheader {
-    position: sticky;
-    top: 0;
-    z-index: 30;
+    --row: 44px;
+    --row-c: 30px;
+    --tab: 48px;
+    --tab-c: 32px;
     border-bottom: 0;
-    transition: top .3s cubic-bezier(.2, .8, .2, 1), box-shadow .3s;
   }
   .appheader::before {   /* frosted glass, on a layer of its own so the sheet can still be fixed */
     content: "";
@@ -754,18 +778,17 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
     backdrop-filter: saturate(1.8) blur(14px);
     border-bottom: var(--hairline) solid var(--border);
   }
-  .appheader.is-tucked { top: calc(-1 * var(--tuck)); }   /* moved by top, not transform, so the sheet inside stays fixed to the screen */
-  .appheader.is-scrolled { box-shadow: 0 6px 18px -10px rgba(31, 35, 40, .3); }
   .appheader-top {
     flex-wrap: nowrap;
     justify-content: space-between;
-    padding-top: calc(10px + env(safe-area-inset-top));
-    padding-bottom: 6px;
-    transition: opacity .2s;
+    height: calc(var(--row) + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
   }
-  .appheader.is-tucked .appheader-top { opacity: 0; }
+  .appheader.is-compact .appheader-top { height: calc(var(--row-c) + env(safe-area-inset-top)); }
   .appheader-top .brand img { width: 28px; height: 28px; }
+  .appheader.is-compact .appheader-top .brand img { width: 19px; height: 19px; }
   .logo-word { font-size: 25px; }
+  .appheader.is-compact .appheader-top .logo-word { font-size: 18px; }
   .crumbs { font-size: 15px; white-space: nowrap; }
   .appheader-top .label { flex: none; font-size: 11px; }
   @media (max-width: 400px) { .appheader-top .label { display: none; } }
@@ -776,7 +799,10 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
     padding-bottom: 10px;
     scroll-snap-type: x proximity;
     scroll-padding: 0 var(--gutter);
+    transition: padding .3s var(--shrink-ease);
   }
+  .appheader.is-compact .tabs { padding-top: 2px; padding-bottom: 4px; }
+  .appheader.is-compact .tabs a { height: 26px; }
   .tabs a {
     flex: none;
     gap: 6px;
@@ -884,7 +910,7 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 @keyframes sheet-up { from { transform: translateY(100%); } }
 @keyframes sheet-dim { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .appheader, .tabs a, .to-top { transition: none; }
+  .appheader, .appheader-top, .appheader-top .brand img, .appheader-top .logo-word, .tabs, .tabs a, .to-top { transition: none; }
   .switch[open] .switch-menu, .switch[open] > summary::after { animation: none; }
 }
 
@@ -936,3 +962,63 @@ a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-ra
 .desc-more svg { width: 16px; height: 16px; transition: transform .3s; }
 .desc-more[aria-expanded="true"] svg { transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce) { .desc-more svg { transition: none; } }
+
+/* Home: the whole team on one square board, Daisy's flowers (PLAN 1) and Butterfly's insects
+   (PLAN 2), with a few empty slots. home.js swaps neighbours every five seconds: one tile lifts
+   over the other, or a tile slides into an empty slot. Each tile leads to its model's card. */
+.board-wrap {
+  display: grid;
+  place-items: center;
+  min-height: calc(100svh - 57px);
+  padding: 32px var(--gutter) 48px;
+}
+.board {
+  --gap: clamp(8px, 1.6vw, 14px);
+  --pad: clamp(10px, 2vw, 18px);
+  --cell: min(118px, (100vw - 2 * var(--gutter) - 2 * var(--pad) - 4 * var(--gap)) / 5);
+  --step: calc(var(--cell) + var(--gap));
+  position: relative;
+  width: calc(5 * var(--cell) + 4 * var(--gap) + 2 * var(--pad));
+  aspect-ratio: 1;
+  border: var(--hairline) solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 1px 2px rgba(31, 35, 40, .04), 0 18px 48px -28px rgba(31, 35, 40, .35);
+}
+.slot, .tile {
+  position: absolute;
+  left: calc(var(--pad) + var(--x) * var(--step));
+  top: calc(var(--pad) + var(--y) * var(--step));
+  width: var(--cell);
+  height: var(--cell);
+  border-radius: 8px;
+}
+.slot { background: #eef1f4; box-shadow: inset 0 0 0 var(--hairline) var(--border); }
+.tile {
+  z-index: 2;
+  box-shadow: 0 1px 2px rgba(31, 35, 40, .12), 0 6px 14px -8px rgba(31, 35, 40, .35);
+  transition: box-shadow .45s;
+}
+.tile svg { display: block; width: 100%; height: 100%; border-radius: 8px; }
+.tile.is-over { z-index: 4; box-shadow: 0 2px 4px rgba(31, 35, 40, .12), 0 22px 34px -14px rgba(31, 35, 40, .45); }
+.tile.is-under { z-index: 1; }
+.tile::after {   /* the model's name, on hover or keyboard focus */
+  content: attr(aria-label);
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  z-index: 5;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--fg);
+  color: #fff;
+  font: 12px/1.3 var(--mono);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 2px);
+  transition: opacity .15s, transform .15s;
+  pointer-events: none;
+}
+.tile:hover, .tile:focus-visible { z-index: 5; text-decoration: none; }
+.tile:hover::after, .tile:focus-visible::after { opacity: 1; transform: translate(-50%, 8px); }
+.tile:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }

@@ -1,4 +1,4 @@
-"""Draw the DNA helix of the "Your data" section, as inline SVG for index.html.
+"""Draw the DNA helix of the "Your data" section, as inline SVG for daisy.html.
 
 Two strands of nodes, in the flower logos' network-of-nodes style: one strand in the logos'
 golden and orange heart colours, the other in the models' own colours, joined by rungs. The
@@ -6,7 +6,7 @@ twist is done by the page's CSS ("DNA helix" in style.css): every rung has its p
 one animated angle turns them all, so the nodes rise, fall, grow and shrink as the helix spins.
 Without motion the helix stands still, twisted.
 
-Usage: python3 tools/make_dna.py > dna.txt   (paste into the "Your data" section of index.html)
+Usage: python3 tools/make_dna.py > dna.txt   (paste into the "Your data" section of daisy.html)
 """
 
 RUNGS, STEP, TWIST = 30, 24, 24          # rungs, pixels between rungs, degrees of twist per rung

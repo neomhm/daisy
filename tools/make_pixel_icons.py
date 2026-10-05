@@ -7,7 +7,7 @@ glyph in ink. "Your computer" is a little farm, 15 pixels wide: a barn, a silo a
 flowers in the colours of the small models that grow there. H marks a
 golden pixel; m, g, p and o mark Orchid magenta, Tulip green, Jasmine purple and Daisy orange.
 
-Usage: python3 tools/make_pixel_icons.py > symbols.txt   (paste into the sprite in index.html)
+Usage: python3 tools/make_pixel_icons.py > symbols.txt   (paste into the sprite in daisy.html)
        python3 tools/make_pixel_icons.py --insects > symbols.txt   (the sprite in butterfly.html)
 """
 import os

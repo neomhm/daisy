@@ -6,7 +6,7 @@ five to ten minutes, never in step with the others. Colours are the logo's, mixe
 mostly with white. The squares are plain HTML elements moved by CSS, which is light work for
 the browser.
 
-Usage: python3 tools/make_background.py > drift.txt   (paste into index.html, right after <body>)
+Usage: python3 tools/make_background.py > drift.txt   (paste into daisy.html, right after <body>)
 """
 import math
 import os

@@ -66,27 +66,34 @@
 })();
 
 
-/* Phones and the section bar ("Phones" in style.css): the chip of the section being read is
-   marked and kept in view; the brand row tucks away while reading down and comes back on the way
-   up; a button brings the reader back to the top. */
+/* The header ("Header" in style.css): on every page it shrinks by a third once the page scrolls.
+   A little way past the top it shrinks, and only right at the top it grows back, so it never
+   flickers in between. */
 (() => {
   const header = document.querySelector('.appheader');
-  const top = header && header.querySelector('.appheader-top');
+  if (!header) return;
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const y = window.scrollY;
+    if (y > 24) header.classList.add('is-compact');
+    else if (y < 4) header.classList.remove('is-compact');
+  };
+  window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  update();
+})();
+
+
+/* The section bar ("Phones" in style.css): the chip of the section being read is marked and kept
+   in view, and a chip glides its section to just under the header; a button brings the reader
+   back to the top. */
+(() => {
+  const header = document.querySelector('.appheader');
   const bar = header && header.querySelector('.tabs');
   if (!bar) return;
   const root = document.documentElement;
-  const phone = window.matchMedia('(max-width: 700px)');
   const chips = [...bar.querySelectorAll('a[href^="#"]')];
   const targets = chips.map(a => document.getElementById(a.hash.slice(1)));
-  const sw = header.querySelector('.switch');
-
-  const measure = () => {
-    root.style.setProperty('--head', header.offsetHeight + 'px');
-    root.style.setProperty('--tuck', top.offsetHeight + 'px');
-  };
-  measure();
-  window.addEventListener('resize', measure);
-
   let current = null;
   const mark = chip => {
     if (chip === current) return;
@@ -105,7 +112,7 @@
   btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   document.body.append(btn);
 
-  let lastY = window.scrollY, ticking = false, jumping = 0;
+  let ticking = false;
   const update = () => {
     ticking = false;
     const y = window.scrollY;
@@ -115,26 +122,17 @@
     if (window.innerHeight + y >= root.scrollHeight - 4) at = targets.length - 1;
     mark(chips[at]);
     btn.classList.toggle('is-shown', y > window.innerHeight * 1.2);
-    header.classList.toggle('is-scrolled', y > 4);
-    if (phone.matches && !(sw && sw.open)) {
-      if (jumping) header.classList.add('is-tucked');
-      else if (y < 80) header.classList.remove('is-tucked');
-      else if (y > lastY + 6) header.classList.add('is-tucked');
-      else if (y < lastY - 6) header.classList.remove('is-tucked');
-    }
-    lastY = y;
   };
   window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
   update();
 
-  // A chip scrolls its section to just under the bar, with the brand row tucked away for the trip.
+  // A chip glides its section to just under the header (scroll-padding-top in style.css).
   chips.forEach((a, i) => a.addEventListener('click', e => {
     const t = targets[i];
-    if (!t || !phone.matches) return;
+    if (!t) return;
     e.preventDefault();
-    const y = i === 0 ? 0 : t.getBoundingClientRect().top + window.scrollY - (header.offsetHeight - top.offsetHeight) - 12;
-    if (y > 80) { header.classList.add('is-tucked'); jumping++; setTimeout(() => { jumping--; }, 900); }
-    window.scrollTo({ top: y, behavior: 'smooth' });
+    if (i === 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+    else t.scrollIntoView({ behavior: 'smooth', block: 'start' });
     history.replaceState(null, '', a.hash);
     mark(a);
   }));
