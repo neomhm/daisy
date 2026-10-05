@@ -1022,3 +1022,237 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .tile:hover, .tile:focus-visible { z-index: 5; text-decoration: none; }
 .tile:hover::after, .tile:focus-visible::after { opacity: 1; transform: translate(-50%, 8px); }
 .tile:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
+
+/* Workbench (workbench.html): the template field on the left; on the right, a panel a quarter of
+   the page wide (its left edge can be dragged) with two screens above the tiles. Tiles move between
+   the panel and the field's squares; dropped near another tile, a tile is pulled into the square
+   beside it and a magnet bar joins the two. The screens add up the size and the latency of the
+   joined group. workbench.js does the moving and the counting. */
+.bench-page { overflow: hidden; }
+.bench {
+  --tray: 25%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 12px var(--tray);
+  height: calc(100svh - 57px);
+}
+.field {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 52px 28px 28px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 22% 18%, rgba(53, 173, 176, .18), transparent 55%),
+    radial-gradient(ellipse at 85% 92%, rgba(194, 84, 158, .14), transparent 50%),
+    linear-gradient(160deg, #1d2833, #11181f);
+  color: #c9d4de;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.field::before {   /* a fine dot grid, like a cutting mat */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, .08) 1px, transparent 1.6px);
+  background-size: 18px 18px;
+  pointer-events: none;
+}
+.field-head {
+  position: absolute;
+  top: 14px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.field-title { font-family: "AKIKI Pixel", var(--mono); font-size: 18px; line-height: 1; color: rgba(255, 255, 255, .38); }
+.field-clear {
+  padding: 4px 11px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  color: rgba(255, 255, 255, .62);
+  font: 12px/1.4 var(--mono);
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+.field-clear:hover { background: rgba(255, 255, 255, .13); color: #fff; }
+.field-clear:focus-visible { outline: 2px solid #7fd6d8; outline-offset: 2px; }
+.field-grid {
+  --cell: 96px;
+  --gap: 12px;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 8), var(--cell));
+  grid-auto-rows: var(--cell);
+  gap: var(--gap);
+}
+.cell {
+  position: relative;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .03);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+  transition: background-color .15s, box-shadow .15s;
+}
+.cell::before {   /* a small cross at the centre of each empty square */
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  background: linear-gradient(rgba(255, 255, 255, .14), rgba(255, 255, 255, .14)) center / 1px 100% no-repeat,
+              linear-gradient(rgba(255, 255, 255, .14), rgba(255, 255, 255, .14)) center / 100% 1px no-repeat;
+}
+.cell.is-target {
+  background: color-mix(in srgb, var(--tc) 20%, transparent);
+  box-shadow: inset 0 0 0 2px var(--tc), 0 0 24px color-mix(in srgb, var(--tc) 50%, transparent);
+}
+.cell.is-target.is-magnet { animation: magnet-pull .55s ease-in-out infinite alternate; }
+@keyframes magnet-pull { to { box-shadow: inset 0 0 0 3px var(--tc), 0 0 34px color-mix(in srgb, var(--tc) 75%, transparent); } }
+.joint {   /* the magnet bar between two joined tiles */
+  position: absolute;
+  z-index: 1;
+  border-radius: 5px;
+  background: linear-gradient(var(--dir), var(--a), var(--b));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--a) 55%, transparent);
+  opacity: .55;
+  pointer-events: none;
+  transition: opacity .3s;
+}
+.joint.is-active { opacity: 1; box-shadow: 0 0 16px color-mix(in srgb, var(--a) 80%, transparent), 0 0 4px #fff; }
+.joint.is-new { animation: joint-in .45s cubic-bezier(.3, 1.5, .5, 1); }
+@keyframes joint-in { from { transform: scale(0); opacity: 0; } 40% { opacity: 1; filter: brightness(2); } }
+
+.wtile {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .2), 0 8px 18px -10px rgba(0, 0, 0, .55);
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: box-shadow .3s;
+}
+.wtile svg { display: block; width: 100%; height: 100%; border-radius: 9px; }
+.wtile:focus-visible { outline: 2px solid #7fd6d8; outline-offset: 3px; }
+.cell .wtile.is-active { box-shadow: 0 0 0 2px rgba(255, 255, 255, .9), 0 0 24px 3px color-mix(in srgb, var(--tc) 70%, transparent); }
+.wtile.is-dragging {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  cursor: grabbing;
+  pointer-events: none;
+  box-shadow: 0 22px 44px -14px rgba(0, 0, 0, .55), 0 0 0 2px rgba(255, 255, 255, .6);
+  transition: width .18s ease-out, height .18s ease-out;
+}
+.cell .wtile::after {   /* the name, on hover or keyboard focus */
+  content: attr(data-name);
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  z-index: 5;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f6f8fa;
+  color: #1f2328;
+  font: 12px/1.3 var(--mono);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 2px);
+  transition: opacity .15s, transform .15s;
+  pointer-events: none;
+}
+.cell .wtile:hover, .cell .wtile:focus-visible { z-index: 6; }
+.cell .wtile:hover::after, .cell .wtile:focus-visible::after { opacity: 1; transform: translate(-50%, 7px); }
+
+.splitter {
+  position: relative;
+  background: var(--bg-subtle);
+  border-left: var(--hairline) solid var(--border);
+  border-right: var(--hairline) solid var(--border);
+  cursor: col-resize;
+  touch-action: none;
+  transition: background-color .15s;
+}
+.splitter::after {   /* the grip */
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 32px;
+  margin: -16px 0 0 -2px;
+  border-radius: 2px;
+  background: radial-gradient(circle, #8c959f 1.2px, transparent 1.6px) center top / 4px 8px repeat-y;
+}
+.splitter:hover, .splitter.is-dragging { background: color-mix(in srgb, var(--link) 12%, var(--bg)); }
+.splitter:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; }
+
+.tray { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg); }
+.meters { display: grid; gap: 12px; padding: 16px 16px 14px; border-bottom: var(--hairline) solid var(--border); }
+.meter-label { color: var(--fg-muted); font: 600 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.meter-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.screen {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  border-radius: 8px;
+  background: radial-gradient(ellipse at 50% 0%, #1c2630, #0d1318 75%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), inset 0 3px 12px rgba(0, 0, 0, .65), 0 0 0 3px #e3e8ed, 0 1px 0 4px #fff;
+  overflow: hidden;
+}
+.screen canvas { display: block; width: 100%; height: 100%; }
+.screen::after {   /* scan lines */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(transparent 0 2px, rgba(0, 0, 0, .16) 2px 3px);
+  pointer-events: none;
+}
+.screen.is-changing { animation: screen-flash .5s ease-out; }
+@keyframes screen-flash { from { filter: brightness(1.35); } }
+.unit { flex: none; min-width: 1.7em; color: #2f4d5c; font: 700 22px/1 var(--mono); }   /* M and B, not the pixel font's m, which reads like "milli" */
+.meter-note { margin: 0; color: var(--fg-muted); font-size: 12px; line-height: 1.4; }
+.tray-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 24px; }
+.tray-head { margin: 16px 0 10px; color: var(--fg-muted); font: 600 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.tray-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 14px 10px; }
+.tray-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.tray-slot .sq {
+  width: 100%;
+  max-width: 72px;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: #f1f4f7;
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: background-color .15s, box-shadow .15s;
+}
+.tray-slot.is-empty .sq { background: repeating-linear-gradient(-45deg, #f6f8fa 0 6px, #eef1f4 6px 12px); box-shadow: inset 0 0 0 1px var(--border); }
+.tray-slot.is-target .sq { background: color-mix(in srgb, var(--tc) 16%, var(--bg)); box-shadow: inset 0 0 0 2px var(--tc); }
+.cap { margin: 0; min-height: 2.7em; color: var(--fg-muted); font-size: 11px; line-height: 1.3; text-align: center; }
+.cap b { display: block; color: #2f4d5c; font: 400 13px/1.2 "AKIKI Pixel", var(--mono); }
+.tray-slot.is-empty .cap { visibility: hidden; }
+
+@media (max-width: 700px) {
+  .bench-page { overflow: auto; }
+  .bench { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .splitter { display: none; }
+  .field { padding: 48px 12px 16px; }
+  .tray-scroll { overflow: visible; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing { animation: none; }
+  .wtile.is-dragging { transition: none; }
+}
