@@ -229,6 +229,7 @@
     activeGroup = group;
     joints(group);
     writeCode(group, all.length - (group.length ? 1 : 0));
+    refilter();
   };
 
   // ---- Moving a tile: it lands in its new square at once, then glides there from where it was. ----
@@ -302,9 +303,13 @@
     }
     const t = tray.getBoundingClientRect();
     if (x >= t.left && x <= t.right && y >= t.top && y <= t.bottom) {
+      if (kind !== 'all' && drag) {   // with a filter on, the tile goes back to its own place
+        const sq = backToPanel(drag.tile);
+        return sq ? { el: trayScroll, sq, magnet: false } : null;
+      }
       let best = null;
       for (const sq of squares) {
-        if (tileIn(sq)) continue;
+        if (tileIn(sq) || !sq.offsetParent) continue;
         const b = sq.getBoundingClientRect();
         const d = Math.hypot(x - (b.left + b.width / 2), y - (b.top + b.height / 2));
         if (!best || d < best.d) best = { el: sq.closest('.tray-slot'), sq, d, magnet: false };
@@ -314,7 +319,7 @@
     return null;
   };
   const dragSize = overTray => {
-    if (overTray) return squares[0].getBoundingClientRect().width;
+    if (overTray) { const sq = squares.find(x => x.offsetParent); return sq ? sq.getBoundingClientRect().width : 72; }
     return cells[0].getBoundingClientRect().width;
   };
 
@@ -337,7 +342,7 @@
     const { tile } = drag;
     target && clearTarget();
     const t = findTarget(e.clientX, e.clientY);
-    const overTray = !!t && t.el.classList.contains('tray-slot');
+    const overTray = !!t && t.sq.classList.contains('sq');
     const size = t ? dragSize(overTray) : drag.size;
     drag.size = size;
     tile.style.width = tile.style.height = size + 'px';
@@ -934,6 +939,66 @@
   keyCode.addEventListener('click', () => openCode(keyCode.getAttribute('aria-expanded') !== 'true'));
   codeWrap.querySelector('.code-close').addEventListener('click', () => { openCode(false); keyCode.focus(); });
   codeWrap.addEventListener('keydown', e => { if (e.key === 'Escape') { openCode(false); keyCode.focus(); } });
+
+  // ---- The filters, between the screens and the tiles: one chip per kind of tile, made from the
+  // tiles' own tags (data-tags), and Ready for the tiles that have measured figures. Only kinds
+  // some tile has are offered, each with how many tiles it holds. The tiles that do not fit the
+  // chosen kind leave the panel, and the rest close up. ----
+  const KINDS = [['all', 'All'], ['ready', 'Ready'], ['brains', 'Brains'], ['database', 'Database'],
+    ['documents', 'Documents'], ['website', 'Website'], ['code', 'Code'], ['checks', 'Checks']];
+  const filterBar = tray.querySelector('.filters');
+  const filterNone = tray.querySelector('.filter-none');
+  const trayScroll = tray.querySelector('.tray-scroll');
+  const slots = [...tray.querySelectorAll('.tray-slot')];
+  const tagsOf = t => (t.dataset.tags || '').split(' ').filter(Boolean);
+  const fits = (t, k) => k === 'all' || (k === 'ready' ? t.dataset.params !== '' || t.dataset.ms !== '' : tagsOf(t).includes(k));
+  let kind = 'all';
+  const found = [...new Set(tiles.flatMap(tagsOf))].filter(k => !KINDS.some(([x]) => x === k));
+  for (const [k, name] of [...KINDS, ...found.map(k => [k, k[0].toUpperCase() + k.slice(1)])]) {
+    const n = tiles.filter(t => fits(t, k)).length;
+    if (!n) continue;
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.dataset.kind = k;
+    chip.setAttribute('aria-pressed', String(k === kind));
+    chip.append(name + ' ');
+    const count = document.createElement('b');
+    count.textContent = n;
+    chip.append(count);
+    filterBar.append(chip);
+  }
+  filterBar.hidden = false;
+
+  function refilter(animate = true) {
+    const motion = animate && !still.matches;
+    const before = motion ? new Map(slots.filter(s => !s.hidden).map(s => [s, s.getBoundingClientRect()])) : null;
+    for (const slot of slots) {
+      const t = tileIn(slot.querySelector('.sq'));
+      slot.hidden = kind !== 'all' && !(t && fits(t, kind));
+    }
+    for (const g of tray.querySelectorAll('.tray-grid')) {   // a heading goes with its tiles
+      g.hidden = g.previousElementSibling.hidden = ![...g.children].some(s => !s.hidden);
+    }
+    filterNone.hidden = slots.some(s => !s.hidden);
+    if (!motion) return;
+    for (const slot of slots) {
+      if (slot.hidden) continue;
+      const a = before.get(slot), b = slot.getBoundingClientRect();
+      if (!a) slot.animate([{ opacity: 0, transform: 'scale(.8)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.2, .8, .2, 1)' });
+      else if (a.left !== b.left || a.top !== b.top) {
+        slot.animate([{ transform: `translate(${a.left - b.left}px, ${a.top - b.top}px)` }, { transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.2, .8, .2, 1)' });
+      }
+    }
+  }
+  filterBar.addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip || chip.dataset.kind === kind) return;
+    kind = chip.dataset.kind;
+    filterBar.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c === chip)));
+    trayScroll.scrollTop = 0;
+    refilter();
+  });
 
   // ---- The panel's width: a quarter of the page to start with; its left edge can be dragged. ----
   const KEY = 'akiki-workbench-panel';
