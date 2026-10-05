@@ -1190,36 +1190,66 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cell .wtile:hover, .cell .wtile:focus-visible { z-index: 6; }
 .cell .wtile:hover::after, .cell .wtile:focus-visible::after { opacity: 1; transform: translate(-50%, 7px); }
 
-/* Roles (tiles.js; workbench.js). A tile is coloured by what it does in a chain: a start (blue)
-   takes the data in, a middle (amber) works on it, an end (teal) gives the result; Siren, a start
-   and an end, wears both; an attachment (slate, dashed edge) snaps onto a tile that needs it. Small
-   tabs on a tile's sides show where work comes in (left) and goes out (right). The tile keeps its
-   own pixel drawing, and its own colour runs along its foot. Each role colour stays above 4.5:1
-   under the white drawing and 3:1 against the field and the panel. */
+/* Roles (tiles.js; workbench.js). Every tile keeps its own icon and colour; a small square in its
+   right-hand margin, level with the icon's top row of pixels, says its role: a start (blue) takes
+   the data in, a middle (amber) works on it, an end (teal) gives the result, Siren (a start and an
+   end) is split in both, and an attachment (a brain, a database, a folder) has a hollow square.
+   The square has a white edge and a faint dark outline, so it reads on light and dark tiles alike;
+   each role colour is above 4.5:1 against that white edge. */
 .bench { --role-start: #1f6fd1; --role-middle: #b35f00; --role-end: #0d7f86; --role-att: #5f6b7a; }
-.wtile { --rc: var(--role-middle); background-color: var(--rc); }
+.wtile { --rc: var(--role-middle); }
 .wtile[data-role="start"] { --rc: var(--role-start); }
 .wtile[data-role="end"] { --rc: var(--role-end); }
-.wtile[data-role="both"] { --rc: var(--role-start); background-image: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
+.wtile[data-role="both"] { --rc: var(--role-start); }
 .wtile[data-role="attachment"] { --rc: var(--role-att); }
-.wtile[data-status="notbuilt"] { background-image: repeating-linear-gradient(-45deg, rgba(255, 255, 255, .15) 0 3px, transparent 3px 9px); }
-.wtile svg { background: linear-gradient(to top, var(--tc) 0 8%, transparent 8%); }
-.wtile::before {   /* the tabs: in on the left, out on the right */
+.wtile::before {   /* the role square */
   content: "";
   position: absolute;
-  top: 34%;
-  bottom: 34%;
-  left: -4px;
-  right: -4px;
-  border-radius: 3px;
-  background: linear-gradient(to right, var(--in, transparent) 0 4px, transparent 4px calc(100% - 4px), var(--out, transparent) calc(100% - 4px));
+  left: 87%;
+  top: 12%;
+  z-index: 1;
+  width: max(6px, 11.5%);
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  border: 1.5px solid #fff;
+  border-radius: 2px;
+  background: var(--rc);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .3);
   pointer-events: none;
 }
-.wtile[data-role="start"]::before { --out: var(--rc); }
-.wtile[data-role="middle"]::before { --in: var(--rc); --out: var(--rc); }
-.wtile[data-role="end"]::before { --in: var(--rc); }
-.wtile[data-role="attachment"]::before { inset: 4px; border: 1.5px dashed rgba(255, 255, 255, .7); border-radius: 6px; background: none; }
+.wtile[data-role="both"]::before { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
+.wtile[data-role="attachment"]::before { background: transparent; }
+.dock .wtile::before { display: none; }   /* docked, an attachment says what it is by where it sits */
 .wtile.is-ghost { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; transform-origin: top left; }
+
+/* A fitted joint (workbench.js, joints): the facing sides of two tiles that fit are notched, and a
+   key in their two colours sits in both notches. The notch depths are animatable properties, so a
+   new joint keys in. A pair that does not fit keeps the plain magnet bar. */
+@property --nl { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+@property --nr { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+@property --nt { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+@property --nb { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+.wtile.is-keyed svg {
+  -webkit-mask:
+    linear-gradient(#000 0 0) left center / var(--nl) 30% no-repeat,
+    linear-gradient(#000 0 0) right center / var(--nr) 30% no-repeat,
+    linear-gradient(#000 0 0) center top / 30% var(--nt) no-repeat,
+    linear-gradient(#000 0 0) center bottom / 30% var(--nb) no-repeat,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) left center / var(--nl) 30% no-repeat,
+    linear-gradient(#000 0 0) right center / var(--nr) 30% no-repeat,
+    linear-gradient(#000 0 0) center top / 30% var(--nt) no-repeat,
+    linear-gradient(#000 0 0) center bottom / 30% var(--nb) no-repeat,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+.wtile svg { transition: --nl .32s cubic-bezier(.3, 1.4, .5, 1), --nr .32s cubic-bezier(.3, 1.4, .5, 1), --nt .32s cubic-bezier(.3, 1.4, .5, 1), --nb .32s cubic-bezier(.3, 1.4, .5, 1); }
+.joint.is-keyed { z-index: 3; border-radius: 2px; opacity: 1; background: linear-gradient(var(--dir), var(--a) 0 50%, var(--b) 50%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); }
+.joint.is-keyed.is-active { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6), 0 0 10px color-mix(in srgb, var(--a) 70%, transparent); }
+.joint.is-keyed.is-new { animation: key-in .5s .12s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes key-in { from { transform: scale(.2); opacity: 0; filter: brightness(2); } 55% { opacity: 1; } }
 
 /* Attachments docked on a tile of the field: small, at its lower right corner. */
 .dock { position: absolute; right: -9%; bottom: -9%; z-index: 7; display: flex; flex-direction: row-reverse; gap: 3px; pointer-events: none; transition: opacity .2s; }
@@ -1237,11 +1267,11 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 /* The colours' key, under the squares; and a short line the field says (an attachment with nowhere to go). */
 .field-legend { position: absolute; left: 164px; right: 24px; bottom: 6px; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; color: rgba(255, 255, 255, .7); font: 11px/1.3 var(--mono); pointer-events: none; }
 .field-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.field-legend i { width: 12px; height: 12px; border-radius: 3px; background: var(--role-middle); }
+.field-legend i { box-sizing: border-box; width: 11px; height: 11px; border: 2px solid #fff; border-radius: 3px; background: var(--role-middle); }   /* the role squares, as on the tiles */
 .field-legend [data-role="start"] i { background: var(--role-start); }
 .field-legend [data-role="end"] i { background: var(--role-end); }
 .field-legend [data-role="both"] i { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
-.field-legend [data-role="attachment"] i { background: var(--role-att); outline: 1px dashed rgba(255, 255, 255, .75); outline-offset: -3px; }
+.field-legend [data-role="attachment"] i { background: transparent; }
 .field-tip { position: absolute; left: 50%; top: 46px; z-index: 8; max-width: min(460px, calc(100% - 32px)); margin: 0; padding: 7px 13px; border-radius: 10px; background: rgba(9, 13, 18, .92); box-shadow: 0 0 0 1px rgba(255, 193, 77, .5); color: #ffe2a8; font: 12px/1.4 var(--mono); text-align: center; transform: translateX(-50%); pointer-events: none; }
 .field-tip[hidden] { display: none; }
 
@@ -1583,7 +1613,8 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 @media (prefers-reduced-motion: reduce) {
   .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing, .key-test .key-leds i, .is-writing .code-live::before, .cell .wtile.is-wrong { animation: none; }
   .code-wrap { transition: none; }
-  .wtile.is-dragging { transition: none; }
+  .wtile.is-dragging, .wtile svg { transition: none; }
+  .joint.is-keyed.is-new { animation: none; }
 }
 
 /* Home, second screen: the workbench, under the board. A little scroll either way settles the

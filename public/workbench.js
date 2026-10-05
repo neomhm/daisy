@@ -12,7 +12,7 @@
    Every tile comes from tiles.js, the one file that says what each tile is: its ROLE (a start takes
    the data in, a middle works on it, an end gives the result; Siren is a start and an end; an
    attachment such as a brain, a database or a documents folder snaps ONTO a tile that needs it),
-   the kinds of data it accepts and hands on, and what it needs. Tiles are coloured by role. Tiles
+   the kinds of data it accepts and hands on, and what it needs. A small square on each tile says its role. Tiles
    side by side pass their work left to right; tiles stacked in a column are alternatives; a tile
    touching Siren is a specialist she calls, whose answer comes back to her. The TesT key checks, in
    this order: a start and an end; every chain going from a start to an end, in one piece; every
@@ -35,20 +35,22 @@
   const isAtt = t => t.dataset.role === 'attachment';
   const orList = words => (words.length < 3 ? words.join(' or ') : words.slice(0, -1).join(', ') + ' or ' + words[words.length - 1]);
 
-  // ---- The panel's tiles, built from tiles.js. Each keeps its own pixel drawing, laid over the
-  // colour of its role, with a strip of its own colour along its foot. ----
+  // ---- The panel's tiles, built from tiles.js. Each is its own icon, in its own colour; a small
+  // square at its right says its role (style.css, "Roles"). ----
   const NS = 'http://www.w3.org/2000/svg';
   const sprite = (document.querySelector('svg > symbol') || {}).parentNode || document.body.appendChild(document.createElementNS(NS, 'svg'));
-  const drawing = d => {   // a copy of the tile's icon without its coloured square
-    const id = `px-${d.id}-g`;
+  const drawing = d => {   // the page's own icon; for a tile with none, one drawn from its glyph
+    const id = `px-${d.id}`;
     if (document.getElementById(id)) return id;
     const sym = document.createElementNS(NS, 'symbol');
     sym.id = id;
     sym.setAttribute('viewBox', '0 0 40 40');
-    const own = document.getElementById('px-' + d.id);
-    if (own) {
-      [...own.children].forEach((ch, i) => { if (i || ch.tagName.toLowerCase() !== 'rect' || ch.hasAttribute('x')) sym.append(ch.cloneNode(true)); });
-    } else if (d.glyph) {   // the same pixels as tools/make_pixel_icons.py: pitch 6, 5.04 wide, 5 units of margin
+    const tile = document.createElementNS(NS, 'rect');
+    tile.setAttribute('width', '40');
+    tile.setAttribute('height', '40');
+    tile.setAttribute('fill', d.colour);
+    sym.append(tile);
+    if (d.glyph) {   // the same pixels as tools/make_pixel_icons.py: pitch 6, 5.04 wide, 5 units of margin
       for (const [mark, fill] of [['X', '#ffffff'], ['H', '#f2b632']]) {
         const g = document.createElementNS(NS, 'g');
         g.setAttribute('fill', fill);
@@ -269,11 +271,27 @@
   };
   const list = names => names.length < 3 ? names.join(' and ') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
 
+  // A magnet bar joins every two tiles side by side. When the two also FIT (what one hands on, the
+  // other accepts; see the rules below), the bar becomes a key: each tile's facing side is notched
+  // and the key settles into both notches, a short animation (none with reduced motion). A pair
+  // that does not fit keeps the plain bar, and TesT says why. Nothing is cut into a tile's sides
+  // before it touches another.
   let jointKeys = new Set(), activeGroup = [];
+  const NOTCH = 8, KEYLEN = 0.3;   // the notch: 8% of the tile deep, 30% of its side long
+  const pairFits = (a, b, across) => {
+    const x = defOf(a), y = defOf(b);
+    if (x.hub || y.hub) {   // Siren and a specialist she calls
+      const [h, o] = x.hub ? [x, y] : [y, x];
+      return (o.role === 'start' || fitsKinds(h.out, o.in)) && (o.role === 'end' || fitsKinds(o.out, h.in));
+    }
+    if (across) return x.role !== 'end' && y.role !== 'start' && fitsKinds(x.out, y.in);
+    return x.role === y.role && (x.role === 'start' || x.in.some(k => y.in.includes(k)));   // alternatives take the same work
+  };
   const joints = (active = activeGroup) => {
     grid.querySelectorAll('.joint').forEach(j => j.remove());
     const S = parseFloat(grid.style.getPropertyValue('--cell')) || 96;
     const G = parseFloat(grid.style.getPropertyValue('--gap')) || 12;
+    const sides = new Map(tiles.map(t => [t, { l: 0, r: 0, t: 0, b: 0 }]));
     const keys = new Set();
     for (const cell of cells) {
       const a = tileIn(cell);
@@ -286,16 +304,29 @@
         keys.add(key);
         const j = document.createElement('i');
         j.className = 'joint';
-        const tuck = Math.min(10, S * 0.12), thick = S * 0.34;
-        if (dc) Object.assign(j.style, { left: (c * (S + G) + S - tuck) + 'px', top: (r * (S + G) + (S - thick) / 2) + 'px', width: (G + 2 * tuck) + 'px', height: thick + 'px' });
-        else Object.assign(j.style, { left: (c * (S + G) + (S - thick) / 2) + 'px', top: (r * (S + G) + S - tuck) + 'px', width: thick + 'px', height: (G + 2 * tuck) + 'px' });
-        j.style.setProperty('--a', getComputedStyle(a).getPropertyValue('--rc'));   // in the colours of their roles
-        j.style.setProperty('--b', getComputedStyle(b).getPropertyValue('--rc'));
+        if (pairFits(a, b, !!dc)) {   // a key in two notches
+          j.classList.add('is-keyed');
+          if (dc) { sides.get(a).r = NOTCH; sides.get(b).l = NOTCH; } else { sides.get(a).b = NOTCH; sides.get(b).t = NOTCH; }
+          const D = S * NOTCH / 100, L = S * KEYLEN, e = Math.max(1.5, S * 0.025);
+          if (dc) Object.assign(j.style, { left: (c * (S + G) + S - D + e) + 'px', top: (r * (S + G) + (S - L) / 2 + e) + 'px', width: (G + 2 * D - 2 * e) + 'px', height: (L - 2 * e) + 'px' });
+          else Object.assign(j.style, { left: (c * (S + G) + (S - L) / 2 + e) + 'px', top: (r * (S + G) + S - D + e) + 'px', width: (L - 2 * e) + 'px', height: (G + 2 * D - 2 * e) + 'px' });
+        } else {
+          const tuck = Math.min(10, S * 0.12), thick = S * 0.34;
+          if (dc) Object.assign(j.style, { left: (c * (S + G) + S - tuck) + 'px', top: (r * (S + G) + (S - thick) / 2) + 'px', width: (G + 2 * tuck) + 'px', height: thick + 'px' });
+          else Object.assign(j.style, { left: (c * (S + G) + (S - thick) / 2) + 'px', top: (r * (S + G) + S - tuck) + 'px', width: thick + 'px', height: (G + 2 * tuck) + 'px' });
+        }
+        j.style.setProperty('--a', getComputedStyle(a).getPropertyValue('--tc'));
+        j.style.setProperty('--b', getComputedStyle(b).getPropertyValue('--tc'));
         j.style.setProperty('--dir', dc ? 'to right' : 'to bottom');
         if (active.includes(a) && active.includes(b)) j.classList.add('is-active');
         if (!jointKeys.has(key)) j.classList.add('is-new');
         grid.append(j);
       }
+    }
+    for (const [t, n] of sides) {   // the notches, cut into the tile's picture (style.css: --nl, --nr, --nt, --nb)
+      const svg = t.querySelector('svg');
+      for (const k of 'lrtb') svg.style.setProperty('--n' + k, n[k] + '%');
+      t.classList.toggle('is-keyed', Object.values(n).some(Boolean));
     }
     jointKeys = keys;
   };
@@ -536,7 +567,7 @@
       t.el.classList.add('is-target');
       t.el.classList.toggle('is-magnet', t.magnet);
       t.el.classList.toggle('is-host', !!t.host);
-      t.el.style.setProperty('--tc', getComputedStyle(tile).getPropertyValue('--rc'));
+      t.el.style.setProperty('--tc', getComputedStyle(tile).getPropertyValue('--tc'));
       if (t.magnet && t.sq && !still.matches) {   // the magnet pulls the tile a little toward its square
         const b = t.sq.getBoundingClientRect();
         x += (b.left - x) * 0.3;

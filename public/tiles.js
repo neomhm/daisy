@@ -1,7 +1,7 @@
 /* THE TILES OF THE WORKBENCH: the one place that says what every tile is.
 
    workbench.js builds the panel of tiles from this file (on workbench.html and on the home page),
-   colours each tile by its ROLE, and its TesT key checks a team against these rules. Edit a tile
+   marks each tile's ROLE with a small square, and its TesT key checks a team against these rules. Edit a tile
    here and both pages follow; nothing about a tile is written anywhere else.
 
    role      start      takes the data in; only a start can begin a chain (a chat, a feeder, a scanner,
@@ -27,11 +27,11 @@
    Every role, kind and need below is a PROPOSAL (2026-10-06) for Laurent to correct. */
 window.AKIKI_TILES = {
   roles: {
-    start: { label: 'start', say: 'starts a chain' },
+    start: { label: 'starts', say: 'starts a chain' },
     middle: { label: 'middle', say: 'works in the middle of a chain' },
-    end: { label: 'end', say: 'ends a chain with a result' },
-    both: { label: 'start + end', say: 'starts and ends a chain' },
-    attachment: { label: 'attach to a tile', say: 'attaches onto a tile that needs it' },
+    end: { label: 'ends', say: 'ends a chain with a result' },
+    both: { label: 'starts + ends', say: 'starts and ends a chain' },
+    attachment: { label: 'attaches to a tile', say: 'attaches onto a tile that needs it' },
   },
   // Each kind as a sentence says it: "Tulip gives a table, Lily needs facts".
   kinds: {
