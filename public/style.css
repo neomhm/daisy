@@ -1040,7 +1040,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   display: grid;
   place-items: center;
   min-width: 0;
-  padding: 52px 164px 28px 28px;   /* the keys stand in the right-hand margin */
+  padding: 52px 28px 28px 164px;   /* the keys stand in the left-hand margin */
   overflow: hidden;
   background:
     radial-gradient(ellipse at 22% 18%, rgba(53, 173, 176, .18), transparent 55%),
@@ -1177,13 +1177,13 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cell .wtile:hover, .cell .wtile:focus-visible { z-index: 6; }
 .cell .wtile:hover::after, .cell .wtile:focus-visible::after { opacity: 1; transform: translate(-50%, 7px); }
 
-/* The keys, at the field's right: dark keycaps with amber pixel letters, like the screens. TesT's
+/* The keys, at the field's left: dark keycaps with amber pixel letters, like the screens. TesT's
    row of lights, in the rainbow order of the version tabs, runs while a test runs and tells how it
-   ended. Download is not ready yet. */
+   ended. Download is not ready yet. CODE opens the code that joins the team, above the screens. */
 .field-keys {
   position: absolute;
   top: 50%;
-  right: 28px;
+  left: 28px;
   z-index: 3;
   display: grid;
   gap: 18px;
@@ -1227,6 +1227,11 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .key-soon, .key-download.is-soon .key-label:not(.key-soon) { display: none; }
 .key-download.is-soon .key-soon { display: block; }
 .key-icon { width: 13px; height: 19px; fill: currentColor; filter: drop-shadow(0 0 4px rgba(255, 170, 40, .8)); }
+.key-icon.is-wide { width: 30px; height: 13px; }
+.key-code[aria-expanded="true"] .key-face {   /* open: the key glows */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .17), inset 0 0 0 1px rgba(255, 193, 77, .6), 0 0 20px rgba(255, 170, 40, .3);
+}
+.key-code[aria-expanded="true"] .key-icon { filter: drop-shadow(0 0 7px rgba(255, 170, 40, 1)); }
 .key-leds { display: flex; gap: 5px; }
 .key-leds i { width: 7px; height: 7px; border-radius: 2px; background: var(--c); opacity: .25; transition: opacity .3s, box-shadow .3s; }
 .key-leds i:nth-child(1) { --c: #e65b56; }
@@ -1360,17 +1365,115 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cap b { display: block; color: #2f4d5c; font: 400 13px/1.2 "AKIKI Pixel", var(--mono); }
 .tray-slot.is-empty .cap { visibility: hidden; }
 
+/* The code (workbench.js). The CODE key opens an editor above the screens that writes, live, the
+   Python joining the team on the field: each model loaded from its own folder, then called with
+   what the models joined to it hand on. New lines are typed in; lines that go fold away. Each kind
+   of code has its colour, each model its tile's colour, with a bar of that colour by its lines;
+   during a test, a model's lines light up as the signal reaches its tile. */
+.code-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  padding: 0 16px;
+  transition: grid-template-rows .45s cubic-bezier(.2, .8, .2, 1), padding .45s cubic-bezier(.2, .8, .2, 1);
+}
+.code-wrap.is-open { grid-template-rows: 1fr; padding: 14px 16px 2px; }
+.code {
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #0f151b;
+  box-shadow: 0 0 0 1px rgba(15, 21, 27, .9), 0 14px 30px -16px rgba(15, 21, 27, .9);
+  color: #c9d4de;
+  font: 12px/18px var(--mono);
+}
+.code-bar { display: flex; height: 32px; background: #161f28; box-shadow: inset 0 -1px #0a0f14; }
+.code-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 16px 0 13px;
+  background: #0f151b;
+  color: #e6edf3;
+}
+.code-tab::before { content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: #ffc14d; box-shadow: 0 0 8px rgba(255, 170, 40, .7); }   /* the open tab, in the screens' amber */
+.code-badge { width: 12px; height: 12px; }
+.code-close { display: grid; place-items: center; width: 34px; margin-left: auto; border: 0; background: none; color: #7d8b97; cursor: pointer; }
+.code-close svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.code-close:hover { background: rgba(255, 255, 255, .06); color: #fff; }
+.code-close:focus-visible, .code-view:focus-visible { outline: 2px solid #7fd6d8; outline-offset: -2px; }
+.code-crumbs { overflow: hidden; padding: 4px 14px 3px; color: #75838f; font-size: 11px; line-height: 16px; white-space: nowrap; text-overflow: ellipsis; }
+.code-crumbs i { margin: 0 6px; color: #46535e; font-style: normal; }
+.code-crumbs b { color: #7fd6d8; font-weight: 400; }
+.code-view {
+  --gut: 46px;
+  height: clamp(150px, 27vh, 262px);
+  margin: 0;
+  padding: 6px 0 12px;
+  overflow: auto;
+  counter-reset: line;
+  font: inherit;
+  scrollbar-color: #2a3742 transparent;
+  scrollbar-width: thin;
+}
+.code-view code { display: block; min-width: max-content; font: inherit; }
+.ln { position: relative; display: block; min-height: 18px; padding: 0 16px 0 var(--gut); white-space: pre; transition: background-color .7s; }
+.ln::before { content: counter(line); counter-increment: line; position: absolute; left: 0; width: calc(var(--gut) - 20px); color: #46535e; text-align: right; }
+.ln.is-gone::before { content: none; counter-increment: none; }
+.ln[data-model]::after { content: ""; position: absolute; top: 3px; bottom: 3px; left: calc(var(--gut) - 11px); width: 3px; border-radius: 2px; background: var(--tc); }   /* the model's colour, by its lines */
+.ln.is-cur { background: rgba(255, 255, 255, .035); }
+.ln.is-cur::before { color: #c9d4de; }
+.ln.is-hot { background: color-mix(in srgb, var(--tc) 24%, transparent); transition-duration: .2s; }
+.caret { display: inline-block; width: 2px; height: 15px; margin-left: 1px; vertical-align: -3px; background: #ffd27a; box-shadow: 0 0 6px rgba(255, 190, 80, .8); animation: blink 1.05s steps(1) infinite; }
+.is-writing .caret { animation: none; }
+.c-kw { color: #d3a7ef; }                     /* keywords: from, import, def, return */
+.c-fn { color: #7fd6d8; }                     /* functions: load, team */
+.c-str { color: #f2c46d; }                    /* strings: each model's folder */
+.c-com { color: #6d7f8d; font-style: italic; }   /* comments */
+.c-var { color: #9cc8ec; }                    /* what one model hands on to the next */
+.c-prm { color: #9cc8ec; font-style: italic; }   /* what the team is given */
+.c-pkg { color: #e6edf3; }                    /* the akiki package */
+.c-op { color: #8b98a4; }                     /* signs */
+.c-mdl { color: color-mix(in srgb, var(--tc) 70%, #fff); font-weight: 600; }   /* each model, in its tile's colour */
+.code-status {
+  display: flex;
+  gap: 13px;
+  overflow: hidden;
+  height: 22px;
+  padding: 0 10px;
+  background: #0e5d64;
+  color: #dcf1f2;
+  font-size: 11px;
+  line-height: 22px;
+  white-space: nowrap;
+}
+.code-status > span { flex: none; }
+.code-branch::before {   /* a branch */
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 11px;
+  margin-right: 5px;
+  vertical-align: -1px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 11' fill='none' stroke='%23dcf1f2' stroke-width='1.3'%3E%3Ccircle cx='2' cy='2' r='1.3'/%3E%3Ccircle cx='2' cy='9' r='1.3'/%3E%3Ccircle cx='7' cy='3.5' r='1.3'/%3E%3Cpath d='M2 3.3v4.4M7 4.8c0 2-5 1.4-5 2.9'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.code-live::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: #7dffb0; box-shadow: 0 0 6px #7dffb0; vertical-align: 1px; }
+.is-writing .code-live::before { animation: live .45s ease-in-out infinite alternate; }
+@keyframes live { to { opacity: .25; box-shadow: none; } }
+.code-pos { margin-left: auto; }
+
 @media (max-width: 700px) {
   .bench-page { overflow: auto; }
   .bench { grid-template-columns: minmax(0, 1fr); height: auto; }
   .splitter { display: none; }
   .field { padding: 48px 12px 16px; row-gap: 18px; }
-  .field-keys { position: static; grid-template-columns: repeat(2, 120px); width: auto; transform: none; }   /* under the squares, side by side */
+  .field-keys { position: static; grid-template-columns: repeat(3, minmax(0, 112px)); gap: 12px; width: 100%; justify-content: center; transform: none; }   /* under the squares, side by side */
   .key { height: 72px; }
   .tray-scroll { overflow: visible; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing, .key-test .key-leds i { animation: none; }
+  .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing, .key-test .key-leds i, .is-writing .code-live::before { animation: none; }
+  .code-wrap { transition: none; }
   .wtile.is-dragging { transition: none; }
 }
 

@@ -7,8 +7,8 @@
    bar joins every two tiles side by side. The two screens add up the size and the latency of the
    group the last moved tile belongs to, and a third the weights' size on disk; tiles with no figures
    yet are named under them. The TesT key, on the field, sends a signal through the tiles to show
-   whether they make one model. The panel can be resized by dragging its left edge, or with the arrow
-   keys on it. */
+   whether they make one model; the CODE key opens, above the screens, the Python that joins them,
+   written live. The panel can be resized by dragging its left edge, or with the arrow keys on it. */
 (() => {
   const bench = document.querySelector('.bench');
   if (!bench) return;
@@ -228,6 +228,7 @@
     note.hidden = !parts.length;
     activeGroup = group;
     joints(group);
+    writeCode(group, all.length - (group.length ? 1 : 0));
   };
 
   // ---- Moving a tile: it lands in its new square at once, then glides there from where it was. ----
@@ -542,6 +543,7 @@
     // A tile coming alive: it flashes, and a ring the shape of its square spreads out from it.
     const boot = t => {
       t.classList.add('is-live');
+      glow(t.dataset.id);
       if (!slow) return;
       t.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.75)', transform: 'scale(1.08)', offset: 0.3 }, { filter: 'brightness(1)', transform: 'none' }],
                 { duration: 480, easing: 'ease-out' });
@@ -717,6 +719,221 @@
     clearTimeout(soon);
     soon = setTimeout(() => keyDownload.classList.remove('is-soon'), 1400);
   });
+
+  // ---- The code. CODE opens an editor above the screens with the Python that joins the team the
+  // screens count: each model loaded from its own folder, then, outward from the model that comes
+  // earliest in the work, each one called with what the models joined to it hand on. It is
+  // rewritten as tiles move: new lines are typed in, lines that go fold away. ----
+  const keyCode = bench.querySelector('.key-code');
+  const codeWrap = bench.querySelector('.code-wrap');
+  const view = codeWrap.querySelector('.code-view');
+  const codeBox = view.querySelector('code');
+  const codeStatus = codeWrap.querySelector('.code-status');
+  const codePos = codeWrap.querySelector('.code-pos');
+  const codeCount = codeWrap.querySelector('.code-count');
+  // For each model: what it is given when a team starts with it, what it hands on, and how early
+  // in the work it comes.
+  const ROLES = {
+    bouquet: ['brief', 'plan', 0], cricket: ['request', 'questions', 0], cicada: ['project', 'memory', 0],
+    butterfly: ['request', 'steps', 1], orchid: ['files', 'facts', 1], lily: ['files', 'logo', 1],
+    tulip: ['sheets', 'tables', 1], magnolia: ['database', 'meaning', 1], dragonfly: ['query', 'found', 2],
+    daisy: ['question', 'answer', 2], jasmine: ['signals', 'design', 2], bees: ['step', 'code', 2],
+    ants: ['step', 'parts', 2], mantis: ['work', 'audit', 3], ladybug: ['work', 'bugs', 3],
+    thistle: ['site', 'findings', 3], iris: ['site', 'report', 3], firefly: ['problem', 'advice', 4],
+  };
+  const role = t => ROLES[t.dataset.id] || ['data', t.dataset.id + '_out', 2];
+  const colour = id => { const t = tiles.find(x => x.dataset.id === id); return t ? t.style.getPropertyValue('--tc') : ''; };
+
+  // The lines of team.py, each a list of [kind, text] (a model's name also carries its colour).
+  const teamPy = (group, loose) => {
+    const out = [];
+    const add = (model, ...tokens) => out.push({ model, tokens, key: (model || '') + '|' + tokens.map(t => t[1]).join('') });
+    const mdl = id => ['mdl', id, colour(id)];
+    add(null, ['com', '# Joined live on the workbench.']);
+    if (!group.length) {
+      add(null, ['com', '# Put tiles on the field to join them.']);
+      return out;
+    }
+    add(null, ['kw', 'from'], ['op', ' '], ['pkg', 'akiki'], ['op', ' '], ['kw', 'import'], ['op', ' '], ['fn', 'load']);
+    add(null);
+    const at = t => posOf(t.parentElement);
+    const reading = (a, b) => at(a)[1] - at(b)[1] || at(a)[0] - at(b)[0];
+    const first = group.slice().sort((a, b) => role(a)[2] - role(b)[2] || reading(a, b))[0];
+    const level = new Map([[first, 0]]), queue = [first];
+    while (queue.length) {
+      const t = queue.shift();
+      for (const n of neighbours(t.parentElement)) {
+        const u = tileIn(n);
+        if (u && group.includes(u) && !level.has(u)) { level.set(u, level.get(t) + 1); queue.push(u); }
+      }
+    }
+    const order = group.slice().sort((a, b) => level.get(a) - level.get(b) || reading(a, b));
+    const joined = t => neighbours(t.parentElement).map(tileIn).filter(u => u && group.includes(u));
+    for (const t of order) {   // squares side by side are always a step apart outward, never level
+      const id = t.dataset.id;
+      const note = t.dataset.params === '' && t.dataset.note ? t.dataset.note.split(/[,;]/)[0] : '';
+      add(id, mdl(id), ['op', ' = '], ['fn', 'load'], ['op', '('], ['str', `"${id}"`], ['op', ')'], ...(note ? [['com', `  # ${note}`]] : []));
+    }
+    add(null);
+    add(null, ['kw', 'def'], ['op', ' '], ['fn', 'team'], ['op', '('], ['prm', role(first)[0]], ['op', '):']);
+    const ends = order.filter(t => !joined(t).some(u => level.get(u) > level.get(t)));
+    const list = items => items.flatMap((x, i) => (i ? [['op', ', '], x] : [x]));
+    for (const t of order) {
+      const given = level.get(t) === 0
+        ? [['prm', role(first)[0]]]
+        : joined(t).filter(u => level.get(u) < level.get(t)).sort(reading).map(u => ['var', role(u)[1]]);
+      const call = [mdl(t.dataset.id), ['op', '('], ...list(given), ['op', ')']];
+      if (ends.length === 1 && ends[0] === t) add(t.dataset.id, ['op', '    '], ['kw', 'return'], ['op', ' '], ...call);
+      else add(t.dataset.id, ['op', '    '], ['var', role(t)[1]], ['op', ' = '], ...call);
+    }
+    if (ends.length > 1) add(null, ['op', '    '], ['kw', 'return'], ['op', ' '], ...list(ends.map(t => ['var', role(t)[1]])));
+    if (loose) {
+      add(null);
+      add(null, ['com', `# ${loose} more ${loose > 1 ? 'pieces' : 'piece'} on the field, not joined`]);
+    }
+    return out;
+  };
+
+  // Which lines stay: the longest run the old and new code share, in order.
+  const common = (a, b) => {
+    const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+    for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+    const keep = new Map();   // new index -> old index
+    for (let i = 0, j = 0; i < a.length && j < b.length;) {
+      if (a[i] === b[j]) keep.set(j++, i++);
+      else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
+      else j++;
+    }
+    return keep;
+  };
+
+  let shown = [];     // the lines on screen: { key, el }
+  let typing = [];    // lines still being typed: { el, spans, i, j, rest }
+  let raf = 0;
+  let codeAt = [[], 0];   // the team and the loose pieces last written
+  const caret = document.createElement('i');
+  caret.className = 'caret';
+  const lineEl = l => {
+    const el = document.createElement('span');
+    el.className = 'ln';
+    if (l.model) {
+      el.dataset.model = l.model;
+      el.style.setProperty('--tc', colour(l.model));
+    }
+    const spans = l.tokens.map(([kind, text, tc]) => {
+      const s = document.createElement('span');
+      s.className = 'c-' + kind;
+      if (tc) s.style.setProperty('--tc', tc);
+      s.dataset.text = text;
+      el.append(s);
+      return s;
+    });
+    return { el, spans };
+  };
+  const current = el => {   // the line with the caret, as in an editor
+    codeBox.querySelectorAll('.ln.is-cur').forEach(x => x.classList.remove('is-cur'));
+    if (!el) return;
+    el.classList.add('is-cur');
+    el.append(caret);
+    const n = [...codeBox.querySelectorAll('.ln:not(.is-gone)')].indexOf(el) + 1;
+    codePos.textContent = `Ln ${n}, Col ${el.textContent.length + 1}`;
+    const top = el.offsetTop, h = el.offsetHeight;
+    if (top < view.scrollTop + 6) view.scrollTop = top - 6;
+    else if (top + h > view.scrollTop + view.clientHeight - 12) view.scrollTop = top + h - view.clientHeight + 12;
+  };
+  const type = () => {
+    if (raf) return;
+    codeStatus.classList.add('is-writing');
+    const frame = () => {
+      // a few letters a frame, more when much is waiting: a whole file takes about a second
+      let budget = Math.max(2, Math.ceil(typing.reduce((n, q) => n + q.rest, 0) / 40));
+      while (budget > 0 && typing.length) {
+        const q = typing[0];
+        if (!q.begun) { q.begun = true; current(q.el); }
+        const span = q.spans[q.i];
+        if (!span) { typing.shift(); continue; }
+        const text = span.dataset.text, take = Math.min(budget, text.length - q.j);
+        span.textContent += text.slice(q.j, q.j + take);
+        q.j += take;
+        q.rest -= take;
+        budget -= take;
+        if (q.j >= text.length) { q.i += 1; q.j = 0; }
+      }
+      const last = codeBox.querySelector('.ln.is-cur');
+      if (last) codePos.textContent = codePos.textContent.replace(/Col \d+/, `Col ${last.textContent.length + 1}`);
+      if (typing.length) { raf = requestAnimationFrame(frame); return; }
+      raf = 0;
+      codeStatus.classList.remove('is-writing');
+    };
+    raf = requestAnimationFrame(frame);
+  };
+
+  const writeCode = (group, loose, fresh = false) => {
+    codeAt = [group, loose];
+    const live = codeWrap.classList.contains('is-open') && !still.matches;
+    if (fresh) {   // start the file again (when the editor opens)
+      shown.forEach(s => s.el.remove());
+      shown = [];
+      typing = [];
+    }
+    const next = teamPy(group, loose);
+    const keep = common(shown.map(s => s.key), next.map(l => l.key));
+    const kept = new Set(keep.values());
+    shown.forEach((s, i) => {   // the lines that go fold away
+      if (kept.has(i)) return;
+      typing = typing.filter(q => q.el !== s.el);
+      s.el.classList.add('is-gone');
+      if (!live) { s.el.remove(); return; }
+      s.el.animate([{ height: '18px', minHeight: '18px', opacity: 1 }, { height: '0px', minHeight: '0px', opacity: 0 }],
+                   { duration: 240, easing: 'ease-in' }).finished.then(() => s.el.remove(), () => s.el.remove());
+    });
+    const result = [];
+    let after = null;
+    next.forEach((l, j) => {
+      if (keep.has(j)) {
+        const s = shown[keep.get(j)];
+        result.push(s);
+        after = s.el;
+        return;
+      }
+      const { el, spans } = lineEl(l);
+      if (after) after.after(el); else codeBox.prepend(el);
+      after = el;
+      result.push({ key: l.key, el });
+      if (live) typing.push({ el, spans, i: 0, j: 0, rest: l.tokens.reduce((n, t) => n + t[1].length, 0) });
+      else spans.forEach(s => { s.textContent = s.dataset.text; });
+    });
+    shown = result;
+    const n = group.length;
+    codeCount.textContent = n ? `${n} model${n > 1 ? 's' : ''}` : 'no models';
+    if (typing.length) type();
+    else if (!raf) current(shown.length ? shown[shown.length - 1].el : null);
+  };
+
+  // A model's lines light up: while its tile is pointed at, and as a test's signal reaches it.
+  const glow = (id, on) => codeBox.querySelectorAll(`.ln[data-model="${id}"]`).forEach(el => {
+    el.classList.toggle('is-hot', on !== false);
+    if (on === undefined) setTimeout(() => el.classList.remove('is-hot'), 650);
+  });
+  tiles.forEach(t => {
+    const hot = on => () => { if (onField(t)) glow(t.dataset.id, on); };
+    t.addEventListener('pointerenter', hot(true));
+    t.addEventListener('pointerleave', hot(false));
+    t.addEventListener('focus', hot(true));
+    t.addEventListener('blur', hot(false));
+  });
+
+  const openCode = open => {
+    keyCode.setAttribute('aria-expanded', String(open));
+    codeWrap.classList.toggle('is-open', open);
+    codeWrap.inert = !open;
+    if (open) writeCode(codeAt[0], codeAt[1], true);   // typed out afresh each time it opens
+  };
+  keyCode.addEventListener('click', () => openCode(keyCode.getAttribute('aria-expanded') !== 'true'));
+  codeWrap.querySelector('.code-close').addEventListener('click', () => { openCode(false); keyCode.focus(); });
+  codeWrap.addEventListener('keydown', e => { if (e.key === 'Escape') { openCode(false); keyCode.focus(); } });
 
   // ---- The panel's width: a quarter of the page to start with; its left edge can be dragged. ----
   const KEY = 'akiki-workbench-panel';
