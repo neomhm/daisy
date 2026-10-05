@@ -754,6 +754,8 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .markdown th, .markdown td { padding: 7px 12px; border: var(--hairline) solid var(--border); text-align: left; vertical-align: top; }
 .markdown th { background: var(--bg-subtle); font-weight: 600; }
 .markdown tbody tr:nth-child(2n) { background: #fbfcfd; }
+.markdown td .ti { width: 18px; height: 18px; margin-right: 6px; border-radius: 4px; vertical-align: -4px; }   /* a model's tile, beside its name */
+.markdown td .ti + .ti { margin-left: -2px; }
 
 /* Section bar: Overview, one chip per model in its colour, Status. switch.js marks the section
    being read and keeps its chip in view. */
