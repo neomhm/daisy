@@ -14,7 +14,9 @@
    attachment such as a brain, a database or a documents folder snaps ONTO a tile that needs it),
    the kinds of data it accepts and hands on, and what it needs. A lettered badge on each tile says its role
    (I an input, Fn a function, O an output). Tiles
-   side by side pass their work left to right; tiles stacked in a column are alternatives; a tile
+   side by side pass their work left to right; tiles stacked in a column form a team that a brain
+   coordinates: functions do the work it gives them, inputs all feed it, and it decides which outputs
+   get the answer; a tile
    touching Siren is a specialist she calls, whose answer comes back to her. The TesT key checks, in
    this order: a start and an end; every chain going from a start to an end, in one piece; every
    two touching tiles fitting; every tile having what it needs. When a check fails, the tile at
@@ -78,6 +80,11 @@
   };
   const drawing = d => {   // the page's own icon; for a tile with none, one drawn from its glyph; for code, "</>"
     if (d.kind === 'code' && d.chat) return codeSymbol('px-chat', 3.3, 5.9, 2.6, 2.2, CHAT_PX);
+    if (d.kind === 'code' && d.pixels) {   // a way in or out: its own pixel drawing, in the code look (tiles.js "pixels")
+      const P = 3.2, Z = 2.7, w = Math.max(...d.pixels.map(r => r.length)), h = d.pixels.length;
+      const px = d.pixels.flatMap((row, r) => [...row].map((ch, c) => (ch === 'X' ? [c, r] : null)).filter(Boolean));
+      return codeSymbol('px-code-' + d.id, (40 - (w - 1) * P - Z) / 2, (40 - (h - 1) * P - Z) / 2, P, Z, px);
+    }
     if (d.kind === 'code') return codeSymbol('px-code', 4.6, 13.6, 2.6, 2.2);
     const id = `px-${d.id}`;
     if (document.getElementById(id)) return id;
@@ -187,17 +194,33 @@
     }
     // The colours' key, on the field.
     const legend = document.createElement('div');
-    legend.className = 'field-legend';
-    legend.setAttribute('aria-hidden', 'true');
+    legend.className = 'field-legend';   // the key is for the eye (each item aria-hidden), but for the team's help
     for (const [role, r] of Object.entries(DATA.roles)) {
       const item = document.createElement('span');
+      item.setAttribute('aria-hidden', 'true');
       item.dataset.role = role;
       item.innerHTML = '<i></i>';
       item.append(r.label);
       legend.append(item);
     }
+    {   // stacked functions (Laurent, 2026-10-07): a team the brain coordinates; a press says how such a team works
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'lg-team';
+      item.innerHTML = '<i aria-hidden="true"></i>';
+      item.append('functions stacked: a team the brain coordinates');
+      item.dataset.help = 'Functions stacked in one column form a team; the brain decides from its blueprint which of them work, in what order, and merges their results into one answer.\n'
+        + 'With a Checker after the team: the brain first writes a contract (the tables, endpoints, names and formats, and who does what); each function builds its part to it; '
+        + 'the Checker runs every part against the contract; if they fit, the brain puts them together into one answer, each part labelled; '
+        + 'if not, it tells the one at fault exactly what to fix, at most three times, then says plainly that it failed.';
+      item.title = item.dataset.help;
+      item.setAttribute('aria-label', 'How a team of stacked functions works');
+      item.addEventListener('click', () => say(item.dataset.help.replace('\n', ' '), 14000));
+      legend.append(item);
+    }
     for (const [k, label] of [['ai', 'AI model'], ['code', 'code'], ['data', 'data']]) {   // and the three looks
       const item = document.createElement('span');
+      item.setAttribute('aria-hidden', 'true');
       item.dataset.kind = k;
       item.className = 'lg-kind';
       item.innerHTML = '<i></i>';
@@ -403,7 +426,9 @@
       return (o.role === 'start' || o.role === 'reader' || fitsKinds(h.out, o.in)) && (o.role === 'end' || fitsKinds(o.out, h.in));
     }
     if (across) return x.role !== 'end' && y.role !== 'start' && fitsKinds(x.out, y.in);
-    return x.role === y.role && (x.role === 'start' || x.role === 'reader' || x.in.some(k => y.in.includes(k)));   // alternatives take the same work
+    const fn = r => r === 'middle' || r === 'reader';
+    if (fn(x.role) && fn(y.role) && (x.role === 'middle' || y.role === 'middle')) return true;   // two functions: one team
+    return x.role === y.role && (x.role === 'start' || x.role === 'reader' || x.in.some(k => y.in.includes(k)));   // a team of the same role (inputs, outputs)
   };
   const joints = (active = activeGroup) => {
     grid.querySelectorAll('.joint').forEach(j => j.remove());
@@ -515,7 +540,8 @@
   // a cross whose title (or a press) gives the reason; a tile alone, or a chain still being built,
   // says nothing. Only what is wrong NOW counts: an order the wrong way round, kinds that do not
   // fit, a lens beside the wrong model. Then, beside a rightly placed tile, the free square to its
-  // right (and, on a wide screen, the one below it, for an alternative) shows faint "ghosts" of
+  // right (and, on a wide screen, the one below it: for a function, another function to work with it
+  // as a team; for an input or an output, another of its role for the brain to coordinate) shows faint "ghosts" of
   // every tile that would fit there, each with one word; a press on a ghost places that tile. ----
   const LIVE = new Set(['no fit', 'wrong order', 'misplaced lens']);
   const WORD = { facts: 'facts', table: 'table', document: 'documents', image: 'image', design: 'design', plan: 'plan',
@@ -548,7 +574,7 @@
       return !faultsAt(bb, q).length && !faultsAt(bb, bb.find(p => p.c === at.c && p.r === at.r)).length;
     }).sort((x, y) => (defOf(x).in || []).includes('*') - (defOf(y).in || []).includes('*'));
   };
-  const showGhosts = (cell, list) => {
+  const showGhosts = (cell, list, join = false) => {
     if (!list.length) return;
     let i = 0;
     const g = document.createElement('div');
@@ -567,7 +593,8 @@
       face.dataset.kind = d.kind || 'ai';
       face.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true"><use href="#${drawing(d)}"/></svg><span class="ghost-word"></span>`;
       face.querySelector('.ghost-word').textContent = wordOf(d);
-      face.setAttribute('aria-label', `Place ${d.name} here (${wordOf(d)})`);
+      face.setAttribute('aria-label', join ? `Add ${d.name} to the team here (${wordOf(d)})` : `Place ${d.name} here (${wordOf(d)})`);
+      g.dataset.join = String(join);
       face.title = `${d.name}: ${d.words}`;
       more.textContent = `+${list.length - 1}`;
       more.setAttribute('aria-label', `Show the next of ${list.length} tiles that fit here`);
@@ -607,13 +634,44 @@
   // The arrow's journey, as levels of hops [from tile, to tile] played one level after another.
   const flowLevels = chain => {
     const { res } = chain, st = p => res.stageOf.get(p), h = res.hub, levels = [];
+    // The brain of a team of stacked functions, as a stop of its own: the work goes into it, it sends each
+    // tile of the team its orders (a short stagger), their results come back to it, and it hands on one answer.
+    const S = parseFloat(grid.style.getPropertyValue('--cell')) || 96, G = parseFloat(grid.style.getPropertyValue('--gap')) || 12;
+    const gr = grid.getBoundingClientRect();
+    const chip = res.board.flatMap(p => docked(p.tile)).find(c => givesOf(c) === 'brain');
+    const viaBrain = new Set();   // stages whose work the brain hands on (a Checker after a team)
+    const brainAt = chip ? (() => { const r = chip.getBoundingClientRect();
+      return { id: chip.dataset.id, tile: chip, c: (r.left + r.width / 2 - gr.left - S / 2) / (S + G), r: (r.top + r.height / 2 - gr.top - S / 2) / (S + G) }; })() : null;
     const allStages = [...new Set([...res.stageOf.values()])];
     const seen = new Set();
     const pipeOn = frontier => {   // from these stages along the pipes, one level per step
       while (frontier.length) {
         const next = [...new Set(frontier.flatMap(x => [...x.succs].map(st)))].filter(x => !seen.has(x));
         const hops = frontier.flatMap(x => [...x.succs].map(st).filter(y => next.includes(y)).flatMap(y => x.members.flatMap(g => y.members.map(m => [g, m]))));
-        if (hops.length) levels.push(hops);
+        // a team's work leaves through the brain, and comes into a team through the brain; a team with a
+        // Checker after it hands its parts to the Checker, which reports to the brain (one fix round shown)
+        const inTeam = p => !!brainAt && p !== brainAt && !!st(p) && st(p).team;
+        const isChk = p => p !== brainAt && !!DEF.get(p.id) && !!DEF.get(p.id).checker;
+        const checkerOf = x => [...x.succs].find(isChk);
+        const seenHop = new Set(), step = [], checked = [];
+        for (const [g0, m] of hops) {
+          const toChecker = inTeam(g0) && isChk(m) && checkerOf(st(g0)) === m;
+          const g = toChecker ? g0 : (inTeam(g0) || viaBrain.has(st(g0))) ? brainAt : g0, to = inTeam(m) ? brainAt : m;
+          if (toChecker && !checked.some(([c]) => c === m)) checked.push([m, st(g0).members]);
+          if (g === to || seenHop.has(g.id + '>' + to.id)) continue;
+          seenHop.add(g.id + '>' + to.id);
+          step.push([g, to]);
+        }
+        if (step.length) levels.push(step);
+        for (const [c, members] of checked) {   // the Checker reports to the brain; a fix order to one function; checked again; back to the brain
+          levels.push([[c, brainAt]], [[brainAt, members[0], 0, 'fix']], [[members[0], c, 0, 'fix']], [[c, brainAt]]);
+          viaBrain.add(st(c));
+        }
+        const team = [...new Set(hops.map(([, m]) => m).filter(inTeam))];
+        if (team.length) {   // the brain sends each its orders, one after another
+          levels.push(team.map((m, i) => [brainAt, m, i * 120]));
+          if (!checkerOf(st(team[0])) && st(team[0]).succs.size) levels.push(team.map((m, i) => [m, brainAt, i * 120]));   // and their results come back to it (not from outputs)
+        }
         next.forEach(x => seen.add(x));
         frontier = next;
       }
@@ -621,6 +679,8 @@
     const chats = allStages.filter(x => x.members.some(p => D(p.id).chat) && x.hubs.size);
     const sources = allStages.filter(x => !x.preds.size && !x.hubs.size);
     sources.forEach(x => seen.add(x));
+    const fed = sources.filter(x => x.team && brainAt).flatMap(x => x.members);   // stacked inputs all feed the brain
+    if (fed.length) levels.push(fed.map((m, i) => [m, brainAt, i * 120]));
     if (sources.length) pipeOn(sources);
     if (h) {
       chats.forEach(x => seen.add(x));
@@ -661,8 +721,18 @@
     if (verdict && verdict.length) return;   // ghosts only beside a tile that stands rightly
     const [c, r] = posOf(last.parentElement);
     const spots = [cellAt(c + 1, r), ...(phone.matches ? [] : [cellAt(c, r + 1)])].filter(x => x && !tileIn(x));
-    const role = last.dataset.role;   // below: true alternatives only, tiles of the same role
-    for (const cell of spots) showGhosts(cell, ghostsFor(b, at, cell).filter(t => cell === spots[0] && posOf(cell)[1] === posOf(last.parentElement)[1] || t.dataset.role === role));
+    // below: under a function, the functions that can join its team; under an input or an output, another of its role, for the same pool
+    const role = last.dataset.role, res0 = check(b), st0 = res0.stageOf.get(at);
+    const isFn = role === 'middle' || (role === 'reader' && !!st0 && st0.preds.size > 0);
+    for (const cell of spots) {
+      const below = !(cell === spots[0] && posOf(cell)[1] === posOf(last.parentElement)[1]);
+      let list = ghostsFor(b, at, cell).filter(t => !below || (isFn ? t.dataset.role === 'middle' || t.dataset.role === 'reader' : t.dataset.role === role));
+      // to the right of a team that writes code in several languages, with no Checker yet: the Checker first
+      if (!below && st0 && st0.team && st0.members.filter(p => defOf(p.tile).writesCode).length > 1 && ![...st0.succs].some(q => defOf(q.tile).checker)) {
+        list = [...list.filter(t => defOf(t).checker), ...list.filter(t => !defOf(t).checker)];
+      }
+      showGhosts(cell, list, below && isFn);
+    }
   };
   // While a tile is dragged over a square, that square already says green or red.
   const hoverVerdict = (tile, cell) => {
@@ -838,10 +908,17 @@
     if (!t || !onField(t) || isAtt(t) || isLensT(t)) return;
     const d = defOf(t);
     const o = DATA.defaultBrain && original(DATA.defaultBrain);
-    if (brain && o && (d.needs || []).includes('brain') && canDock(t, o)
+    // the brain goes to a tile that needs one, or, when this tile has just made (or joined) a team of
+    // stacked functions, to the first tile of that team that can take it
+    let brainHost = (d.needs || []).includes('brain') && o && canDock(t, o) ? t : null;
+    if (brain && o && !brainHost) {
+      const b = board(), res = check(b), st = res.stageOf.get(b.find(p => p.tile === t));
+      if (st && st.team) brainHost = [t, ...st.members.map(p => p.tile), ...(groups().find(g => g.includes(t)) || [])].find(x => canDock(x, o)) || null;   // a stack of code tiles: any tile of the team that thinks
+    }
+    if (brain && o && brainHost
         && !(groups().find(g => g.includes(t)) || [t]).flatMap(docked).some(c => givesOf(c) === 'brain')) {
       const c = copyOf(o);
-      dockOnto(c, t, false);
+      dockOnto(c, brainHost, false);
       c.dataset.auto = 'brain';
     }
     if (skill) for (const k of tiles.filter(x => isAtt(x) && givesOf(x) === 'skill' && (defOf(x).serves || []).includes(d.id))) {
@@ -1183,7 +1260,9 @@
 
   // ---- The rules TesT applies. A board is the tiles on the field as [{ id, c, r, att }], att being
   // the needs their docked attachments fill. Tiles side by side pass their work left to right (a
-  // PIPE); tiles stacked in one column are alternatives that all get the same work (a STAGE); a tile
+  // PIPE); tiles stacked in one column make a STAGE, and a stage of two or more is a TEAM the brain
+  // coordinates (it needs one): stacked functions do what its blueprint gives each, stacked inputs all
+  // feed it, and it sends the answer to one, several or all of stacked outputs; a tile
   // touching Siren (a hub) is a specialist she CALLS, and its answer comes back to her. The checks
   // run in order and the first that fails is the answer: (1) a start and an end; (2) one piece, and
   // every start reaching an end, with nothing before a start, nothing after an end, and no middle
@@ -1209,7 +1288,7 @@
     const names = ps => list([...new Set(ps.map(nm))]);
     const hub = p => !!(p && D(p.id).hub);
     const stageOf = new Map();
-    const lone = p => !!p && D(p.id).chat;   // a Chat window stacks with nothing: it is never an alternative
+    const lone = p => !!p && D(p.id).chat;   // a Chat window stacks with nothing: it is never in a pool
     for (const p of board) {
       if (stageOf.has(p) || hub(p)) continue;
       const st = { members: [], preds: new Set(), succs: new Set(), hubs: new Set() };
@@ -1232,6 +1311,20 @@
         stageOf.get(q).preds.add(p);
       }
     }
+    // Functions stacked in one column form a TEAM (Laurent, 2026-10-07: "when function are placed one above
+    // the other (vertically) it means they work equally in team"; "it will be depending on the blueprint
+    // received by the BRAIN. It will alternate them and synchronise them to give one unified response"):
+    // the brain decides from its blueprint which of them work, in what order, and merges their results
+    // into one answer.
+    // Then the same for stacked inputs and stacked outputs (Laurent, 2026-10-07): stacked inputs all feed the
+    // brain, which handles whatever arrives from any of them; for stacked outputs the brain decides, per
+    // request, to which one, several or all the answer goes. Every stack is a pool the brain coordinates.
+    for (const st of new Set(stageOf.values())) {
+      st.team = st.members.length > 1;
+      st.pool = !st.team ? null : !st.preds.size && !st.hubs.size && st.members.every(p => isStart(D(p.id))) ? 'inputs'
+        : !st.succs.size && !st.hubs.size && st.members.every(p => isEnd(D(p.id))) ? 'outputs' : 'functions';
+    }
+    const outsOf = ps => [...new Set(ps.flatMap(q => D(q.id).out))];
     const errs = [];
     const add = (cat, p, sentence, big, more = {}) => errs.push({ cat, p, sentence, big, mode: 'replace', ...more });
     // (1) a start and an end
@@ -1284,13 +1377,47 @@
       else if (d.role !== 'start' && d.role !== 'reader' && !before && !called) add('order', p, `Nothing comes before ${d.name}: ${d.name} needs ${kinds(d.in)}, from a start tile on the left or from Siren beside it.`, 'no start');
       else if (d.role !== 'end' && !after && !called) add('order', p, `What ${d.name} gives goes nowhere: ${d.name} hands on ${kinds(d.out)}, and a chain must end in a tile that gives the result.`, 'dead end');
     }
+    // An Input straight into an Output (Laurent, 2026-10-07: input -> function -> output): an input only
+    // brings the data in, an output gives the result of the work, so a Function goes between them. A pure
+    // input is a starter, the Chat window where a conversation starts, or a code reader (the Feeder) with
+    // nothing before it; a model that reads (Orchid, Tulip, Cricket) does work of its own and counts as a function.
+    const pureIn = p => { const d = D(p.id), st = stageOf.get(p);
+      return !!st && !st.preds.size && !st.hubs.size && (d.role === 'start' || d.role === 'both' || (d.role === 'reader' && (d.kind || 'ai') === 'code')); };
+    const playsOut = p => { const d = D(p.id), st = stageOf.get(p); return !!st && !st.hubs.size && (d.role === 'end' || (d.role === 'both' && st.preds.size > 0)); };
+    for (const e of edges.filter(x => x.type === 'pipe')) {
+      const L = stageOf.get(e.from), R = stageOf.get(e.to);
+      if (!L.members.every(pureIn)) continue;
+      for (const m of R.members.filter(playsOut)) {
+        if (errs.some(x => x.cat === 'order' && x.p === m && x.big2 === 'no function')) continue;
+        add('order', m, `${nm(m)} cannot come straight after ${names(L.members)}: ${names(L.members)} only ${L.members.length > 1 ? 'bring' : 'brings'} the data in, and ${nm(m)} gives the result of the work, so put a Function between them.`, 'wrong order', { other: L.members, big2: 'no function' });
+      }
+    }
     // (3) every two touching tiles fit
-    const piped = new Set();
+    const piped = new Map();
     for (const e of edges) {
-      if (e.type === 'pipe') {   // alternatives: whichever of the left stage answers, each of the right stage must take it
+      if (e.type === 'pipe' && (stageOf.get(e.from).team || stageOf.get(e.to).team)) {
+        // a team: what the tiles of a team hand on is joined, and the brain hands each of a team its
+        // orders, so a team takes the work when one of its tiles can
+        const L = stageOf.get(e.from), R = stageOf.get(e.to);
+        if (piped.has(L) && piped.get(L).has(R)) continue;
+        if (!piped.has(L)) piped.set(L, new Set());
+        piped.get(L).add(R);
+        const givers = L.team ? [{ ps: L.members, name: list(L.members.map(nm)), out: outsOf(L.members) }]
+          : L.members.map(g => ({ ps: [g], name: nm(g), out: D(g.id).out }));
+        for (const g of givers) {
+          if (!g.out.length) continue;
+          if (R.team) {
+            if (!R.members.some(m => fitsKinds(g.out, D(m.id).in))) add('kinds', R.members[0], `${list(R.members.map(nm))} cannot follow ${g.name}: ${g.name} ${g.ps.length > 1 ? 'give' : 'gives'} ${kinds(g.out)}, and none of them takes it.`, 'no fit', { other: g.ps });
+          } else for (const m of R.members) {
+            const b = D(m.id);
+            if (b.role === 'start') continue;
+            if (!fitsKinds(g.out, b.in)) add('kinds', m, `${b.name} cannot follow ${g.name}: ${g.name} ${g.ps.length > 1 ? 'give' : 'gives'} ${kinds(g.out)}, ${b.name} needs ${kinds(b.in)}.`, 'no fit', { other: g.ps });
+          }
+        }
+      } else if (e.type === 'pipe') {   // one tile to one tile
         for (const g of stageOf.get(e.from).members) for (const m of stageOf.get(e.to).members) {
           if (piped.has(g.id + '|' + m.id)) continue;
-          piped.add(g.id + '|' + m.id);
+          piped.set(g.id + '|' + m.id, true);
           const a = D(g.id), b = D(m.id);
           if (b.role === 'start' || !a.out.length) continue;   // the order check names these
           if (!fitsKinds(a.out, b.in)) add('kinds', m, `${b.name} cannot follow ${a.name}: ${a.name} gives ${kinds(a.out)}, ${b.name} needs ${kinds(b.in)}.`, 'no fit', { other: [g] });
@@ -1314,12 +1441,33 @@
     const fedWith = p => new Set([...(stageOf.get(p) || { preds: [] }).preds].flatMap(q => D(q.id).out));
     // a brain is the team's: one brain anywhere in a connected team serves every tile there that needs one
     const brainOf = p => [...(p.attIds || [])].find(id => (DEF.get(id) || {}).gives === 'brain');
+    const POOL_SAY = { functions: 'it makes a blueprint from the input, decides which of them work and in what order, and merges their results into one answer.',
+      inputs: 'all of them feed it, and it handles whatever arrives from any of them.', outputs: 'it decides, for each request, to which one, several or all of them the answer goes.' };
+    const POOL_DOES = { functions: 'decides from its blueprint which of them work, in what order, and merges their results into one answer.',
+      inputs: 'takes in whatever arrives from any of them.', outputs: 'decides, for each request, to which one, several or all of them the answer goes.' };
     const brainSay = id => `${DNAME(id).replace(/ remote$/, '')} (${(DEF.get(id) || {}).where || 'local'})`;
     for (const piece of pieces) {
       const thinkers = piece.filter(p => (D(p.id).needs || []).includes('brain'));
-      if (!thinkers.length) continue;
+      // a team of stacked functions needs the brain too: it turns the input into a blueprint and gives each its orders
+      const teams = [...new Set(piece.map(p => stageOf.get(p)).filter(st => st && st.team))];
+      if (!thinkers.length && !teams.length) continue;
       const own = thinkers.filter(brainOf), shared = piece.map(brainOf).find(Boolean);
-      if (!shared) { add('needs', thinkers[0], 'This team needs a brain: attach one (Qwen or Glimmer, local or remote) to any tile \u2014 every tile that needs a brain will share it.', 'needs a brain', { mode: 'attach', need: 'brain' }); continue; }
+      if (!shared) {
+        const t = teams[0], canThink = p => ['ai', 'hybrid'].includes(D(p.id).kind || 'ai') && !isLensD(p);
+        const host = thinkers[0] || t.members.find(canThink) || piece.find(canThink) || t.members[0];
+        add('needs', host, thinkers.length
+          ? 'This team needs a brain: attach one (Qwen or Glimmer, local or remote) to any tile \u2014 every tile that needs a brain will share it.'
+          : `${list(t.members.map(nm))} are stacked, so they form a team, and a team needs a brain: ${POOL_SAY[t.pool]} Attach one (Qwen or Glimmer, local or remote) to any tile.`,
+          'needs a brain', { mode: 'attach', need: 'brain', team: thinkers.length ? null : t.members.map(nm) });
+        continue;
+      }
+      for (const t of teams) {
+        notes.push(`${list(t.members.map(nm))} form a team: the brain, ${brainSay(shared)}, ${POOL_DOES[t.pool]}`);
+        const coders = t.members.filter(p => D(p.id).writesCode), checker = [...t.succs].find(q => D(q.id).checker);
+        if (checker) notes.push(`The brain writes a contract (tables, endpoints, names, formats, who does what); ${list(t.members.map(nm))} build their parts to it; the ${nm(checker)} runs every part against it. On a pass the brain assembles one answer${coders.length ? `, each part labelled (${list([...new Set(coders.map(p => D(p.id).writesCode))])})` : ''}; on a fail it sends a fix order to the one at fault, at most three rounds, then says plainly that it failed.`);
+        else if (coders.length > 1) notes.unshift('This team writes code in several languages with nothing to check that the parts fit. Add a Checker.');   // a warning, not a fault
+      }
+      if (!thinkers.length) continue;
       if (thinkers.every(brainOf)) {   // each has its own: say each one's
         for (const p of thinkers) notes.push(`${nm(p)} uses ${p.id === 'siren' ? 'her' : 'its'} own brain, ${brainSay(brainOf(p))}.`);
         continue;
@@ -1372,9 +1520,10 @@
     const cat = ORDER.find(c => errs.some(e => e.cat === c));
     const faults = cat ? errs.filter(e => e.cat === cat).sort(flow) : [];
     // the team, as the work goes: "Siren → Daisy → Siren" when Siren only calls; otherwise each chain
-    // from its start ("Orchid or Tulip → Bouquet → Jasmine → Iris, Thistle or Lily"), then whom Siren calls
+    // from its start ("Orchid or Tulip → Bouquet → Jasmine → Iris, Thistle or Lily"; stacked functions
+    // read "Tulip and Daisy, coordinated by the brain"), then whom Siren calls
     const stages = [...new Set(stageOf.values())].sort((a, b) => Math.min(...a.members.map(p => p.c)) - Math.min(...b.members.map(p => p.c)) || Math.min(...a.members.map(p => p.r)) - Math.min(...b.members.map(p => p.r)));
-    const says = st => orList(st.members.map(nm));
+    const says = st => (st.team ? list(st.members.map(nm)) + ', coordinated by the brain' : orList(st.members.map(nm)));
     const h = board.find(hub);
     const called = stages.filter(st => st.hubs.size);
     let path;
@@ -1475,8 +1624,166 @@
     bind: Object.fromEntries(board().filter(p => p.att.size).map(p => [p.id, [...p.att]])),
   });
 
-  const runTest = () => {
+  // ---- The brain chooser (Laurent, 2026-10-07: "when testing a function, and no AI brain model was
+  // selected, ask the user which one he wants and list them on the screen"). When TesT finds a team
+  // whose chain is right but that has no brain for a tile that needs one, it asks instead of failing:
+  // a dialog lists every brain in tiles.js (local and remote), each with its figures as the screens
+  // show them. A pick attaches that brain exactly as pressing it in the panel would, then TesT runs
+  // again; Cancel, Esc or a press outside leave the team as it was and TesT says what is missing.
+  // The look: a pulse leaves the tile that needs a brain, the panel unfolds in pixel steps, the cards
+  // arrive one by one; the chosen brain flies onto the tile with a small burst of pixels. With reduced
+  // motion everything simply appears. ----
+  const BRAINS = DATA.tiles.filter(d => d.gives === 'brain');
+  const brainFault = res => !res.all.some(e => COMPLETE_BLOCKERS.has(e.cat)) && res.all.find(e => e.cat === 'needs' && e.need === 'brain');
+  const brainFigures = d => {
+    const z = sizeMeter.format(+d.params), w = mbMeter.format(+d.mb), v = msMeter.format(+d.ms);
+    return [d.params === '' ? 'size not measured yet' : `${z.text} ${z.unit} parameters`,
+      d.mb === '' ? 'weights not measured yet' : +d.mb === 0 ? 'no weights on this PC' : `${w.text} ${w.unit} on disk`,
+      d.ms === '' ? 'speed not measured yet' : `${v.text} ${v.unit}`];
+  };
+  let asking = null;   // the open chooser, if any
+  const askBrain = (host, team) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'brainpick-wrap';
+    wrap.innerHTML = '<div class="brainpick-shade"></div>'
+      + '<div class="brainpick" role="dialog" aria-modal="true" aria-labelledby="brainpick-title" aria-describedby="brainpick-say">'
+      + '<div class="brainpick-head"><h3 class="brainpick-title" id="brainpick-title">Which brain should this team use?</h3>'
+      + '<button class="brainpick-cancel" type="button">Cancel</button></div>'
+      + '<p class="brainpick-say" id="brainpick-say"></p><div class="brainpick-list" role="group" aria-label="The brains"></div></div>';
+    const dlg = wrap.querySelector('.brainpick'), listEl = wrap.querySelector('.brainpick-list');
+    const thinkers = (groups().find(g => g.includes(host)) || [host]).filter(t => (defOf(t).needs || []).includes('brain')).map(t => t.dataset.name);
+    wrap.querySelector('.brainpick-say').textContent = team
+      ? `${list(team)} are stacked: a team the brain coordinates, so the team needs a brain. The one you pick serves the whole team.`
+      : `${thinkers.length > 1 ? `${list(thinkers)} need` : `${host.dataset.name} needs`} a brain, and the team has none. The one you pick is shared by every tile that needs a brain.`;
+    for (const d of BRAINS) {
+      const t = original(d.id);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'brainpick-card';
+      b.dataset.brain = d.id;
+      b.style.setProperty('--tc', d.colour);
+      const fig = brainFigures(d), where = d.where === 'remote' ? 'remote' : 'local';
+      b.innerHTML = '<span class="bp-icon"></span><span class="bp-text"><b class="bp-name"></b><i class="bp-where"></i><span class="bp-fig"></span></span>';
+      b.querySelector('.bp-icon').append(t ? t.querySelector('svg').cloneNode(true) : '');
+      b.querySelector('.bp-name').textContent = d.name.replace(/ remote$/, '');
+      b.querySelector('.bp-where').textContent = where;
+      b.querySelector('.bp-where').dataset.where = where;
+      b.querySelector('.bp-fig').textContent = fig.join(' \u00b7 ');
+      b.title = d.words;
+      b.setAttribute('aria-label', `${d.name.replace(/ remote$/, '')}, ${where}: ${fig.join(', ')}. ${d.words}.`);
+      listEl.append(b);
+    }
+    document.body.append(wrap);
+    const phoneSheet = phone.matches;
+    if (!phoneSheet) {   // over the field, under its title
+      const f = field.getBoundingClientRect();
+      const w = Math.min(560, f.width - 32);
+      Object.assign(dlg.style, { left: f.left + (f.width - w) / 2 + 'px', width: w + 'px', top: Math.max(8, f.top + 56) + 'px', maxHeight: Math.max(160, Math.min(innerHeight, f.bottom) - Math.max(8, f.top + 56) - 16) + 'px' });
+    }
+    const cards = [...listEl.children];
+    asking = { wrap, host, done: false };
+    const motion = !still.matches;
+    if (motion) {
+      const h = host.getBoundingClientRect(), d0 = dlg.getBoundingClientRect();
+      const to = [d0.left + d0.width / 2, phoneSheet ? d0.top : d0.top + 8], from = [h.left + h.width / 2, h.top + h.height / 2];
+      [0, 1, 2].forEach(i => {   // the pulse from the tile that needs a brain
+        const pz = document.createElement('i');
+        pz.className = 'brainpick-pulse' + (i ? ' is-trail' : '');
+        wrap.append(pz);
+        pz.animate([{ transform: `translate(${from[0]}px, ${from[1]}px) scale(1.4)`, opacity: 1 },
+                    { transform: `translate(${(from[0] + to[0]) / 2}px, ${Math.min(from[1], to[1]) - 30}px)`, opacity: 1, offset: 0.5 },
+                    { transform: `translate(${to[0]}px, ${to[1]}px) scale(.6)`, opacity: 0 }],
+                   { duration: 520, delay: i * 40, easing: 'cubic-bezier(.45, 0, .55, 1)', fill: 'both' }).finished.then(() => pz.remove(), () => pz.remove());
+      });
+      host.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.8)', offset: 0.25 }, { filter: 'brightness(1)' }], { duration: 600 });
+      wrap.querySelector('.brainpick-shade').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: 'both' });
+      dlg.animate(phoneSheet
+        ? [{ clipPath: 'inset(100% 0 0 0)' }, { clipPath: 'inset(0 0 0 0)' }]
+        : [{ clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0 0)' }],
+        { duration: 420, delay: 360, easing: 'steps(8, end)', fill: 'both' });
+      cards.forEach((c, i) => c.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 260, delay: 640 + i * 110, easing: 'steps(4, end)', fill: 'both' }));
+    }
+    (cards[0] || dlg.querySelector('.brainpick-cancel')).focus({ preventScroll: true });
+    const close = (then, fast) => {
+      if (asking !== null && asking.wrap === wrap) asking = null;
+      document.removeEventListener('keydown', keys, true);
+      const gone = () => { wrap.remove(); then(); };
+      if (!motion || fast) { gone(); return; }
+      dlg.getAnimations().forEach(a => a.cancel());
+      cards.forEach(c => c.getAnimations().forEach(a => a.finish()));
+      wrap.querySelector('.brainpick-shade').animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'both' });
+      dlg.animate(phoneSheet ? [{ clipPath: 'inset(0 0 0 0)' }, { clipPath: 'inset(100% 0 0 0)' }] : [{ clipPath: 'inset(0 0 0 0)' }, { clipPath: 'inset(0 0 100% 0)' }],
+        { duration: 260, easing: 'steps(6, end)', fill: 'both' }).finished.then(gone, gone);
+    };
+    const cancel = () => {
+      if (!asking || asking.wrap !== wrap) return;
+      close(() => { runTest({ ask: false }); keyTest.focus({ preventScroll: true }); }, true);
+    };
+    const pick = id => {
+      if (!asking || asking.wrap !== wrap) return;
+      const o = original(id);
+      if (o && onField(host) && !canDock(host, o)) host = (groups().find(g => g.includes(host)) || []).find(x => canDock(x, o)) || host;   // a stack of code tiles: a tile of the team that thinks
+      if (!o || !onField(host) || !canDock(host, o)) { cancel(); return; }
+      const card = listEl.querySelector(`[data-brain="${id}"]`), icon = card.querySelector('.bp-icon').getBoundingClientRect();
+      const chip = copyOf(o);
+      dockOnto(chip, host);   // exactly as a press on the brain in the panel (attachByClick)
+      count();
+      if (!motion) { close(() => { runTest({ ask: false }); keyTest.focus({ preventScroll: true }); }); return; }
+      card.classList.add('is-picked');
+      const r = chip.getBoundingClientRect();
+      const ghost = card.querySelector('.bp-icon svg').cloneNode(true);
+      ghost.setAttribute('class', 'brainpick-fly');
+      Object.assign(ghost.style, { width: icon.width + 'px', height: icon.height + 'px' });
+      document.body.append(ghost);
+      chip.style.visibility = 'hidden';
+      const land = () => {
+        ghost.remove();
+        chip.style.visibility = '';
+        for (let i = 0; i < 8; i++) {   // a burst of pixels where it lands
+          const sp = document.createElement('i');
+          sp.className = 'brainpick-spark';
+          document.body.append(sp);
+          const a = i * Math.PI / 4, cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+          sp.animate([{ transform: `translate(${cx}px, ${cy}px)`, opacity: 1 }, { transform: `translate(${cx + Math.cos(a) * 26}px, ${cy + Math.sin(a) * 26}px) scale(.4)`, opacity: 0 }],
+                     { duration: 420, easing: 'steps(5, end)', fill: 'both' }).finished.then(() => sp.remove(), () => sp.remove());
+        }
+        runTest({ ask: false });
+        keyTest.focus({ preventScroll: true });
+      };
+      close(() => {}, false);
+      ghost.animate([{ transform: `translate(${icon.left}px, ${icon.top}px)` },
+                     { transform: `translate(${(icon.left + r.left) / 2}px, ${Math.min(icon.top, r.top) - 40}px) scale(${(1 + r.width / icon.width) / 2})`, offset: 0.55 },
+                     { transform: `translate(${r.left}px, ${r.top}px) scale(${r.width / icon.width})` }],
+                    { duration: 560, easing: 'cubic-bezier(.3, .1, .3, 1)', fill: 'both' }).finished.then(land, land);
+    };
+    const keys = e => {
+      if (!wrap.isConnected) return;
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel(); return; }
+      const focusables = [...cards, dlg.querySelector('.brainpick-cancel')];
+      const i = focusables.indexOf(document.activeElement);
+      if (e.key === 'Tab') {   // the focus stays in the dialog
+        e.preventDefault();
+        focusables[(i + (e.shiftKey ? -1 : 1) + focusables.length) % focusables.length].focus();
+      } else if (['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft'].includes(e.key) && cards.includes(document.activeElement)) {
+        e.preventDefault();
+        const j = cards.indexOf(document.activeElement) + (e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1);
+        cards[(j + cards.length) % cards.length].focus();
+      }
+    };
+    document.addEventListener('keydown', keys, true);
+    listEl.addEventListener('click', e => { const c = e.target.closest('.brainpick-card'); if (c) pick(c.dataset.brain); });
+    dlg.querySelector('.brainpick-cancel').addEventListener('click', cancel);
+    wrap.querySelector('.brainpick-shade').addEventListener('click', cancel);
+  };
+
+  const runTest = ({ ask = true } = {}) => {
     if (EMPTY) { say('Nothing to test yet: robot tiles are coming.', 3200); return; }
+    if (asking) return;
+    if (ask && BRAINS.length) {
+      const f = brainFault(check(board()));
+      if (f && f.p.tile) { resetTest(); askBrain(f.p.tile, f.team); return; }
+    }
     resetTest();
     const S = parseFloat(grid.style.getPropertyValue('--cell')) || 96;
     const G = parseFloat(grid.style.getPropertyValue('--gap')) || 12;
@@ -1716,7 +2023,7 @@
       finish(lit + 460 + 2800);
     }
   };
-  keyTest.addEventListener('click', runTest);
+  keyTest.addEventListener('click', () => runTest());
 
   let soon = 0;
   keyDownload.addEventListener('click', () => {   // not ready yet: the key says "soon" for a moment
@@ -1731,7 +2038,9 @@
   // earliest in the work, each one called with what the models joined to it hand on. It is
   // rewritten as tiles move: new lines are typed in, lines that go fold away. ----
   // ---- FLOW, the fourth key: an arrow travels through the complete team in its working order,
-  // splitting at stacked alternatives and passing lenses and brains by (they are not steps); with
+  // stacked inputs feed the brain; a team of stacked functions or outputs is reached through its brain, which
+  // sends each its orders in turn and takes their results back before handing on one answer; lenses are
+  // passed by (they are not steps); with
   // reduced motion the path is drawn for a moment instead. Without a complete chain it says why. ----
   const flowArrow = () => {
     const chain = chainOf();
@@ -1750,8 +2059,9 @@
     if (still.matches) {   // the path, drawn still for a moment
       const svg = document.createElementNS(NS, 'svg');
       svg.setAttribute('class', 'flow-path');
-      for (const [a, b] of levels.flat()) {
+      for (const [a, b, , fix] of levels.flat()) {
         const l = document.createElementNS(NS, 'line');
+        if (fix) l.setAttribute('class', 'is-fix');   // the fix round: a return arrow, dashed
         const [x1, y1] = ctr(a), [x2, y2] = ctr(b);
         [['x1', x1], ['y1', y1], ['x2', x2], ['y2', y2]].forEach(([k, v]) => l.setAttribute(k, v));
         svg.append(l);
@@ -1760,20 +2070,20 @@
       setTimeout(done, 1800);
       return;
     }
-    levels.forEach((hops, k) => hops.forEach(([a, b]) => {
+    levels.forEach((hops, k) => hops.forEach(([a, b, lag = 0, fix]) => {
       const [x1, y1] = ctr(a), [x2, y2] = ctr(b), ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
       const arrow = document.createElement('i');
-      arrow.className = 'flow-arrow';
+      arrow.className = 'flow-arrow' + (fix ? ' is-fix' : '');
       layer.append(arrow);
       arrow.animate([
         { transform: `translate(${x1}px, ${y1}px) rotate(${ang}deg) scale(.6)`, opacity: 0 },
         { transform: `translate(${x1 + (x2 - x1) * 0.15}px, ${y1 + (y2 - y1) * 0.15}px) rotate(${ang}deg)`, opacity: 1, offset: 0.15 },
         { transform: `translate(${x1 + (x2 - x1) * 0.85}px, ${y1 + (y2 - y1) * 0.85}px) rotate(${ang}deg)`, opacity: 1, offset: 0.85 },
         { transform: `translate(${x2}px, ${y2}px) rotate(${ang}deg) scale(.6)`, opacity: 0 },
-      ], { duration: HOP, delay: k * HOP, easing: 'ease-in-out', fill: 'both' });
-      setTimeout(() => { glow(b.id); b.tile.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.5)', offset: 0.4 }, { filter: 'brightness(1)' }], { duration: 380 }); }, (k + 1) * HOP - 60);
+      ], { duration: HOP, delay: k * HOP + lag, easing: 'ease-in-out', fill: 'both' });
+      setTimeout(() => { glow(b.id); b.tile.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.5)', offset: 0.4 }, { filter: 'brightness(1)' }], { duration: 380 }); }, (k + 1) * HOP - 60 + lag);
     }));
-    setTimeout(done, levels.length * HOP + 400);
+    setTimeout(done, levels.length * HOP + 400 + Math.max(0, ...levels.flat().map(h => h[2] || 0)));
   };
   const keyFlow = (() => {
     const k = document.createElement('button');

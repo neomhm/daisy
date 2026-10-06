@@ -42,6 +42,11 @@
              is no measurement. Never estimated.
    glyph     only for tiles with no pixel icon in the page's sprite: a 5 x 5 drawing in the logo's
              pixels (X white, H gold), as tools/make_pixel_icons.py draws the others.
+   writesCode  a function that writes code, and in which language ('SQL', 'Python', or 'code' when it is not
+             fixed): a team of two or more of them with no Checker gets a warning from TesT
+   checker   the Checker: after a team, it runs every part against the brain's contract
+   pixels    for a code tile (a way in or out): its own drawing, rows of X, in the code look (the tile's
+             colour on dark, no square), instead of "</>"
 
    Every role, kind and need below is a PROPOSAL (2026-10-06) for Laurent to correct. */
 window.AKIKI_TILES = {
@@ -84,7 +89,7 @@ window.AKIKI_TILES = {
       status: 'working', params: '32.8', ms: '77', mb: '131', tags: 'documents',
       note: '32.8M parameters, 131 MB, 77 ms per chunk' },
     { id: 'tulip', word: 'table', name: 'Tulip', words: 'Imports spreadsheets', group: 'flowers', colour: '#3aa56f',
-      role: 'reader', in: ['document'], out: ['table'], needs: [], startNeeds: ['documents'], lenses: { best: ['magnolia'] },
+      role: 'reader', in: ['document'], out: ['table'], needs: [], startNeeds: ['documents'], lenses: { best: ['magnolia'] }, writesCode: 'Python',
       status: 'working', params: '61.6', ms: '120', mb: '', tags: 'database documents',
       note: '61.6M parameters, 0.12 s per sheet' },
     { id: 'jasmine', word: 'design', kind: 'hybrid', name: 'Jasmine', words: 'Dresses the site', group: 'flowers', colour: '#a06fc2',
@@ -92,7 +97,7 @@ window.AKIKI_TILES = {
       status: 'working', params: '3.4', ms: '9', mb: '13.5', tags: 'website',
       note: '3.4M parameters, 13.5 MB; about 9 ms per design, measured on a network her size' },
     { id: 'daisy', word: 'answer', name: 'Daisy', words: 'Answers questions', group: 'flowers', colour: '#ec8e4a',
-      role: 'middle', in: ['question', 'reading', 'table', 'plan'], out: ['table', 'spec'], needs: ['database'],
+      role: 'middle', in: ['question', 'reading', 'table', 'plan'], out: ['table', 'spec'], needs: ['database'], writesCode: 'SQL',
       lenses: { needs: [{ lens: 'magnolia', unless: 'plantables', why: 'on an unfamiliar database' }] },
       status: 'working', params: '27.1', ms: '270', mb: '108', tags: 'database',
       note: '27.1M parameters, 108 MB, 0.27 s from question to rows' },
@@ -127,10 +132,10 @@ window.AKIKI_TILES = {
       role: 'reader', in: ['text'], out: ['request'], needs: [],
       status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'in design, no figures yet' },
     { id: 'bees', word: 'code', name: 'Bees', words: 'Write the code', group: 'insects', colour: '#f0a444',
-      role: 'middle', in: ['plan', 'request', 'ranking'], out: ['code'], needs: ['brain'], takes: ['memory'],
+      role: 'middle', in: ['plan', 'request', 'ranking'], out: ['code'], needs: ['brain'], takes: ['memory'], writesCode: 'code',
       status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'in design, no figures yet' },
     { id: 'ants', word: 'code', name: 'Ants', words: 'Tiny specialists', group: 'insects', colour: '#a0452e',
-      role: 'middle', in: ['plan', 'request'], out: ['code'], needs: [],
+      role: 'middle', in: ['plan', 'request'], out: ['code'], needs: [], writesCode: 'code',
       status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'in design, no figures yet' },
     { id: 'mantis', word: 'audit', name: 'Mantis', words: 'Audits each piece', group: 'insects', colour: '#7fae3e',
       role: 'middle', in: ['code', 'spec'], out: ['findings'], needs: ['brain'],
@@ -158,6 +163,17 @@ window.AKIKI_TILES = {
     { id: 'siren', word: 'talk', name: 'Siren', words: 'Talks with you', group: 'sea', colour: '#2b7fd4',
       role: 'middle', hub: true, in: ['text', '*'], out: ['question', 'request', 'text'], needs: ['brain'],
       status: 'design', params: '', ms: '', mb: '', tags: 'voice', note: 'designed, not built or measured yet' },
+    // The Checker (Laurent approved, 2026-10-07): with functions stacked as a team, the brain writes a blueprint
+    // and a CONTRACT (tables, endpoints, names, formats, who does what); each function builds its part to it;
+    // the Checker then runs the parts against the contract (the SQL on the contract's tables, the Python in
+    // the contract's format, the page calling exactly those endpoints, one test end to end). On a pass the
+    // brain assembles one answer, each part labelled; on a fail it sends a fix order to the one function at
+    // fault, at most three rounds, then says plainly that it failed. Code, not a model: Mantis audits a piece
+    // with a brain; the Checker runs them.
+    { id: 'contract-check', word: 'check', kind: 'code', name: 'Checker', words: 'Runs every part against the brain\u2019s contract', group: 'io', colour: '#b9862f',
+      role: 'middle', checker: true, in: ['code', 'spec', 'table', 'plan', 'facts', 'design'], out: ['code', 'spec', 'table', 'findings'], needs: [],
+      pixels: ['XXXXXXXXX', 'X.......X', 'X.....X.X', 'X....X..X', 'X.X.X...X', 'X..X....X', 'XXXXXXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code checks', note: 'designed, not built yet' },
     // Attachments: brains, and your own data
     // Brains: each one LOCAL (on your PC) or REMOTE (a server you reach); pick the one you mean.
     { id: 'qwen27b', name: 'Qwen 27B', words: 'Local: on your PC, data stays here, 17.7 GB', group: 'attach', colour: '#5f6b7a',
@@ -188,19 +204,89 @@ window.AKIKI_TILES = {
       role: 'attachment', gives: 'documents', glyph: ['XX...', 'XXXXX', 'X...X', 'X.H.X', 'XXXXX'],
       status: 'yours', params: '', ms: '', mb: '', tags: 'documents',
       note: 'a folder of your documents and spreadsheets, read only' },
-    // Starts and ends Laurent named, not built yet
-    { id: 'chat', word: 'chat', kind: 'code', chat: true, name: 'Chat window', words: 'Where you type and read: a conversation starts and ends here', group: 'io', colour: '#3d8fd1',
-      role: 'both', in: ['*'], out: ['text', 'question', 'request'], needs: [],
-      status: 'notbuilt', params: '', ms: '', mb: '', tags: 'voice code', note: 'code, not built yet' },
-    { id: 'feeder', word: 'feed', kind: 'code', name: 'Feeder', words: 'Feeds your documents (RAG)', group: 'io', colour: '#6a7480',
-      role: 'reader', in: ['document'], out: ['document'], needs: [], startNeeds: ['documents'], glyph: ['X.X.X', '.....', 'XXXXX', '.XHX.', '..X..'],
-      status: 'notbuilt', params: '', ms: '', mb: '', tags: 'documents', note: 'not built yet' },
+    // Ways in and ways out (Laurent, 2026-10-07: "make sure there are code based tiles for each of those
+    // available"): the usual input methods, then the usual output methods, in his order. Each is code, and
+    // only designed: none of these connectors is built yet. The Chat window is the chat box both ways, the
+    // Feeder the folder or knowledge base (RAG), the API the API response or webhook call. A way out takes
+    // any result, as the API does; TesT refuses any input straight into any output (a Function goes between).
     { id: 'scanner', word: 'scan', name: 'Scanner', words: 'Reads paper and photos', group: 'io', colour: '#6a7480',
       role: 'start', in: [], out: ['document'], needs: [], glyph: ['XXXXX', 'X...X', 'HHHHH', 'X...X', 'XXXXX'],
       status: 'notbuilt', params: '', ms: '', mb: '', tags: 'documents', note: 'not built yet' },
+    { id: 'chat', word: 'chat', kind: 'code', chat: true, name: 'Chat window', words: 'Where you type and read: a conversation starts and ends here', group: 'io', colour: '#3d8fd1',
+      role: 'both', in: ['*'], out: ['text', 'question', 'request'], needs: [],
+      status: 'notbuilt', params: '', ms: '', mb: '', tags: 'voice code', note: 'code, not built yet' },
+    { id: 'voice-in', word: 'hear', kind: 'code', name: 'Microphone', words: 'Turns your voice into text', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['text', 'question'], needs: [], pixels: ['...XXX...', '...XXX...', '...XXX...', '.X.XXX.X.', '.X.....X.', '..XXXXX..', '....X....', '..XXXXX..'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'voice code', note: 'designed, not built yet' },
+    { id: 'upload', word: 'upload', kind: 'code', name: 'File upload', words: 'Takes a file you upload: PDF, Word, spreadsheet, picture', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['document', 'image'], needs: [], pixels: ['....X....', '...XXX...', '..X.X.X..', '....X....', '....X....', 'X.......X', 'X.......X', 'XXXXXXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'documents code', note: 'designed, not built yet' },
+    { id: 'feeder', word: 'feed', kind: 'code', name: 'Feeder', words: 'Feeds your documents (RAG)', group: 'io', colour: '#6a7480',
+      role: 'reader', in: ['document'], out: ['document'], needs: [], startNeeds: ['documents'], glyph: ['X.X.X', '.....', 'XXXXX', '.XHX.', '..X..'],
+      status: 'notbuilt', params: '', ms: '', mb: '', tags: 'documents', note: 'not built yet' },
+    { id: 'webhook', word: 'webhook', kind: 'code', name: 'Webhook', words: 'An API call or webhook starts the work', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['request', 'text'], needs: [], pixels: ['.X...X.', '.X...X.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...', '...X...'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'db-in', word: 'connect', kind: 'code', name: 'Database connection', words: 'Reads from a database it connects to', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['reading'], needs: [], pixels: ['.XXXXX.', 'X.....X', '.XXXXX.', 'X.....X', 'X.....X', '.XXXXX.', 'X.....X', '.XXXXX.'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'database code', note: 'designed, not built yet' },
+    { id: 'web-in', word: 'browse', kind: 'code', name: 'Web page', words: 'Reads a web page, a URL or a web search', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['document', 'text'], needs: [], pixels: ['..XXXXX..', '.X..X..X.', 'X..X.X..X', 'XXXXXXXXX', 'X..X.X..X', '.X..X..X.', '..XXXXX..'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'website code', note: 'designed, not built yet' },
+    { id: 'mail-in', word: 'inbox', kind: 'code', name: 'E-mail inbox', words: 'Reads the e-mails that arrive', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['document', 'text', 'question'], needs: [], pixels: ['XXXXXXXXX', 'XX.....XX', 'X.X...X.X', 'X..X.X..X', 'X...X...X', 'X.......X', 'XXXXXXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'msg-in', word: 'message', kind: 'code', name: 'Messaging apps', words: 'Reads messages: WhatsApp, Slack, Teams, Telegram', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['text', 'question', 'request'], needs: [], pixels: ['.XXXXXXX.', 'X.......X', 'X.X.X.X.X', 'X.......X', '.XXXXXXX.', '..X......', '.X.......'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'camera', word: 'see', kind: 'code', name: 'Camera', words: 'Takes in images and video', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['image'], needs: [], pixels: ['..XXX....', 'XXXXXXXXX', 'X..XXX..X', 'X.X...X.X', 'X.X...X.X', 'X..XXX..X', 'XXXXXXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'sensors', word: 'sense', kind: 'code', name: 'Sensors', words: 'Reads sensors and devices', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['text'], needs: [], pixels: ['.X.X.X.', 'XXXXXXX', '.X...X.', 'XX.X.XX', '.X...X.', 'XXXXXXX', '.X.X.X.'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'schedule', word: 'trigger', kind: 'code', name: 'Schedule', words: 'Starts the work on a timer or an event, such as a form sent', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['request'], needs: [], pixels: ['..XXXXX..', '.X..X..X.', 'X...X...X', 'X...XXX.X', 'X.......X', '.X.....X.', '..XXXXX..'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'webform', word: 'form', kind: 'code', name: 'Web form', words: 'Takes what someone fills in on a web form', group: 'io', colour: '#4a86c8',
+      role: 'start', in: [], out: ['text', 'request'], needs: [], pixels: ['XXXXXXXXX', 'X.......X', 'X.XXXXX.X', 'X.......X', 'X.XXXXX.X', 'X.......X', 'XXXXXXXXX', '......XXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'website code', note: 'designed, not built yet' },
+    { id: 'speech', word: 'speak', kind: 'code', name: 'Speech', words: 'Reads the result aloud', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['....X..X.', '...XX...X', '.XXXX.X.X', '.XXXX.X.X', '.XXXX.X.X', '...XX...X', '....X..X.'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'voice code', note: 'designed, not built yet' },
+    { id: 'file-out', word: 'file', kind: 'code', name: 'Generated file', words: 'Makes a file: PDF, Word, Excel, PowerPoint, image', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['XXXXX..', 'X...XX.', 'X...XXX', 'X.....X', 'X.XXX.X', 'X.....X', 'X.XXX.X', 'XXXXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'documents code', note: 'designed, not built yet' },
+    { id: 'save-folder', word: 'save', kind: 'code', name: 'Save to folder', words: 'Saves the result to a folder or a knowledge base', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['XXX......', 'X..XXXXXX', 'X.......X', 'X...X...X', 'X...X...X', 'X.XXXXX.X', 'X..XXX..X', 'XXXXXXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'documents code', note: 'designed, not built yet' },
     { id: 'api', word: 'send', kind: 'code', name: 'API', words: 'Sends the result to an API', group: 'io', colour: '#6a7480',
       role: 'end', in: ['*'], out: [], needs: [], glyph: ['X.H.X', '.X.X.', '..X..', '..X..', '.XXX.'],
       status: 'notbuilt', params: '', ms: '', mb: '', tags: 'code', note: 'not built yet' },
+    { id: 'db-out', word: 'write', kind: 'code', name: 'Write to database', words: 'Writes the result into a database', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['.XXXXX..', 'X.....X.', '.XXXXX..', 'X.....X.', 'X.....X.X', 'X.....XXX', '.XXXXX.X.', '........'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'database code', note: 'designed, not built yet' },
+    { id: 'web-out', word: 'publish', kind: 'code', name: 'Published page', words: 'Publishes the result as a web page', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['XXXXXXXXX', 'X.X.X...X', 'XXXXXXXXX', 'X.......X', 'X.XXX.X.X', 'X.......X', 'XXXXXXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'website code', note: 'designed, not built yet' },
+    { id: 'mail-out', word: 'mail', kind: 'code', name: 'E-mail sent', words: 'Sends the result by e-mail', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['........X', '......XX.', '....XX.X.', '..XX..X..', 'XXXXXX...', '...XX....', '...X.....'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'msg-out', word: 'reply', kind: 'code', name: 'Message to an app', words: 'Sends the result as a message in an app', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['.XXXXXXX.', 'X.......X', 'X.XXXXX.X', 'X.......X', '.XXXXXXX.', '......X..', '.......X.'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'dashboard', word: 'chart', kind: 'code', name: 'Dashboard', words: 'Shows the result as a dashboard, a chart or a report', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['X........', 'X.....XX.', 'X..XX.XX.', 'X..XX.XX.', 'XX.XX.XX.', 'XX.XX.XX.', 'XXXXXXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'notify', word: 'alert', kind: 'code', name: 'Notification', words: 'Sends a notification or an alert', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['....X....', '..XXXXX..', '.X.....X.', '.X.....X.', '.X.....X.', 'XXXXXXXXX', '...XXX...'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'app-action', word: 'act', kind: 'code', name: 'Action in an app', words: 'Does something in another app: a ticket, a meeting', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['XXXXXXXXX', 'X.......X', 'X......XX', 'X.X...X.X', 'X..X.X..X', 'X...X...X', 'XXXXXXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
+    { id: 'device', word: 'command', kind: 'code', name: 'Device command', words: 'Sends a command to a device or a robot', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['....X....', '..XXXXX..', '.X.....X.', '.X.X.X.X.', '.X.....X.', '.XXXXXXX.', 'X.X...X.X'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'designed, not built yet' },
     { id: 'port', word: 'broadcast', kind: 'code', name: 'Port', words: 'Broadcasts on a port', group: 'io', colour: '#6a7480',
       role: 'end', in: ['*'], out: [], needs: [], glyph: ['.X.X.', '.X.X.', 'XXXXX', '.XHX.', '..X..'],
       status: 'notbuilt', params: '', ms: '', mb: '', tags: 'code', note: 'not built yet' },
@@ -210,7 +296,7 @@ window.AKIKI_TILES = {
   // PROPOSALS (2026-10-06), for Laurent to correct.
   presets: [
     { id: 'daisy', name: 'Daisy', plan: 'PLAN 1', colour: '#ec8e4a',
-      say: 'PLAN 1: the owner talks in the Chat window, where Siren answers; Orchid and Tulip read the owner\u2019s files for Bouquet, who plans the site; Jasmine dresses it; Iris, Thistle and Lily finish it. MAGNOLIA, a lens, reads the database for Daisy, who answers the owner through Siren.',
+      say: 'PLAN 1: the owner talks in the Chat window, where Siren answers; Orchid and Tulip, coordinated by the brain, read the owner\u2019s files for Bouquet, who plans the site; Jasmine dresses it; Iris, Thistle and Lily, coordinated by the brain, finish it. MAGNOLIA, a lens, reads the database for Daisy, who answers the owner through Siren.',
       tiles: [
         ['magnolia', 2, 1], ['daisy', 3, 1, ['database']],
         ['chat', 2, 2], ['siren', 3, 2], ['iris', 5, 2],
@@ -218,7 +304,7 @@ window.AKIKI_TILES = {
         ['tulip', 2, 4, ['folder']], ['lily', 5, 4, ['folder']],
       ] },
     { id: 'butterfly', name: 'Butterfly', plan: 'PLAN 2', colour: '#2fb39a',
-      say: 'PLAN 2: Cricket clarifies the request; Bouquet (or Butterfly) plans; Bees, Ants or Daisy (for SQL) write; Mantis audits; Dragonfly finds the suspect lines; Ladybug debugs; Firefly calls for help.',
+      say: 'PLAN 2: Cricket clarifies the request; Bouquet and Butterfly, coordinated by the brain, plan; Bees, Ants and Daisy (for SQL), coordinated by the brain, write; Mantis audits; Dragonfly finds the suspect lines; Ladybug debugs; Firefly calls for help.',
       tiles: [
         ['bees', 2, 1],
         ['cricket', 0, 2], ['bouquet', 1, 2, ['qwen27b']], ['ants', 2, 2], ['mantis', 3, 2],
@@ -226,7 +312,7 @@ window.AKIKI_TILES = {
         ['butterfly', 1, 3, ['cicada']], ['daisy', 2, 3, ['database']], ['magnolia', 2, 4],
       ] },
     { id: 'siren', name: 'Siren', plan: 'PLAN 3', colour: '#2b7fd4',
-      say: 'PLAN 3: the person talks in the Chat window; Siren, beside it, calls the specialists around her: Daisy (fed by Tulip), Orchid, and Bouquet, who with Dragonfly hands the work on to Bees, Mantis and Firefly.',
+      say: 'PLAN 3: the person talks in the Chat window; Siren, beside it, calls the specialists around her: Daisy (fed by Tulip), Orchid, and Bouquet and Dragonfly, coordinated by the brain, who hand the work on to Bees, Mantis and Firefly.',
       tiles: [
         ['chat', 3, 2], ['dragonfly', 4, 2, ['folder']],
         ['tulip', 1, 3, ['folder']], ['daisy', 2, 3, ['database']], ['siren', 3, 3, ['qwen27b']],

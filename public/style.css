@@ -1325,6 +1325,8 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .flow-arrow { position: absolute; left: 0; top: 0; width: 0; height: 0; border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-left: 16px solid #ffc14d; margin: -9px 0 0 -8px; filter: drop-shadow(0 0 6px rgba(255, 170, 40, .95)); transform-origin: 8px 9px; }
 .flow-path { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .flow-path line { stroke: #ffc14d; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 2 7; filter: drop-shadow(0 0 4px rgba(255, 170, 40, .9)); }
+.flow-arrow.is-fix { border-left-color: #ff8a80; filter: drop-shadow(0 0 6px rgba(255, 110, 100, .95)); }   /* the fix round: the brain sends one function back to work */
+.flow-path line.is-fix { stroke: #ff8a80; stroke-dasharray: 8 5; filter: drop-shadow(0 0 4px rgba(255, 110, 100, .9)); }
 .key-word { font: 400 20px/1 "AKIKI Pixel", var(--mono); letter-spacing: .04em; text-shadow: 0 0 6px rgba(255, 170, 40, .85); }
 .key-flow.is-off .key-face { filter: saturate(.3) brightness(.7); }
 .key-flow.is-running .key-face { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .17), inset 0 0 0 1px rgba(255, 193, 77, .6), 0 0 20px rgba(255, 170, 40, .3); }
@@ -1355,6 +1357,10 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cell .wtile[data-kind="code"].is-active { box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 2px rgba(255, 255, 255, .9); }
 .wtile .hy-mark { position: absolute; left: 6%; bottom: 6%; width: 30%; height: auto; aspect-ratio: 1; padding: 1px; box-sizing: border-box; border-radius: 3px; background: rgba(15, 20, 26, .78); color: #fff; }
 .field-legend .lg-kind i { border: 0; border-radius: 3px; background: #c9d4de; box-shadow: 0 0 6px rgba(201, 212, 222, .7); }
+.field-legend .lg-team { display: inline-flex; align-items: center; gap: 6px; padding: 0 6px; border: 1px dashed rgba(255, 255, 255, .28); border-radius: 6px; background: none; color: inherit; font: inherit; cursor: help; pointer-events: auto; }
+.field-legend .lg-team:hover { border-color: rgba(255, 193, 77, .6); color: #ffc14d; }
+.field-legend .lg-team:focus-visible { outline: 2px solid #7fd6d8; outline-offset: 2px; }
+.field-legend .lg-team i { border: 0; width: 7px; height: 12px; border-radius: 1px; background: linear-gradient(var(--role-middle) 0 5px, transparent 5px 7px, var(--role-middle) 7px); box-shadow: none; }   /* two function squares, one above the other */
 .field-legend .lg-kind[data-kind="code"] i { border-radius: 0; background: transparent; box-shadow: inset 0 0 0 1.5px #c9d4de; }
 .field-legend .lg-kind[data-kind="data"] i { background: #5f6b7a; box-shadow: none; }
 .field-legend .lg-kind:first-of-type { margin-left: 10px; }
@@ -1914,3 +1920,84 @@ html:has(> body.snap) { scroll-snap-type: none; scroll-padding-top: calc(37px + 
 .snap .stack { scroll-snap-align: start; scroll-margin-top: 100px; }   /* the margin reaches past the header: the squares snap to the very top */
 .snap #voice { scroll-snap-align: start; }
 @media (max-width: 700px) { html:has(> body.snap) { scroll-padding-top: calc(30px + env(safe-area-inset-top)); } }
+
+/* The brain chooser (workbench.js, "The brain chooser"): when TesT finds a team with no brain, a panel
+   in the field's dark and the keys' amber asks which brain it should use, one card per brain in
+   tiles.js. Over the field on a wide screen; a bottom sheet on a phone, its whole control area on
+   screen even in a short landscape view. The motion (a pulse, the panel unfolding in pixel steps, the
+   cards one by one, the chosen brain flying onto its tile) is all in workbench.js, and none of it runs
+   with reduced motion. */
+.brainpick-wrap { position: fixed; inset: 0; z-index: 90; }
+.brainpick-shade { position: absolute; inset: 0; background: rgba(9, 13, 18, .45); }
+.brainpick {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 14px 16px 16px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #1d2833, #11181f);
+  box-shadow: 0 0 0 1px rgba(255, 193, 77, .35), 0 24px 48px -16px #000;
+  color: #c9d4de;
+}
+.brainpick::before { content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: #ffc14d; box-shadow: 0 0 8px rgba(255, 170, 40, .7); }
+.brainpick-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex: none; }
+.brainpick-title { margin: 0; color: #ffc14d; font: 400 18px/1.25 "AKIKI Pixel", var(--mono); text-shadow: 0 0 8px rgba(255, 170, 40, .5); }
+.brainpick-say { flex: none; margin: 8px 0 12px; color: rgba(255, 228, 180, .78); font: 12px/1.45 var(--mono); }
+.brainpick-cancel {
+  flex: none;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .06);
+  color: rgba(255, 255, 255, .78);
+  font: 12px/1 var(--mono);
+  cursor: pointer;
+}
+.brainpick-cancel:hover { background: rgba(255, 255, 255, .13); color: #fff; }
+.brainpick-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; min-height: 0; overflow-y: auto; padding: 3px; margin: -3px; }
+.brainpick-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 193, 77, .22);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .04);
+  color: #e6edf3;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .15s, border-color .15s, transform .09s;
+}
+.brainpick-card:hover { background: rgba(255, 193, 77, .1); border-color: rgba(255, 193, 77, .6); }
+.brainpick-card:active { transform: translateY(1px); }
+.brainpick-card:focus-visible, .brainpick-cancel:focus-visible { outline: 2px solid #7fd6d8; outline-offset: 2px; }
+.brainpick-card.is-picked { border-color: #ffc14d; box-shadow: 0 0 18px rgba(255, 170, 40, .5); }
+.bp-icon { flex: none; width: 34px; height: 34px; }
+.bp-icon svg { display: block; width: 100%; height: 100%; border-radius: 7px; }
+.bp-text { display: grid; gap: 2px; min-width: 0; }
+.bp-name { font: 400 14px/1.2 "AKIKI Pixel", var(--mono); color: #fff; }
+.bp-where { justify-self: start; padding: 0 5px; border-radius: 4px; font: 700 9.5px/1.6 var(--mono); font-style: normal; letter-spacing: .08em; text-transform: uppercase; background: rgba(125, 255, 176, .14); color: #7dffb0; }
+.bp-where[data-where="remote"] { background: rgba(127, 214, 216, .14); color: #7fd6d8; }
+.bp-fig { color: rgba(201, 212, 222, .8); font: 11px/1.35 var(--mono); }
+.brainpick-pulse { position: fixed; left: 0; top: 0; z-index: 91; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 2px; background: #ffc14d; box-shadow: 0 0 12px 4px rgba(255, 170, 40, .75); pointer-events: none; }
+.brainpick-pulse.is-trail { width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; opacity: .6; }
+.brainpick-fly { position: fixed; left: 0; top: 0; z-index: 95; transform-origin: top left; border-radius: 7px; pointer-events: none; box-shadow: 0 0 16px rgba(255, 170, 40, .7); }
+.brainpick-spark { position: fixed; left: 0; top: 0; z-index: 96; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 1px; background: #ffc14d; box-shadow: 0 0 6px rgba(255, 170, 40, .9); pointer-events: none; }
+@media (max-width: 700px) {   /* a bottom sheet */
+  .brainpick { left: 0; right: 0; bottom: 0; max-height: 100%; border-radius: 14px 14px 0 0; padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); }
+  .brainpick-list { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+}
+@media (max-height: 420px) {   /* a short landscape view: one line per card, everything on screen */
+  .brainpick { padding-top: 8px; padding-bottom: 8px; }
+  .brainpick-title { font-size: 15px; }
+  .brainpick-say { display: none; }
+  .brainpick-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+  .brainpick-card { min-height: 0; padding: 5px 8px; gap: 8px; }
+  .bp-icon { width: 24px; height: 24px; }
+  .bp-fig { display: none; }
+}
