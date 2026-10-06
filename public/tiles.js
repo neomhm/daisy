@@ -1,10 +1,10 @@
 /* THE TILES OF THE WORKBENCH: the one place that says what every tile is.
 
    workbench.js builds the panel of tiles from this file (on workbench.html and on the home page),
-   marks each tile's ROLE with a lettered badge (S, Fn, O), and its TesT key checks a team against these rules. Edit a tile
+   marks each tile's ROLE with a lettered badge (I, Fn, O), and its TesT key checks a team against these rules. Edit a tile
    here and both pages follow; nothing about a tile is written anywhere else.
 
-   role      reader     a starter OR a function: with nothing before it, it starts the chain from what is
+   role      reader     an input OR a function: with nothing before it, it starts the chain from what is
                         attached to it ("startNeeds", e.g. a Documents folder); after a tile that brings
                         what it accepts ("in"), it works on that instead and needs no attachment
              start      takes the data in; only a start can begin a chain (a chat, a feeder, a scanner,
@@ -46,11 +46,11 @@
    Every role, kind and need below is a PROPOSAL (2026-10-06) for Laurent to correct. */
 window.AKIKI_TILES = {
   roles: {
-    start: { label: 'starter', say: 'starts a chain' },
-    reader: { label: 'starter or function', say: 'starts a chain from what is attached to it, or works on what the tile before it brings' },
+    start: { label: 'input', say: 'starts a chain' },
+    reader: { label: 'input or function', say: 'starts a chain from what is attached to it, or works on what the tile before it brings' },
     middle: { label: 'function', say: 'works in the middle of a chain' },
     end: { label: 'output', say: 'gives the result at the end of a chain' },
-    both: { label: 'starter + output', say: 'starts a chain and gives its result' },
+    both: { label: 'input + output', say: 'starts a chain and gives its result' },
     lens: { label: 'lens', say: 'is the lens: touching a model, she adapts to it and to the data it reads' },
     attachment: { label: 'attaches to a tile', say: 'attaches onto a tile that needs it' },
   },
@@ -67,9 +67,9 @@ window.AKIKI_TILES = {
   // "When putting bouquet or another large model tile, put 27B with it by default".
   defaultBrain: 'qwen27b',
   // The panel is ordered by what a tile is FOR (workbench.js puts each tile in its section from its
-  // role); "group" says which plan a tile comes from, shown as a small PLAN tag.
+  // role); "group" says which plan a tile comes from (no longer shown under the tile, 2026-10-07).
   sections: [
-    { id: 'starters', head: 'Starters' }, { id: 'functions', head: 'Functions' }, { id: 'outputs', head: 'Outputs' },
+    { id: 'starters', head: 'Inputs' }, { id: 'functions', head: 'Functions' }, { id: 'outputs', head: 'Outputs' },
     { id: 'lenses', head: 'Lens & add-ons' }, { id: 'skills', head: 'Skills' }, { id: 'brains', head: 'Brains' }, { id: 'data', head: 'Data' },
   ],
   plans: { flowers: 'PLAN 1', insects: 'PLAN 2', sea: 'PLAN 3' },

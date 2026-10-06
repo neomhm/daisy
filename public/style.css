@@ -1232,11 +1232,11 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cell .wtile:hover::after, .cell .wtile:focus-visible::after { opacity: 1; transform: translate(-50%, 7px); }
 
 /* Roles (tiles.js; workbench.js). Every tile keeps its own icon and colour; a badge at its top right,
-   lettered, says its role: S a starter (blue) takes the data in, Fn a function
+   lettered, says its role: I an input (blue) takes the data in, Fn a function
    (amber) works on it, O an output (teal) gives the result, in the site's mono capitals (the pixel
    font is unicase, and these are capitals). The three share one badge: the same
    square, size, edge and letters, only the colour and the letter change. A tile that can play two
-   roles is split in both colours and says both ("S/Fn", "S/O") in the panel; on the field it wears the
+   roles is split in both colours and says both ("I/Fn", "I/O") in the panel; on the field it wears the
    one it plays (workbench.js sets data-badge and data-plays). An attachment (a brain, a database, a
    folder) keeps a small hollow square, the lens a small round mark. The badge has a white edge and a
    faint dark outline, so it reads on light and dark tiles alike; each role colour is above 4.5:1
@@ -1248,7 +1248,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .wtile[data-role="both"] { --rc: var(--role-start); }
 .wtile[data-role="attachment"] { --rc: var(--role-att); }
 .wtile { container-type: inline-size; }
-.wtile::before {   /* the role square: a small mark for an attachment or the lens; the badge below for S, Fn and O */
+.wtile::before {   /* the role square: a small mark for an attachment or the lens; the badge below for I, Fn and O */
   content: "";
   position: absolute;
   left: 87%;
@@ -1585,17 +1585,20 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .splitter:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; }
 
 .tray { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg); }
-.meters { display: grid; gap: 12px; padding: 16px 16px 14px; border-bottom: var(--hairline) solid var(--border); }
-.meter-label { color: var(--fg-muted); font: 600 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
-.meter-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+/* The screens are half the size they were (2026-10-07, "to let more space to the tiles"): half as
+   tall, half as wide as the row used to give them (the row minus its old 10 px gap and the old
+   unit's 1.7em of 22 px), their digits and units half as large. The labels stop at 9 px, not half. */
+.meters { display: grid; gap: 6px; padding: 8px 16px 7px; border-bottom: var(--hairline) solid var(--border); }
+.meter-label { color: var(--fg-muted); font: 600 9px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.meter-row { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
 .screen {
   position: relative;
-  flex: 1;
+  flex: 0 0 min((100% - 47.4px) / 2, (25vw - 79.4px) / 2);   /* the second: half the old screen in the old quarter-page panel, however wide the panel is now */
   min-width: 0;
-  height: 56px;
-  border-radius: 8px;
+  height: 28px;
+  border-radius: 4px;
   background: radial-gradient(ellipse at 50% 0%, #1c2630, #0d1318 75%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), inset 0 3px 12px rgba(0, 0, 0, .65), 0 0 0 3px #e3e8ed, 0 1px 0 4px #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), inset 0 2px 6px rgba(0, 0, 0, .65), 0 0 0 1.5px #e3e8ed, 0 .5px 0 2px #fff;
   overflow: hidden;
 }
 .screen canvas { display: block; width: 100%; height: 100%; }
@@ -1603,12 +1606,12 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   content: "";
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(transparent 0 2px, rgba(0, 0, 0, .16) 2px 3px);
+  background: repeating-linear-gradient(transparent 0 1px, rgba(0, 0, 0, .16) 1px 1.5px);
   pointer-events: none;
 }
 .screen.is-changing { animation: screen-flash .5s ease-out; }
 @keyframes screen-flash { from { filter: brightness(1.35); } }
-.unit { flex: none; min-width: 1.7em; color: #2f4d5c; font: 700 22px/1 var(--mono); }   /* M and B, not the pixel font's m, which reads like "milli" */
+.unit { flex: none; min-width: 1.7em; color: #2f4d5c; font: 700 11px/1 var(--mono); }   /* M and B, not the pixel font's m, which reads like "milli" */
 .meter-note { margin: 0; color: var(--fg-muted); font-size: 12px; line-height: 1.4; }
 /* The teams (workbench.js; presets in tiles.js): one button per plan, each in its plan's own colour,
    squarer than the round filter chips, which only show tiles: a team places tiles on the field.
@@ -1664,6 +1667,18 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .tray-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 24px; }
 .tray-head { margin: 16px 0 10px; color: var(--fg-muted); font: 600 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
 .tray-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 14px 10px; }
+/* Inputs, Functions, Outputs: three columns side by side, each two tiles wide, scrolling with the
+   panel as one (workbench.js). On a phone, or in a panel dragged too narrow for three such columns,
+   the three groups stack, each still two tiles wide. The other sections follow underneath as before. */
+.tray-scroll { container: inventory / inline-size; }
+.tray-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px; align-items: start; }
+.tray-cols:empty { display: none; }
+.tray-col { min-width: 0; }
+.tray-col .tray-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 8px; }
+.tray-col .cap { overflow-wrap: break-word; hyphens: auto; }
+@container inventory (max-width: 330px) {
+  .tray-cols { grid-template-columns: minmax(0, 1fr); }
+}
 .tray-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
 .tray-slot .sq {
   width: 100%;
@@ -1679,7 +1694,6 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cap { margin: 0; min-height: 2.7em; color: var(--fg-muted); font-size: 11px; line-height: 1.3; text-align: center; }
 .cap b { display: block; color: #2f4d5c; font: 400 13px/1.2 "AKIKI Pixel", var(--mono); }
 .tray-slot.is-empty .cap { visibility: hidden; }
-.plan-tag { display: table; margin: 3px auto 0; padding: 0 5px; border-radius: 4px; background: #eef1f4; color: #57606a; font: 600 9.5px/1.6 var(--mono); font-style: normal; letter-spacing: .03em; }
 /* The lenses of the model being worked on (workbench.js, lensHints): solid ring = it needs this lens, dashed = works best with it. */
 .tray-slot.is-lens-need .sq { box-shadow: 0 0 0 3px var(--role-lens), 0 0 14px rgba(112, 72, 200, .45); }
 .tray-slot.is-lens-best .sq { outline: 2px dashed var(--role-lens); outline-offset: 3px; }
@@ -1823,6 +1837,8 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   .field-keys { position: static; grid-template-columns: repeat(4, minmax(0, 112px)); gap: 12px; width: 100%; justify-content: center; transform: none; }   /* under the squares, side by side */
   .key { height: 72px; }
   .tray-scroll { overflow: visible; }
+  .screen { flex-basis: calc((100% - 47.4px) / 2); }   /* the panel is the page's width here */
+  .tray-cols { grid-template-columns: minmax(0, 1fr); }   /* the three groups stacked, each two tiles wide */
   .field-legend { position: static; gap: 4px 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1860,6 +1876,35 @@ html:has(> body.home) { scroll-snap-type: y mandatory; scroll-padding-top: calc(
   .home .bench { height: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .board-next { animation: none; } }
+/* Held at the workbench (snap.js): once the page has come down to the workbench, scrolling no longer
+   takes it back up; this pull tab does. It stands on the workbench's top edge, in the field's dark and
+   the keys' amber, like the open tab over the workbench page, and shows only while the page is held. */
+.home .bench { position: relative; }
+.bench-up {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  z-index: 31;   /* over the sticky header, which the tab reaches into */
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 24px;
+  margin-left: -28px;
+  padding: 0;
+  border: 1px solid rgba(255, 193, 77, .35);
+  border-bottom: 0;
+  border-radius: 9px 9px 0 0;
+  background: #1d2833;
+  color: #ffc14d;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .15s, color .15s;
+}
+.bench-up[hidden] { display: none; }
+.bench-up::before { content: ""; position: absolute; inset: 0 0 auto; height: 2px; border-radius: 9px 9px 0 0; background: #ffc14d; box-shadow: 0 0 8px rgba(255, 170, 40, .7); }
+.bench-up svg { width: 19px; height: 11px; fill: currentColor; filter: drop-shadow(0 0 4px rgba(255, 170, 40, .6)); }
+.bench-up:hover { background: #26333f; color: #ffd27a; }
+.bench-up:focus-visible { outline: 2px solid #7fd6d8; outline-offset: 2px; }
 
 /* The Siren page: the animated squares, then the profiles under them. The same little-scroll glide as the
    home page (snap.js does it on a wide screen), but the profiles are taller than a screen, so there the

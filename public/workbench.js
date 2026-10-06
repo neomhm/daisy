@@ -13,7 +13,7 @@
    the data in, a middle works on it, an end gives the result; Siren is a start and an end; an
    attachment such as a brain, a database or a documents folder snaps ONTO a tile that needs it),
    the kinds of data it accepts and hands on, and what it needs. A lettered badge on each tile says its role
-   (S a starter, Fn a function, O an output). Tiles
+   (I an input, Fn a function, O an output). Tiles
    side by side pass their work left to right; tiles stacked in a column are alternatives; a tile
    touching Siren is a specialist she calls, whose answer comes back to her. The TesT key checks, in
    this order: a start and an end; every chain going from a start to an end, in one piece; every
@@ -108,8 +108,8 @@
   const roleSay = d => DATA.roles[d.role].say;
   // The role badge at a tile's top right (style.css, "Roles"): S a starter, Fn a function, O an output.
   // A tile that can be either says both in the panel; on the field it says the one it plays (roleBadges).
-  const BADGE = { start: 'S', middle: 'Fn', end: 'O', reader: 'S/Fn', both: 'S/O' };
-  const BADGE_SAY = { S: 'starter', Fn: 'function', O: 'output' };
+  const BADGE = { start: 'I', middle: 'Fn', end: 'O', reader: 'I/Fn', both: 'I/O' };   // I an input (Laurent, 2026-10-07: was S, a starter)
+  const BADGE_SAY = { I: 'input', Fn: 'function', O: 'output' };
   const DNAME = id => (DEF.get(id) || { name: id }).name;
   // A tile's profile, in its tooltip and in what it says: what it needs, and the lenses it works best with.
   const profile = d => {
@@ -126,9 +126,7 @@
     : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.role === 'skill' || d.gives === 'skill' ? 'skills' : d.gives === 'brain' ? 'brains' : 'data');
   const fillCap = (cap, d) => {
     cap.innerHTML = '<span></span>';   // the panel shows what a tile does; its name is in its tooltip and label
-    cap.firstChild.textContent = d.words;
-    const plan = (DATA.plans || {})[d.group];
-    if (plan) { const tag = document.createElement('em'); tag.className = 'plan-tag'; tag.textContent = plan; cap.append(tag); }
+    cap.firstChild.textContent = d.words;   // no PLAN tag under the tile (Laurent, 2026-10-07: "no need")
   };
   const makeTile = d => {
     const b = document.createElement('button');
@@ -150,7 +148,13 @@
   {
     const scroll = tray.querySelector('.tray-scroll');
     const level = scroll.dataset.head || '2';
-    scroll.querySelectorAll('.tray-head, .tray-grid').forEach(x => x.remove());
+    scroll.querySelectorAll('.tray-cols, .tray-head, .tray-grid').forEach(x => x.remove());
+    // Inputs, Functions and Outputs stand side by side as three columns, each two tiles wide; the
+    // other sections follow under them as before. ROBOTS has the same columns, empty for now.
+    const COLUMNS = ['starters', 'functions', 'outputs'];
+    const cols = document.createElement('div');
+    cols.className = 'tray-cols';
+    scroll.append(cols);
     for (const g of DATA.sections) {
       const mine = DATA.tiles.filter(d => sectionOf(d) === g.id);
       if (!mine.length) continue;
@@ -173,7 +177,13 @@
         slot.append(sq, cap);
         box.append(slot);
       }
-      scroll.append(head, box);
+      if (COLUMNS.includes(g.id)) {
+        const col = document.createElement('div');
+        col.className = 'tray-col';
+        col.dataset.section = g.id;
+        col.append(head, box);
+        cols.append(col);
+      } else scroll.append(head, box);
     }
     // The colours' key, on the field.
     const legend = document.createElement('div');
@@ -446,8 +456,8 @@
   };
 
   // On the field, a tile that can play two roles wears the letter of the one it plays now: a reader fed
-  // by the tile before it, or called by Siren, is a function (Fn), else a starter (S); the Chat window
-  // after a chain is an output (O), before one a starter (S), and beside Siren both (S/O). In the panel
+  // by the tile before it, or called by Siren, is a function (Fn), else an input (I); the Chat window
+  // after a chain is an output (O), before one an input (I), and beside Siren both (I/O). In the panel
   // it says both again.
   const roleBadges = () => {
     const res = check(board());
@@ -1234,7 +1244,7 @@
     if (!chatless.length && board.length && !board.some(p => isStart(D(p.id)))) {
       for (const p of (sources.length ? sources : board)) {
         const d = D(p.id);
-        add('ends', p, `Nothing starts this chain: ${d.name} ${d.in.length ? `needs ${kinds(d.in)}, and ` : ''}only a Starter can begin a chain.`, 'no start');
+        add('ends', p, `Nothing starts this chain: ${d.name} ${d.in.length ? `needs ${kinds(d.in)}, and ` : ''}only an Input can begin a chain.`, 'no start');
       }
     }
     if (!chatless.length && board.length && !board.some(p => isEnd(D(p.id)))) {
@@ -1726,7 +1736,7 @@
   const flowArrow = () => {
     const chain = chainOf();
     if (EMPTY) { say('Nothing to run yet: robot tiles are coming.', 3200); return; }
-    if (!chain) { say('FLOW needs a complete chain: a Starter, joined rightly, through to an Output.'); return; }
+    if (!chain) { say('FLOW needs a complete chain: an Input, joined rightly, through to an Output.'); return; }
     resetTest();
     const levels = flowLevels(chain);
     const S = parseFloat(grid.style.getPropertyValue('--cell')) || 96, G = parseFloat(grid.style.getPropertyValue('--gap')) || 12;
@@ -2132,7 +2142,9 @@
     splitter.setAttribute('aria-valuenow', Math.round(px / W * 100));
     return px / W;
   };
-  let panel = 0.25;
+  // A quarter of the page, but never less than the three columns of tiles need (400 px): on a
+  // 1024 px screen that is 39%. A width the viewer chose by dragging is kept as it was.
+  let panel = Math.min(0.6, Math.max(0.25, 400 / (bench.clientWidth || innerWidth)));
   try { const saved = parseFloat(localStorage.getItem(KEY)); if (saved > 0.05 && saved < 0.9) panel = saved; } catch (e) { /* no storage: keep a quarter */ }
   splitter.setAttribute('aria-valuemin', '15');
   splitter.setAttribute('aria-valuemax', '60');

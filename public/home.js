@@ -82,11 +82,12 @@
 
 /* The workbench under the board ("Home, second screen" in style.css). Scroll snapping stops the
    page on one or the other, but a short wheel or trackpad scroll would only spring back; here even
-   a little scroll down from the board glides the page to the workbench, and a little scroll up from
-   the workbench's top glides it back. Scrolls inside the tiles panel stay there. On phones the page
-   scrolls freely. */
+   a little scroll down from the board glides the page to the workbench. Once there, the page stays:
+   no scroll takes it back up to the board; the pull tab at the workbench's top edge does (snap.js,
+   "Held at the workbench"). Scrolls inside the tiles panel stay there. */
 (() => {
   const bench = document.querySelector('.home .bench');
   if (!bench) return;
-  window.akikiSnap(bench, document.querySelector('.board-next'));
+  window.akikiSnap(bench, document.querySelector('.board-next'),
+    { lock: true, up: bench.querySelector('.bench-up'), above: document.querySelector('.home .board-wrap') });
 })();
