@@ -76,11 +76,13 @@
     const needs = [...(d.needs || []).map(n => DATA.needs[n]), ...((d.lenses || {}).needs || []).map(x => `${DNAME(x.lens)}${x.why ? ' ' + x.why : ''}`)];
     if (needs.length) parts.push('needs: ' + needs.join(', '));
     if ((d.lenses || {}).best) parts.push('works best with: ' + d.lenses.best.map(DNAME).join(', '));
-    if (d.serves) parts.push('a lens for ' + d.serves.map(DNAME).join(', '));
+    const andList = w => (w.length < 3 ? w.join(' and ') : w.slice(0, -1).join(', ') + ' and ' + w[w.length - 1]);   // `list` is defined further down
+    if (d.serves) parts.push('the lens for ' + andList(d.serves.map(DNAME)) + (d.adapts ? '; ' + d.adapts : ''));
+    if (d.heads) parts.push('her roles: ' + d.heads.map(h => `${h.does} (${h.status})`).join(', '));
     return parts.join('; ');
   };
   const sectionOf = d => (d.role === 'start' || d.role === 'both' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'finishers'
-    : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.gives === 'brain' ? 'brains' : 'data');
+    : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.role === 'skill' ? 'skills' : d.gives === 'brain' ? 'brains' : 'data');
   const fillCap = (cap, d) => {
     cap.innerHTML = '<b></b><span></span>';
     cap.firstChild.textContent = d.name.toLowerCase();
@@ -411,7 +413,7 @@
     if (host && hintedFor !== host && !placing.length) {
       hintedFor = host;
       const p = profile(defOf(host));
-      say(`${host.dataset.name} ${p.replace(/^needs: /, 'needs ').replace(/; works best with: /, '; works best with ')}. Its lenses are marked in the panel.`, 4200);
+      say(`${host.dataset.name} ${p.replace(/^needs: /, 'needs ').replace(/; works best with: /, '; works best with ')}. The lens is marked in the panel.`, 4200);
     }
     if (!host) hintedFor = null;
   };
@@ -953,7 +955,7 @@
       const has = new Set(around(p).filter(isLensD).map(q => q.id));
       for (const x of L.needs || []) {
         if (has.has(x.lens)) continue;
-        if (x.unless && (p.attIds || new Set()).has(x.unless)) { notes.push(`${nm(p)} does not need ${DNAME(x.lens)} on ${DNAME(x.unless)}.`); continue; }
+        if (x.unless && (p.attIds || new Set()).has(x.unless)) { notes.push(`${DNAME(x.lens)} is optional for ${nm(p)} on ${DNAME(x.unless)}.`); continue; }
         add('needs', p, `${nm(p)} needs ${DNAME(x.lens)}${x.why ? ' ' + x.why : ''}: put ${DNAME(x.lens)} beside ${nm(p)}.`, 'needs a lens', { mode: 'lens', lens: x.lens });
       }
       const missing = (L.best || []).filter(id => !has.has(id));

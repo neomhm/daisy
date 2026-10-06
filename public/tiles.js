@@ -13,8 +13,11 @@
                         to her, so "Siren, Daisy, Siren" is one Siren with Daisy beside her
              attachment not part of the chain: it snaps ONTO a tile that needs it (a brain, a
                         database, a documents folder)
-             lens       a full tile that serves ONE kind of model ("serves"): placed touching that model,
-                        it sharpens it, joined by a lens joint, and is not a step of the chain
+             lens       THE lens (MAGNOLIA): one model that adapts to the model it touches and to the
+                        data attached to it, switching into one of her roles ("heads") on her own; placed
+                        touching a model it serves, joined by a lens joint, and not a step of the chain
+             (skill     room is left for SKILLS, their own kind, not built yet: a tile with role 'skill'
+                        goes in the Skills section)
    lenses    on a model: { needs: [...], best: [...] }: the lenses it cannot work without, and the
              ones it works best with. A need may carry "unless": an attachment that makes it a
              "works best with" instead (Daisy on PLAN's own tables does not need MAGNOLIA).
@@ -36,7 +39,7 @@ window.AKIKI_TILES = {
     middle: { label: 'function', say: 'works in the middle of a chain' },
     end: { label: 'finisher', say: 'finishes a chain with a result' },
     both: { label: 'starter + finisher', say: 'starts and finishes a chain' },
-    lens: { label: 'lens', say: 'is a lens: it sharpens the one model it serves, touching it' },
+    lens: { label: 'lens', say: 'is the lens: touching a model, she adapts to it and to the data it reads' },
     attachment: { label: 'attaches to a tile', say: 'attaches onto a tile that needs it' },
   },
   // Each kind as a sentence says it: "Tulip gives a table, Lily needs facts".
@@ -51,21 +54,21 @@ window.AKIKI_TILES = {
   // role); "group" says which plan a tile comes from, shown as a small PLAN tag.
   sections: [
     { id: 'starters', head: 'Starters' }, { id: 'functions', head: 'Functions' }, { id: 'finishers', head: 'Finishers' },
-    { id: 'lenses', head: 'Lenses & add-ons' }, { id: 'brains', head: 'Brains' }, { id: 'data', head: 'Data' },
+    { id: 'lenses', head: 'Lens & add-ons' }, { id: 'skills', head: 'Skills' }, { id: 'brains', head: 'Brains' }, { id: 'data', head: 'Data' },
   ],
   plans: { flowers: 'PLAN 1', insects: 'PLAN 2', sea: 'PLAN 3' },
   tiles: [
     // Daisy's flowers (PLAN)
     { id: 'bouquet', name: 'Bouquet', words: 'Plans the work', group: 'flowers', colour: '#35adb0',
-      role: 'middle', in: ['text', 'request', 'facts', 'document', 'table'], out: ['plan'], needs: ['brain'],
+      role: 'middle', in: ['text', 'request', 'facts', 'document', 'table'], out: ['plan'], needs: ['brain'], lenses: { best: ['magnolia'] },
       status: 'working', params: '', ms: '24500', mb: '', tags: 'website',
       note: 'a planning prompt and its checker on the brain you attach; 17 to 32 s per call on the 27B, counted as 24.5 s' },
     { id: 'orchid', name: 'Orchid', words: 'Finds the facts', group: 'flowers', colour: '#c2549e',
-      role: 'start', in: [], out: ['facts'], needs: ['documents'],
+      role: 'start', in: [], out: ['facts'], needs: ['documents'], lenses: { best: ['magnolia'] },
       status: 'working', params: '32.8', ms: '77', mb: '131', tags: 'documents',
       note: '32.8M parameters, 131 MB, 77 ms per chunk' },
     { id: 'tulip', name: 'Tulip', words: 'Imports spreadsheets', group: 'flowers', colour: '#3aa56f',
-      role: 'start', in: [], out: ['table'], needs: ['documents'],
+      role: 'start', in: [], out: ['table'], needs: ['documents'], lenses: { best: ['magnolia'] },
       status: 'working', params: '61.6', ms: '120', mb: '', tags: 'database documents',
       note: '61.6M parameters, 0.12 s per sheet' },
     { id: 'jasmine', name: 'Jasmine', words: 'Dresses the site', group: 'flowers', colour: '#a06fc2',
@@ -74,13 +77,20 @@ window.AKIKI_TILES = {
       note: '3.4M parameters, 13.5 MB; about 9 ms per design, measured on a network her size' },
     { id: 'daisy', name: 'Daisy', words: 'Answers questions', group: 'flowers', colour: '#ec8e4a',
       role: 'middle', in: ['question', 'reading', 'table', 'plan'], out: ['table', 'spec'], needs: ['database'],
-      lenses: { needs: [{ lens: 'magnolia', unless: 'plantables', why: 'on an unfamiliar database' }], best: ['values', 'checker', 'path'] },
+      lenses: { needs: [{ lens: 'magnolia', unless: 'plantables', why: 'on an unfamiliar database' }] },
       status: 'working', params: '27.1', ms: '270', mb: '108', tags: 'database',
       note: '27.1M parameters, 108 MB, 0.27 s from question to rows' },
-    { id: 'magnolia', name: 'MAGNOLIA', words: 'Reads what an unfamiliar database\u2019s names mean', group: 'flowers', colour: '#de7c95',
-      role: 'lens', serves: ['daisy'], scope: 'scope lens', in: [], out: [], needs: [],
+    { id: 'magnolia', name: 'MAGNOLIA', words: 'The lens: adapts to the model it serves and to the data it reads', group: 'flowers', colour: '#de7c95',
+      role: 'lens', serves: ['daisy', 'tulip', 'orchid', 'bouquet', 'dragonfly'], in: [], out: [], needs: [],
+      adapts: 'what she does depends on the model she touches and the data attached to it: beside Daisy on an unfamiliar database she reads its names; on PLAN tables she is optional',
+      heads: [
+        { does: 'reading unfamiliar names', status: 'trained, gate passed, not yet in use' },
+        { does: 'values', status: 'designed, not built yet' }, { does: 'links between tables', status: 'designed, not built yet' },
+        { does: 'dates', status: 'designed, not built yet' }, { does: 'language', status: 'designed, not built yet' },
+        { does: 'privacy', status: 'designed, not built yet' },
+      ],
       status: 'gate', params: '0.9', ms: '1800', mb: '', tags: 'database lenses',
-      note: 'trained, gate passed, not yet in use; 0.9M parameters, 1.8 s per database' },
+      note: 'reading names: trained, gate passed, not yet in use; 0.9M parameters, 1.8 s per database' },
     { id: 'iris', name: 'Iris', words: 'Watches live sites', group: 'flowers', colour: '#7c8acb',
       role: 'end', in: ['design'], out: ['findings'], needs: [],
       status: 'working', params: '3.4', ms: '14', mb: '', tags: 'website checks',
@@ -116,7 +126,7 @@ window.AKIKI_TILES = {
       role: 'attachment', gives: 'memory',
       status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'in design, no figures yet' },
     { id: 'dragonfly', name: 'Dragonfly', words: 'Searches by meaning', group: 'insects', colour: '#6592b4',
-      role: 'middle', in: ['question', 'text', 'findings'], out: ['ranking'], needs: ['documents'],
+      role: 'middle', in: ['question', 'text', 'findings'], out: ['ranking'], needs: ['documents'], lenses: { best: ['magnolia'] },
       status: 'design', params: '', ms: '', mb: '', tags: 'code documents', note: 'in design, no figures yet' },
     { id: 'firefly', name: 'Firefly', words: 'Calls for help', group: 'insects', colour: '#ec8e4a',
       role: 'end', in: ['findings'], out: ['message'], needs: [],
@@ -155,28 +165,6 @@ window.AKIKI_TILES = {
       role: 'attachment', gives: 'documents', glyph: ['XX...', 'XXXXX', 'X...X', 'X.H.X', 'XXXXX'],
       status: 'yours', params: '', ms: '', mb: '', tags: 'documents',
       note: 'a folder of your documents and spreadsheets, read only' },
-    // Lenses: each serves one kind of model and sits touching it. Designed, not built yet.
-    { id: 'values', name: 'Values lens', words: 'Matches the values in a question to the ones stored', colour: '#6c5fb0',
-      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['X...X', '.X.X.', '..H..', '.X.X.', 'X...X'],
-      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
-    { id: 'path', name: 'Path lens', words: 'Finds how the tables join', colour: '#6c5fb0',
-      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['XX...', '.X...', '.XHX.', '...X.', '...XX'],
-      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
-    { id: 'checker', name: 'Checker lens', words: 'Checks a query before it runs', colour: '#6c5fb0',
-      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['....X', '...X.', 'X.H..', '.X...', '.....'],
-      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
-    { id: 'time', name: 'Time lens', words: 'Reads dates and periods such as \u201clast quarter\u201d', colour: '#6c5fb0',
-      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['.XXX.', 'X.X.X', 'X.HXX', 'X...X', '.XXX.'],
-      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
-    { id: 'language', name: 'Language lens', words: 'Reads questions asked in other languages', colour: '#6c5fb0',
-      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['XXXXX', '..X..', '.XHX.', 'X...X', 'X...X'],
-      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
-    { id: 'explain', name: 'Explanation lens', words: 'Says in plain words what an answer shows', colour: '#6c5fb0',
-      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['XXXXX', 'X...X', 'X.H.X', 'XXXXX', 'X....'],
-      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
-    { id: 'privacy', name: 'Privacy lens', words: 'Keeps personal data out of answers', colour: '#6c5fb0',
-      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['.XXX.', 'X...X', 'XXXXX', 'XXHXX', 'XXXXX'],
-      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
     // Starts and ends Laurent named, not built yet
     { id: 'feeder', name: 'Feeder', words: 'Feeds your documents (RAG)', group: 'io', colour: '#6a7480',
       role: 'start', in: [], out: ['document'], needs: ['documents'], glyph: ['X.X.X', '.....', 'XXXXX', '.XHX.', '..X..'],
