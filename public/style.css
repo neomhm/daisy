@@ -1231,19 +1231,24 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cell .wtile:hover, .cell .wtile:focus-visible { z-index: 6; }
 .cell .wtile:hover::after, .cell .wtile:focus-visible::after { opacity: 1; transform: translate(-50%, 7px); }
 
-/* Roles (tiles.js; workbench.js). Every tile keeps its own icon and colour; a small square in its
-   right-hand margin, level with the icon's top row of pixels, says its role: a start (blue) takes
-   the data in, a middle (amber) works on it, an end (teal) gives the result, Siren (a start and an
-   end) is split in both, and an attachment (a brain, a database, a folder) has a hollow square.
-   The square has a white edge and a faint dark outline, so it reads on light and dark tiles alike;
-   each role colour is above 4.5:1 against that white edge. */
+/* Roles (tiles.js; workbench.js). Every tile keeps its own icon and colour; a badge at its top right,
+   lettered, says its role: S a starter (blue) takes the data in, Fn a function
+   (amber) works on it, O an output (teal) gives the result, in the site's mono capitals (the pixel
+   font is unicase, and these are capitals). The three share one badge: the same
+   square, size, edge and letters, only the colour and the letter change. A tile that can play two
+   roles is split in both colours and says both ("S/Fn", "S/O") in the panel; on the field it wears the
+   one it plays (workbench.js sets data-badge and data-plays). An attachment (a brain, a database, a
+   folder) keeps a small hollow square, the lens a small round mark. The badge has a white edge and a
+   faint dark outline, so it reads on light and dark tiles alike; each role colour is above 4.5:1
+   against its white letters. It scales with the tile (container units) but never below 12px. */
 .bench { --role-start: #1f6fd1; --role-middle: #b35f00; --role-end: #0d7f86; --role-att: #5f6b7a; --role-lens: #7048c8; }
 .wtile { --rc: var(--role-middle); }
 .wtile[data-role="start"] { --rc: var(--role-start); }
 .wtile[data-role="end"] { --rc: var(--role-end); }
 .wtile[data-role="both"] { --rc: var(--role-start); }
 .wtile[data-role="attachment"] { --rc: var(--role-att); }
-.wtile::before {   /* the role square */
+.wtile { container-type: inline-size; }
+.wtile::before {   /* the role square: a small mark for an attachment or the lens; the badge below for S, Fn and O */
   content: "";
   position: absolute;
   left: 87%;
@@ -1258,11 +1263,34 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, .3);
   pointer-events: none;
 }
+.wtile[data-badge]::before {   /* the role badge */
+  content: attr(data-badge);
+  left: auto;
+  right: 4%;
+  top: 4%;
+  display: grid;
+  place-items: center;
+  width: auto;
+  min-width: max(12px, 27cqw);
+  height: max(12px, 27cqw);
+  aspect-ratio: auto;
+  padding: 0 max(1px, 3cqw);
+  border-width: max(1px, 1.6cqw);
+  border-radius: max(2px, 4.5cqw);
+  color: #fff;
+  font: 700 max(8.5px, 14cqw)/1 var(--mono);
+  letter-spacing: -.02em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .35);
+  white-space: nowrap;
+}
 .wtile[data-role="both"]::before { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
 .wtile[data-role="reader"] { --rc: var(--role-start); }
 .wtile[data-role="reader"]::before { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-middle) 50%); }   /* a starter or a function */
 .wtile[data-role="attachment"]::before { background: transparent; }
 .wtile[data-role="lens"]::before { border-radius: 50%; background: var(--role-lens); }   /* a lens: a round mark */
+.wtile[data-plays="start"]::before { background: var(--role-start); }   /* on the field: the role it plays now */
+.wtile[data-plays="middle"]::before { background: var(--role-middle); }
+.wtile[data-plays="end"]::before { background: var(--role-end); }
 .dock .wtile::before { display: none; }   /* docked, an attachment says what it is by where it sits */
 .wtile.is-ghost { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; transform-origin: top left; }
 
@@ -1753,9 +1781,43 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 @keyframes live { to { opacity: .25; box-shadow: none; } }
 .code-pos { margin-left: auto; }
 
+/* The tabs over the workbench (workbench.js, "The tabs"): MODELS and ROBOTS, in the field's own dark
+   and the keys' amber, in capitals like the screens' labels (the pixel font is unicase); the open tab carries the code tab's amber line. */
+.bench[hidden] { display: none; }
+.bench-tabs {
+  display: flex;
+  gap: 4px;
+  height: 40px;
+  padding: 0 24px;
+  align-items: flex-end;
+  background: #11181f;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.bench-tab {
+  position: relative;
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-bottom: 0;
+  border-radius: 9px 9px 0 0;
+  background: rgba(255, 255, 255, .03);
+  color: rgba(255, 228, 180, .5);
+  font: 700 12.5px/1 var(--mono);
+  letter-spacing: .14em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .15s, color .15s;
+}
+.bench-tab:hover { color: #ffc14d; background: rgba(255, 255, 255, .07); }
+.bench-tab[aria-selected="true"] { color: #ffc14d; background: #1d2833; border-color: rgba(255, 193, 77, .35); text-shadow: 0 0 8px rgba(255, 170, 40, .55); }
+.bench-tab[aria-selected="true"]::before { content: ""; position: absolute; inset: 0 0 auto; height: 2px; border-radius: 9px 9px 0 0; background: #ffc14d; box-shadow: 0 0 8px rgba(255, 170, 40, .7); }
+.bench-tab:focus-visible { outline: 2px solid #7fd6d8; outline-offset: -2px; }
+.has-bench-tabs .bench { height: calc(100svh - 57px - 40px); }
+
 @media (max-width: 700px) {
   .bench-page { overflow: auto; }
-  .bench { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .bench, .has-bench-tabs .bench { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .bench-tabs { padding: 0 12px; }
   .splitter { display: none; }
   .field { padding: 48px 12px 16px; row-gap: 18px; }
   .field-keys { position: static; grid-template-columns: repeat(4, minmax(0, 112px)); gap: 12px; width: 100%; justify-content: center; transform: none; }   /* under the squares, side by side */

@@ -1,7 +1,7 @@
 /* THE TILES OF THE WORKBENCH: the one place that says what every tile is.
 
    workbench.js builds the panel of tiles from this file (on workbench.html and on the home page),
-   marks each tile's ROLE with a small square, and its TesT key checks a team against these rules. Edit a tile
+   marks each tile's ROLE with a lettered badge (S, Fn, O), and its TesT key checks a team against these rules. Edit a tile
    here and both pages follow; nothing about a tile is written anywhere else.
 
    role      reader     a starter OR a function: with nothing before it, it starts the chain from what is
@@ -19,8 +19,8 @@
              lens       THE lens (MAGNOLIA): one model that adapts to the model it touches and to the
                         data attached to it, switching into one of her roles ("heads") on her own; placed
                         touching a model it serves, joined by a lens joint, and not a step of the chain
-             (skill     room is left for SKILLS, their own kind, not built yet: a tile with role 'skill'
-                        goes in the Skills section)
+             (skills    a SKILL is an attachment that "gives: 'skill'" and docks only onto the models it
+                        "serves"; it goes in the Skills section)
    lenses    on a model: { needs: [...], best: [...] }: the lenses it cannot work without, and the
              ones it works best with. A need may carry "unless": an attachment that makes it a
              "works best with" instead (Daisy on PLAN's own tables does not need MAGNOLIA).
@@ -49,8 +49,8 @@ window.AKIKI_TILES = {
     start: { label: 'starter', say: 'starts a chain' },
     reader: { label: 'starter or function', say: 'starts a chain from what is attached to it, or works on what the tile before it brings' },
     middle: { label: 'function', say: 'works in the middle of a chain' },
-    end: { label: 'finisher', say: 'finishes a chain with a result' },
-    both: { label: 'starter + finisher', say: 'starts and finishes a chain' },
+    end: { label: 'output', say: 'gives the result at the end of a chain' },
+    both: { label: 'starter + output', say: 'starts a chain and gives its result' },
     lens: { label: 'lens', say: 'is the lens: touching a model, she adapts to it and to the data it reads' },
     attachment: { label: 'attaches to a tile', say: 'attaches onto a tile that needs it' },
   },
@@ -61,11 +61,15 @@ window.AKIKI_TILES = {
     design: 'a design', image: 'an image', code: 'code', findings: 'findings', ranking: 'a ranking',
     message: 'a message to a person',
   },
-  needs: { brain: 'a brain', database: 'a database', documents: 'a documents folder', memory: 'a memory' },
+  needs: { brain: 'a brain', database: 'a database', documents: 'a documents folder', memory: 'a memory', skill: 'a skill' },
+  // What a tile gets on its own when it is put on the field (workbench.js, "Defaults"): a tile that needs a
+  // brain, in a team with none yet, gets this one (local, so nothing leaves the PC). Laurent, 2026-10-07:
+  // "When putting bouquet or another large model tile, put 27B with it by default".
+  defaultBrain: 'qwen27b',
   // The panel is ordered by what a tile is FOR (workbench.js puts each tile in its section from its
   // role); "group" says which plan a tile comes from, shown as a small PLAN tag.
   sections: [
-    { id: 'starters', head: 'Starters' }, { id: 'functions', head: 'Functions' }, { id: 'finishers', head: 'Finishers' },
+    { id: 'starters', head: 'Starters' }, { id: 'functions', head: 'Functions' }, { id: 'outputs', head: 'Outputs' },
     { id: 'lenses', head: 'Lens & add-ons' }, { id: 'skills', head: 'Skills' }, { id: 'brains', head: 'Brains' }, { id: 'data', head: 'Data' },
   ],
   plans: { flowers: 'PLAN 1', insects: 'PLAN 2', sea: 'PLAN 3' },
@@ -134,6 +138,13 @@ window.AKIKI_TILES = {
     { id: 'ladybug', word: 'debug', name: 'Ladybug', words: 'Hunts bugs', group: 'insects', colour: '#e65b56',
       role: 'middle', in: ['code', 'ranking'], out: ['findings'], needs: ['brain'],
       status: 'design', params: '', ms: '', mb: '', tags: 'code checks', note: 'in design, no figures yet' },
+    // SKILLS: a small specialist a model retrains on the fly. "serves" lists ONLY the models where a skill
+    // passed its measured test on held-out material (Orchid, Iris, Daisy); Tulip and MAGNOLIA showed no proven
+    // gain, so they get none. A served model gets the skill on its own when it is placed (Laurent, 2026-10-07).
+    { id: 'skill', name: 'Skill', words: 'A small specialist the model retrains on the fly', group: 'attach', colour: '#8a5cc8',
+      role: 'attachment', gives: 'skill', serves: ['orchid', 'iris', 'daisy'], glyph: ['..X..', '.XHX.', 'XHHHX', '.XHX.', '..X..'],
+      status: 'gate', params: '', ms: '', mb: '', tags: 'lenses',
+      note: 'measured gain on held-out tests, not yet in use' },
     { id: 'cicada', name: 'Cicada', words: 'Keeps the memory', group: 'insects', colour: '#8a80cf',
       role: 'attachment', gives: 'memory',
       status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'in design, no figures yet' },

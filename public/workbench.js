@@ -12,7 +12,8 @@
    Every tile comes from tiles.js, the one file that says what each tile is: its ROLE (a start takes
    the data in, a middle works on it, an end gives the result; Siren is a start and an end; an
    attachment such as a brain, a database or a documents folder snaps ONTO a tile that needs it),
-   the kinds of data it accepts and hands on, and what it needs. A small square on each tile says its role. Tiles
+   the kinds of data it accepts and hands on, and what it needs. A lettered badge on each tile says its role
+   (S a starter, Fn a function, O an output). Tiles
    side by side pass their work left to right; tiles stacked in a column are alternatives; a tile
    touching Siren is a specialist she calls, whose answer comes back to her. The TesT key checks, in
    this order: a start and an end; every chain going from a start to an end, in one piece; every
@@ -20,10 +21,12 @@
    fault is marked, the reason is said in one sentence, and the panel shows only the tiles that
    would fit in its place. */
 (() => {
-  const bench = document.querySelector('.bench');
-  const DATA = window.AKIKI_TILES;
+  // One workbench. workbench.html has two, under tabs (see "The tabs" at the end): MODELS, with every
+  // tile in tiles.js, and ROBOTS, the same bench with nothing in its panel yet. The home page has one.
+  const initBench = (bench, DATA) => {
   if (!bench || !DATA) return;
-  const SIZES = [7, 8, 9, 10], GRID_KEY = 'akiki-workbench-grid';
+  const EMPTY = !DATA.tiles.length;   // ROBOTS: no tiles yet
+  const SIZES = [7, 8, 9, 10], GRID_KEY = 'akiki-workbench-grid' + (bench.dataset.board && bench.dataset.board !== 'models' ? '-' + bench.dataset.board : '');
   let COLS = 7, ROWS = 7;   // the grid size control ("The grid's size" below) changes both
   const field = bench.querySelector('.field');
   const grid = bench.querySelector('.field-grid');
@@ -37,20 +40,34 @@
   const isLensT = t => t.dataset.role === 'lens';
   const orList = words => (words.length < 3 ? words.join(' or ') : words.slice(0, -1).join(', ') + ' or ' + words[words.length - 1]);
 
-  // ---- The panel's tiles, built from tiles.js. Each is its own icon, in its own colour; a small
-  // square at its right says its role (style.css, "Roles"). ----
+  // ---- The panel's tiles, built from tiles.js. Each is its own icon, in its own colour; a badge at
+  // its top right says its role (style.css, "Roles"). ----
   const NS = 'http://www.w3.org/2000/svg';
   const sprite = (document.querySelector('svg > symbol') || {}).parentNode || document.body.appendChild(document.createElementNS(NS, 'svg'));
   // A code tile shows "</>", drawn in the logo's pixels in the tile's own colour (currentColor), on no square.
   const CODE_PX = [[2, 0], [1, 1], [0, 2], [1, 3], [2, 4], [7, 0], [6, 1], [5, 2], [4, 3], [3, 4], [9, 0], [10, 1], [11, 2], [10, 3], [9, 4]];
-  const codeSymbol = (id, x0, y0, p, size) => {
+  // The Chat window, a code tile too, shows chat lines instead: a speech bubble holding three lines of text.
+  const CHAT_PX = [
+    '.XXXXXXXXXXX.',
+    'X...........X',
+    'X.XXXXXXXX..X',
+    'X...........X',
+    'X.XXXXXXXXX.X',
+    'X...........X',
+    'X.XXXXX.....X',
+    'X...........X',
+    '.XXXXXXXXXXX.',
+    '..XX.........',
+    '..X..........',
+  ].flatMap((row, r) => [...row].map((ch, c) => (ch === 'X' ? [c, r] : null)).filter(Boolean));
+  const codeSymbol = (id, x0, y0, p, size, PX = CODE_PX) => {
     if (document.getElementById(id)) return id;
     const sym = document.createElementNS(NS, 'symbol');
     sym.id = id;
     sym.setAttribute('viewBox', '0 0 40 40');
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('fill', 'currentColor');
-    for (const [c, r] of CODE_PX) {
+    for (const [c, r] of PX) {
       const px = document.createElementNS(NS, 'rect');
       [['x', x0 + c * p], ['y', y0 + r * p], ['width', size], ['height', size], ['rx', size * 0.25]].forEach(([k, v]) => px.setAttribute(k, v.toFixed(2)));
       g.append(px);
@@ -60,6 +77,7 @@
     return id;
   };
   const drawing = d => {   // the page's own icon; for a tile with none, one drawn from its glyph; for code, "</>"
+    if (d.kind === 'code' && d.chat) return codeSymbol('px-chat', 3.3, 5.9, 2.6, 2.2, CHAT_PX);
     if (d.kind === 'code') return codeSymbol('px-code', 4.6, 13.6, 2.6, 2.2);
     const id = `px-${d.id}`;
     if (document.getElementById(id)) return id;
@@ -88,6 +106,10 @@
     return id;
   };
   const roleSay = d => DATA.roles[d.role].say;
+  // The role badge at a tile's top right (style.css, "Roles"): S a starter, Fn a function, O an output.
+  // A tile that can be either says both in the panel; on the field it says the one it plays (roleBadges).
+  const BADGE = { start: 'S', middle: 'Fn', end: 'O', reader: 'S/Fn', both: 'S/O' };
+  const BADGE_SAY = { S: 'starter', Fn: 'function', O: 'output' };
   const DNAME = id => (DEF.get(id) || { name: id }).name;
   // A tile's profile, in its tooltip and in what it says: what it needs, and the lenses it works best with.
   const profile = d => {
@@ -100,8 +122,8 @@
     if (d.heads) parts.push('her roles: ' + d.heads.map(h => `${h.does} (${h.status})`).join(', '));
     return parts.join('; ');
   };
-  const sectionOf = d => (d.role === 'start' || d.role === 'both' || d.role === 'reader' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'finishers'
-    : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.role === 'skill' ? 'skills' : d.gives === 'brain' ? 'brains' : 'data');
+  const sectionOf = d => (d.role === 'start' || d.role === 'both' || d.role === 'reader' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'outputs'
+    : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.role === 'skill' || d.gives === 'skill' ? 'skills' : d.gives === 'brain' ? 'brains' : 'data');
   const fillCap = (cap, d) => {
     cap.innerHTML = '<span></span>';   // the panel shows what a tile does; its name is in its tooltip and label
     cap.firstChild.textContent = d.words;
@@ -116,6 +138,7 @@
       params: d.params, ms: d.ms, mb: d.mb, tags: d.tags || '', note: d.note || '' });
     b.style.setProperty('--tc', d.colour);
     b.dataset.kind = d.kind || 'ai';
+    if (BADGE[d.role]) b.dataset.badge = BADGE[d.role];
     const prof = profile(d);
     b.setAttribute('aria-label', `${d.name}: ${d.words[0].toLowerCase() + d.words.slice(1)}. ${roleSay(d)[0].toUpperCase() + roleSay(d).slice(1)}. ${d.note}.${prof ? ' ' + prof[0].toUpperCase() + prof.slice(1) + '.' : ''}`);
     const kindSay = { code: 'code: no brain, always does the same', hybrid: 'an AI model with code checks', data: 'your own data' }[d.kind] || 'an AI model';
@@ -133,6 +156,7 @@
       if (!mine.length) continue;
       const head = document.createElement('h' + level);
       head.className = 'tray-head';
+      head.dataset.section = g.id;
       head.textContent = g.head;
       const box = document.createElement('div');
       box.className = 'tray-grid';
@@ -177,10 +201,10 @@
   const home = new Map(tiles.map(t => [t, t.parentElement]));
   const squares = [...tray.querySelectorAll('.tray-slot .sq')];
   // The Chat window is both where a conversation starts and where a result can be shown, so it is
-  // offered in the Finishers too: a mirror of the one tile, which stands in for it (press or drag).
+  // offered in the Outputs too: a mirror of the one tile, which stands in for it (press or drag).
   const mirrors = [];
   for (const d of DATA.tiles.filter(x => x.chat)) {
-    const t = tiles.find(x => x.dataset.id === d.id), grid = [...tray.querySelectorAll('.tray-head')].find(h => h.textContent === 'Finishers');
+    const t = tiles.find(x => x.dataset.id === d.id), grid = tray.querySelector('.tray-head[data-section="outputs"]');
     if (!t || !grid) continue;
     const slot = document.createElement('div');
     slot.className = 'tray-slot is-mirror-slot';
@@ -190,7 +214,9 @@
     const m = t.cloneNode(true);
     m.classList.add('is-mirror');
     m.dataset.mirror = d.id;
-    m.setAttribute('aria-label', `${d.name}, as a finisher: the result is shown in a chat box. Press to place the ${d.name}.`);
+    m.dataset.badge = 'O';   // here it stands for the Chat window as an output
+    m.dataset.plays = 'end';
+    m.setAttribute('aria-label', `${d.name}, as an output: the result is shown in a chat box. Press to place the ${d.name}.`);
     sq.append(m);
     const cap = document.createElement('p');
     cap.className = 'cap';
@@ -419,6 +445,24 @@
     jointKeys = keys;
   };
 
+  // On the field, a tile that can play two roles wears the letter of the one it plays now: a reader fed
+  // by the tile before it, or called by Siren, is a function (Fn), else a starter (S); the Chat window
+  // after a chain is an output (O), before one a starter (S), and beside Siren both (S/O). In the panel
+  // it says both again.
+  const roleBadges = () => {
+    const res = check(board());
+    for (const t of tiles) {
+      const d = defOf(t);
+      if (d.role !== 'reader' && d.role !== 'both') continue;
+      const p = onField(t) ? res.board.find(x => x.tile === t) : null;
+      const st = p && res.stageOf.get(p);
+      let plays = null;
+      if (st && d.role === 'reader') plays = st.preds.size || st.hubs.size ? 'middle' : 'start';
+      else if (st && !st.hubs.size) plays = st.preds.size ? 'end' : st.succs.size ? 'start' : null;
+      t.dataset.badge = plays ? BADGE[plays] : BADGE[d.role];
+      if (plays) t.dataset.plays = plays; else delete t.dataset.plays;
+    }
+  };
   const count = () => {
     const all = groups();
     let group = (last && onField(last) && all.find(g => g.includes(last))) || null;
@@ -447,6 +491,7 @@
     note.textContent = parts.join(' ');
     note.hidden = !parts.length;
     activeGroup = group;
+    roleBadges();
     joints(group);
     writeCode(group, all.length - (group.length ? 1 : 0));
     lensHints();
@@ -524,6 +569,7 @@
       resetTest();
       place(t, cell, { magnet: true });
       last = t;
+      defaults(t);
       count();
     });
     more.addEventListener('click', e => { e.stopPropagation(); i = (i + 1) % list.length; draw(); });
@@ -533,9 +579,9 @@
     cell.append(g);
     if (!still.matches) g.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
   };
-  // ---- A complete team (a chain from a Starter to a Finisher, rightly ordered and fitting; what is
+  // ---- A complete team (a chain from a Starter to an Output, rightly ordered and fitting; what is
   // still to attach does not matter here) gets a small "start" mark on its starter(s) and "end" on
-  // its finisher(s); FLOW then plays an arrow through it, in working order. ----
+  // its output(s); FLOW then plays an arrow through it, in working order. ----
   const COMPLETE_BLOCKERS = new Set(['ends', 'orphan', 'order', 'kinds']);
   const chainOf = () => {
     const b = board();
@@ -666,7 +712,8 @@
   const givesOf = t => defOf(t).gives;
   const wants = host => { const d = defOf(host); return [...(d.needs || []), ...(d.startNeeds || []), ...(d.takes || [])]; };
   const canDock = (host, att) => !!host && !isAtt(host) && onField(host)
-    && (wants(host).includes(givesOf(att)) || (givesOf(att) === 'brain' && ['ai', 'hybrid'].includes(host.dataset.kind) && !isLensT(host)))
+    && (wants(host).includes(givesOf(att)) || (givesOf(att) === 'brain' && ['ai', 'hybrid'].includes(host.dataset.kind) && !isLensT(host))
+      || (givesOf(att) === 'skill' && (defOf(att).serves || []).includes(host.dataset.id)))
     && !docked(host).some(c => c !== att && givesOf(c) === givesOf(att));
   const original = id => tiles.find(t => t.dataset.id === id);
   const dockOf = host => {
@@ -741,6 +788,7 @@
     tile.classList.remove('is-dragging');
     ['transform', 'width', 'height'].forEach(k => tile.style.removeProperty(k));
     sq.append(tile);
+    if (!sq.classList.contains('cell')) delete tile.dataset.auto;
     if (prev && prev.classList.contains('sq')) setCaption(caption(prev), tileIn(prev));
     if (sq.classList.contains('sq')) setCaption(caption(sq), tile);
     if (docks.has(tile)) {   // its attachments go where it goes; back in the panel, they come off
@@ -764,6 +812,40 @@
   const lensSpot = host => {
     const [c, r] = posOf(host.parentElement);
     return [cellAt(c, r + 1), cellAt(c, r - 1), cellAt(c - 1, r), cellAt(c + 1, r)].find(x => x && !tileIn(x)) || null;
+  };
+  // ---- Defaults (Laurent, 2026-10-07: "put 27B with it by default"; "by default add lenses and skills on
+  // compatible models"). A tile put on the field FROM THE PANEL arrives with what it is best with, exactly
+  // as if each had been picked by hand: the brain named by tiles.js "defaultBrain" when it needs a brain
+  // and its team has none yet; the skill, when the skill serves it; and MAGNOLIA, above or below it, when
+  // she serves it and is still in the panel (there is one lens). Each happens once, on arrival: taken off
+  // afterwards, nothing puts it back for that tile. A tile moved on the field gets nothing. ----
+  const autoLensSpot = host => {
+    const [c, r] = posOf(host.parentElement);
+    const free = [cellAt(c, r - 1), cellAt(c, r + 1)].filter(x => x && !tileIn(x));
+    return free.find(x => !neighbours(x).some(n => n !== host.parentElement && tileIn(n))) || free[0] || null;   // touching nothing else first
+  };
+  const defaults = (t, { brain = true, lens = true, skill = true } = {}) => {
+    if (!t || !onField(t) || isAtt(t) || isLensT(t)) return;
+    const d = defOf(t);
+    const o = DATA.defaultBrain && original(DATA.defaultBrain);
+    if (brain && o && (d.needs || []).includes('brain') && canDock(t, o)
+        && !(groups().find(g => g.includes(t)) || [t]).flatMap(docked).some(c => givesOf(c) === 'brain')) {
+      const c = copyOf(o);
+      dockOnto(c, t, false);
+      c.dataset.auto = 'brain';
+    }
+    if (skill) for (const k of tiles.filter(x => isAtt(x) && givesOf(x) === 'skill' && (defOf(x).serves || []).includes(d.id))) {
+      if (!canDock(t, k)) continue;
+      const c = copyOf(k);
+      dockOnto(c, t, false);
+      c.dataset.auto = 'skill';
+    }
+    if (lens) for (const L of tiles.filter(x => isLensT(x) && !onField(x) && (defOf(x).serves || []).includes(d.id))) {
+      const cell = autoLensSpot(t);
+      if (!cell) continue;
+      place(L, cell, { magnet: true });
+      L.dataset.auto = 'lens';
+    }
   };
   // Where a click sends a panel tile: beside the group being built, else the middle of the field.
   const nextCell = () => {
@@ -897,7 +979,10 @@
       }
     } else if (t) {
       place(tile, t.sq, { magnet: t.magnet });
-      if (t.sq.classList.contains('cell')) last = tile;
+      if (t.sq.classList.contains('cell')) {
+        last = tile;
+        if (from && from.classList.contains('sq')) defaults(tile);   // from the panel, not moved on the field
+      }
     } else place(tile, from);
     count();
   };
@@ -959,11 +1044,13 @@
         if (!cell) { say(`There is no free square beside ${mend.host.dataset.name}.`); return; }
         place(tile, cell, { magnet: true });
         last = tile;
+        defaults(tile);
         endFix();
       } else if (mend && mend.mode === 'replace' && (tileIn(mend.cell) === mend.host || !tileIn(mend.cell))) {
         if (tileIn(mend.cell)) place(mend.host, backToPanel(mend.host));
         place(tile, mend.cell, { magnet: true });
         last = tile;
+        defaults(tile);
         endFix();
       } else {
         const cell = nextCell();
@@ -971,6 +1058,7 @@
         const magnet = neighbours(cell).some(tileIn);
         place(tile, cell, { magnet });
         last = tile;
+        defaults(tile);
       }
       count();
     });
@@ -1152,7 +1240,7 @@
     if (!chatless.length && board.length && !board.some(p => isEnd(D(p.id)))) {
       for (const p of (sinks.length ? sinks : board)) {
         const d = D(p.id);
-        add('ends', p, `Nothing ends this chain: ${d.name} hands on ${kinds(d.out)}, and only a Finisher can give the result.`, 'no end');
+        add('ends', p, `Nothing ends this chain: ${d.name} hands on ${kinds(d.out)}, and only an Output can give the result.`, 'no end');
       }
     }
     // (2) one piece; then the order
@@ -1378,6 +1466,7 @@
   });
 
   const runTest = () => {
+    if (EMPTY) { say('Nothing to test yet: robot tiles are coming.', 3200); return; }
     resetTest();
     const S = parseFloat(grid.style.getPropertyValue('--cell')) || 96;
     const G = parseFloat(grid.style.getPropertyValue('--gap')) || 12;
@@ -1636,7 +1725,8 @@
   // reduced motion the path is drawn for a moment instead. Without a complete chain it says why. ----
   const flowArrow = () => {
     const chain = chainOf();
-    if (!chain) { say('FLOW needs a complete chain: a Starter, joined rightly, through to a Finisher.'); return; }
+    if (EMPTY) { say('Nothing to run yet: robot tiles are coming.', 3200); return; }
+    if (!chain) { say('FLOW needs a complete chain: a Starter, joined rightly, through to an Output.'); return; }
     resetTest();
     const levels = flowLevels(chain);
     const S = parseFloat(grid.style.getPropertyValue('--cell')) || 96, G = parseFloat(grid.style.getPropertyValue('--gap')) || 12;
@@ -1935,7 +2025,8 @@
   fixChip.setAttribute('aria-pressed', 'false');
   fixChip.innerHTML = 'Fits here <b>0</b>';
   filterBar.prepend(fixChip);
-  filterBar.hidden = false;
+  filterBar.hidden = EMPTY;
+  if (EMPTY) filterNone.textContent = DATA.empty || 'Nothing to place yet.';
   function setKind(k) {
     kind = k;
     fixChip.hidden = k !== 'fix';
@@ -1987,7 +2078,7 @@
     b.setAttribute('aria-label', `${team.name}: place ${team.plan} on the field`);
     presetBar.append(b);
   }
-  filterBar.before(presetBar);
+  if ((DATA.presets || []).length) filterBar.before(presetBar);
   let placing = [];
   const placeTeam = team => {
     if (drag) return;
@@ -2014,6 +2105,10 @@
       att.forEach(a => { const o = original(a); if (o && canDock(t, o)) dockOnto(copyOf(o), t, false); });
       count();
     }));
+    // the defaults a team does not bring itself: a team with its own lens or brain keeps its own
+    const brought = team.tiles.flatMap(([id, , , att = []]) => [id, ...att]).map(id => DEF.get(id) || {});
+    const own = { brain: !brought.some(d => d.gives === 'brain'), lens: !brought.some(d => d.role === 'lens'), skill: !brought.some(d => d.gives === 'skill') };
+    later(wait + team.tiles.length * step + (still.matches ? 0 : 60), () => team.tiles.forEach(([id]) => { const t = original(id); if (t && onField(t)) defaults(t, own); }));
     later(wait + team.tiles.length * step + (still.matches ? 0 : 120), () => { count(); say(`${team.name} (${team.plan}) is on the field. Press TesT to check it.`, 4000); });
   };
   presetBar.addEventListener('click', e => {
@@ -2179,4 +2274,86 @@
   ro.observe(tray);
   fit();
   count();
+  };
+
+  // ---- The tabs (workbench.html only: <main data-tabs>). MODELS is the workbench as it has always
+  // been; ROBOTS is the same bench, built from a copy of the page's own markup taken before anything
+  // was drawn, with an empty panel until robot tiles exist. Each keeps its own field while the other is
+  // shown. The tab is remembered per viewer (localStorage, when there is one), and #models / #robots in
+  // the address opens that tab. ----
+  const ROBOTS = { roles: {}, kinds: {}, needs: {}, sections: [], plans: {}, tiles: [], presets: [],
+    empty: 'Robot tiles are coming. Nothing to place yet.' };
+  const models = document.querySelector('.bench');
+  if (!models || !models.matches('[data-tabs]')) { initBench(models, window.AKIKI_TILES); return; }
+  const TAB_KEY = 'akiki-workbench-tab';
+  const pristine = models.cloneNode(true);   // ROBOTS is drawn from this, the first time its tab opens
+  const robots = document.createElement('section');
+  for (const k of ['class', 'aria-label']) if (models.hasAttribute(k)) robots.setAttribute(k, models.getAttribute(k));
+  let robotsBuilt = false;
+  const buildRobots = () => {
+    if (robotsBuilt) return;
+    robotsBuilt = true;
+    robots.append(...[...pristine.childNodes]);
+    robots.querySelectorAll('h1').forEach(h => h.remove());   // the page has one heading
+    robots.querySelectorAll('[id]').forEach(e => { e.id += '-robots'; });
+    robots.querySelectorAll('[aria-controls]').forEach(e => e.setAttribute('aria-controls', e.getAttribute('aria-controls') + '-robots'));
+    const robotTray = robots.querySelector('.tray');
+    if (robotTray) robotTray.setAttribute('aria-label', 'The robots');
+    initBench(robots, ROBOTS);
+  };
+  models.dataset.board = 'models';
+  robots.dataset.board = 'robots';
+  models.after(robots);
+  const bar = document.createElement('div');
+  bar.className = 'bench-tabs';
+  bar.setAttribute('role', 'tablist');
+  bar.setAttribute('aria-label', 'Workbenches');
+  const tabs = [['models', 'MODELS', models], ['robots', 'ROBOTS', robots]].map(([id, word, panel]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'bench-tab';
+    b.id = 'tab-' + id;
+    b.dataset.tab = id;
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-controls', 'panel-' + id);
+    b.textContent = word;
+    panel.id = 'panel-' + id;
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', b.id);
+    bar.append(b);
+    return { id, b, panel };
+  });
+  models.before(bar);
+  document.body.classList.add('has-bench-tabs');
+  const show = (id, { focus = false, keep = true } = {}) => {
+    if (id === 'robots') buildRobots();
+    for (const t of tabs) {
+      const on = t.id === id;
+      t.b.setAttribute('aria-selected', String(on));
+      t.b.tabIndex = on ? 0 : -1;
+      t.panel.hidden = !on;
+      if (on && focus) t.b.focus();
+    }
+    if (!keep) return;
+    try { localStorage.setItem(TAB_KEY, id); } catch (e) { /* no storage: the tab is not remembered */ }
+    if (location.hash.slice(1) !== id) try { history.replaceState(null, '', '#' + id); } catch (e) { /* fine */ }
+  };
+  const asked = () => {
+    const h = location.hash.slice(1).toLowerCase();
+    if (tabs.some(t => t.id === h)) return h;
+    try { const saved = localStorage.getItem(TAB_KEY); if (tabs.some(t => t.id === saved)) return saved; } catch (e) { /* no storage */ }
+    return 'models';
+  };
+  bar.addEventListener('click', e => { const b = e.target.closest('.bench-tab'); if (b) show(b.dataset.tab); });
+  bar.addEventListener('keydown', e => {
+    const i = tabs.findIndex(t => t.b === document.activeElement);
+    if (i < 0) return;
+    const to = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    show(tabs[(to + tabs.length) % tabs.length].id, { focus: true });
+  });
+  window.addEventListener('hashchange', () => { const h = location.hash.slice(1).toLowerCase(); if (tabs.some(t => t.id === h)) show(h); });
+  initBench(models, window.AKIKI_TILES);
+  show(asked(), { keep: false });
 })();
