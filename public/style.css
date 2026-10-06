@@ -1341,6 +1341,9 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .dock .wtile svg { border-radius: 7px; }
 .dock .wtile::before { inset: 2px; border-width: 1px; border-radius: 5px; }
 .dock.is-away { opacity: .25; }
+/* A tile using its team's brain (workbench.js, teamBrains): a faded copy of that brain, dashed, at its corner. */
+.team-brain { pointer-events: none; position: absolute; right: -9%; bottom: -9%; z-index: 6; width: calc(var(--cell) * .34); height: calc(var(--cell) * .34); border-radius: 7px; opacity: .72; outline: 1.5px dashed rgba(255, 255, 255, .85); outline-offset: -1px; box-shadow: 0 0 0 2px #151e27; }
+.team-brain svg { display: block; width: 100%; height: 100%; border-radius: 7px; }
 .cell.is-host > .wtile { box-shadow: 0 0 0 3px #fff, 0 0 26px rgba(255, 255, 255, .55); }
 
 /* TesT's verdict on a tile at fault: a red ring, and its name under it. */

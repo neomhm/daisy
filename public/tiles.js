@@ -33,6 +33,8 @@
    chat      the Chat window: where a conversation starts and ends; Siren works only beside one
    unlessFed a need waived when the tile before it brings that kind ({ documents: 'document' }: Lily needs
              no folder when a Feeder or a Scanner hands her documents)
+   brain     a brain is the TEAM's: one brain attached to any tile serves every tile of the connected team
+             that needs one; a brain attached straight onto a tile is that tile's own (an override)
    status    working (built, figures measured) | design (designed, not built) | notbuilt (named by
              Laurent, not designed yet) | yours (your own data: no figures of its own)
    params, ms, mb   millions of parameters, milliseconds per call, megabytes on disk; "" when there
@@ -149,19 +151,19 @@ window.AKIKI_TILES = {
     { id: 'qwen27b', name: 'Qwen 27B', words: 'Local: on your PC, data stays here, 17.7 GB', group: 'attach', colour: '#5f6b7a',
       role: 'attachment', gives: 'brain', where: 'local', glyph: ['.X.X.', 'XXXXX', 'XHXHX', 'XXXXX', '.X.X.'],
       status: 'working', params: '27000', ms: '', mb: '17700', tags: 'brains',
-      note: 'local: 27B class, 17.7 GB of weights on this PC, the engine Bouquet runs on today; its speed depends on your PC' },
+      note: 'local: 27B class, 17.7 GB of weights on this PC, the engine Bouquet runs on today; its speed depends on your PC; tiles sharing one brain take turns on it, so answers can be slower' },
     { id: 'qwen27b-remote', name: 'Qwen 27B remote', words: 'Remote: your cluster or a server; needs a connection; data leaves this PC unless the server is yours', group: 'attach', colour: '#4f6f8f',
       role: 'attachment', gives: 'brain', where: 'remote', glyph: ['.X.X.', 'XXXXX', 'XHXHX', 'XXXXX', 'H.H.H'],
       status: 'working', params: '27000', ms: '', mb: '0', tags: 'brains',
-      note: 'remote: 27B class, no weights on this PC; speed not measured yet' },
+      note: 'remote: 27B class, no weights on this PC; speed not measured yet; tiles sharing one brain take turns on it, so answers can be slower' },
     { id: 'glimmer', name: 'Muse Glimmer', words: 'Local: on your PC, data stays here; size not measured yet', group: 'attach', colour: '#5f6b7a',
       role: 'attachment', gives: 'brain', where: 'local', glyph: ['X.X.X', '.XHX.', 'XHHHX', '.XHX.', 'X.X.X'],
       status: 'working', params: '', ms: '', mb: '', tags: 'brains',
-      note: 'local: a general model by Meta, not measured on this page yet' },
+      note: 'local: a general model by Meta, not measured on this page yet; tiles sharing one brain take turns on it, so answers can be slower' },
     { id: 'glimmer-remote', name: 'Muse Glimmer remote', words: 'Remote: your cluster or a server; needs a connection; data leaves this PC unless the server is yours', group: 'attach', colour: '#4f6f8f',
       role: 'attachment', gives: 'brain', where: 'remote', glyph: ['X.X.X', '.XHX.', 'XHHHX', '.XHX.', 'H.H.H'],
       status: 'working', params: '', ms: '', mb: '0', tags: 'brains',
-      note: 'remote: a general model by Meta, no weights on this PC; not measured yet' },
+      note: 'remote: a general model by Meta, no weights on this PC; not measured yet; tiles sharing one brain take turns on it, so answers can be slower' },
     { id: 'database', kind: 'data', name: 'Database', words: 'Your own data', group: 'attach', colour: '#5f6b7a',
       role: 'attachment', gives: 'database', glyph: ['.XXX.', 'X...X', 'XHHHX', 'X...X', '.XXX.'],
       status: 'yours', params: '', ms: '', mb: '', tags: 'database',
@@ -199,24 +201,24 @@ window.AKIKI_TILES = {
       say: 'PLAN 1: the owner talks in the Chat window, where Siren answers; Orchid and Tulip read the owner\u2019s files for Bouquet, who plans the site; Jasmine dresses it; Iris, Thistle and Lily finish it. MAGNOLIA, a lens, reads the database for Daisy, who answers the owner through Siren.',
       tiles: [
         ['magnolia', 2, 1], ['daisy', 3, 1, ['database']],
-        ['chat', 2, 2], ['siren', 3, 2, ['qwen27b']], ['iris', 5, 2],
+        ['chat', 2, 2], ['siren', 3, 2], ['iris', 5, 2],
         ['orchid', 2, 3, ['folder']], ['bouquet', 3, 3, ['qwen27b']], ['jasmine', 4, 3], ['thistle', 5, 3],
         ['tulip', 2, 4, ['folder']], ['lily', 5, 4, ['folder']],
       ] },
     { id: 'butterfly', name: 'Butterfly', plan: 'PLAN 2', colour: '#2fb39a',
       say: 'PLAN 2: Cricket clarifies the request; Bouquet (or Butterfly) plans; Bees, Ants or Daisy (for SQL) write; Mantis audits; Dragonfly finds the suspect lines; Ladybug debugs; Firefly calls for help.',
       tiles: [
-        ['bees', 2, 1, ['qwen27b']],
-        ['cricket', 0, 2], ['bouquet', 1, 2, ['qwen27b']], ['ants', 2, 2], ['mantis', 3, 2, ['qwen27b']],
-        ['dragonfly', 4, 2, ['folder']], ['ladybug', 5, 2, ['qwen27b']], ['firefly', 6, 2],
-        ['butterfly', 1, 3, ['qwen27b', 'cicada']], ['daisy', 2, 3, ['database']], ['magnolia', 2, 4],
+        ['bees', 2, 1],
+        ['cricket', 0, 2], ['bouquet', 1, 2, ['qwen27b']], ['ants', 2, 2], ['mantis', 3, 2],
+        ['dragonfly', 4, 2, ['folder']], ['ladybug', 5, 2], ['firefly', 6, 2],
+        ['butterfly', 1, 3, ['cicada']], ['daisy', 2, 3, ['database']], ['magnolia', 2, 4],
       ] },
     { id: 'siren', name: 'Siren', plan: 'PLAN 3', colour: '#2b7fd4',
       say: 'PLAN 3: the person talks in the Chat window; Siren, beside it, calls the specialists around her: Daisy (fed by Tulip), Orchid, and Bouquet, who with Dragonfly hands the work on to Bees, Mantis and Firefly.',
       tiles: [
         ['chat', 3, 2], ['dragonfly', 4, 2, ['folder']],
         ['tulip', 1, 3, ['folder']], ['daisy', 2, 3, ['database']], ['siren', 3, 3, ['qwen27b']],
-        ['bouquet', 4, 3, ['glimmer']], ['bees', 5, 3, ['qwen27b']], ['mantis', 6, 3, ['qwen27b']], ['firefly', 7, 3],
+        ['bouquet', 4, 3], ['bees', 5, 3], ['mantis', 6, 3], ['firefly', 7, 3],
         ['magnolia', 2, 4], ['orchid', 3, 4, ['folder']],
       ] },
   ],

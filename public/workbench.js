@@ -453,7 +453,28 @@
     writeCode(group, all.length - (group.length ? 1 : 0));
     lensHints();
     syncMirrors();
+    teamBrains(all);
     refilter();
+  };
+  // The team's brain: a tile that needs a brain and has none of its own gets a small faded copy of the
+  // brain its team shares, at its corner, saying so; with no brain in the team, nothing is drawn.
+  const teamBrains = all => {
+    grid.querySelectorAll('.team-brain').forEach(x => x.remove());
+    for (const g of all) {
+      const brains = g.flatMap(docked).filter(c => givesOf(c) === 'brain');
+      if (!brains.length) continue;
+      const b = brains[0], d = defOf(b), where = d.where || 'local';
+      for (const t of g) {
+        if (!(defOf(t).needs || []).includes('brain') || docked(t).some(c => givesOf(c) === 'brain')) continue;
+        const m = document.createElement('i');
+        m.className = 'team-brain';
+        m.dataset.brain = b.dataset.id;
+        m.title = `${t.dataset.name} uses the team\u2019s brain (${d.name.replace(/ remote$/, '')} \u00b7 ${where})`;
+        m.setAttribute('aria-label', m.title);
+        m.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true"><use href="#px-${b.dataset.id}"/></svg>`;
+        t.parentElement.append(m);
+      }
+    }
   };
   // When a model with lenses is the one being worked on, the panel marks its lenses: a solid ring for
   // a lens it needs, a dashed one for a lens it works best with; and the field says so once.
@@ -484,7 +505,8 @@
   const hostOf = chip => { for (const [h, d] of docks) if (d.contains(chip)) return h; return null; };
   const givesOf = t => defOf(t).gives;
   const wants = host => { const d = defOf(host); return [...(d.needs || []), ...(d.startNeeds || []), ...(d.takes || [])]; };
-  const canDock = (host, att) => !!host && !isAtt(host) && onField(host) && wants(host).includes(givesOf(att))
+  const canDock = (host, att) => !!host && !isAtt(host) && onField(host)
+    && (wants(host).includes(givesOf(att)) || (givesOf(att) === 'brain' && ['ai', 'hybrid'].includes(host.dataset.kind) && !isLensT(host)))
     && !docked(host).some(c => c !== att && givesOf(c) === givesOf(att));
   const original = id => tiles.find(t => t.dataset.id === id);
   const dockOf = host => {
@@ -1027,7 +1049,24 @@
     }
     // (4) every tile has what it needs: its attachments, then its lenses
     const fedWith = p => new Set([...(stageOf.get(p) || { preds: [] }).preds].flatMap(q => D(q.id).out));
+    // a brain is the team's: one brain anywhere in a connected team serves every tile there that needs one
+    const brainOf = p => [...(p.attIds || [])].find(id => (DEF.get(id) || {}).gives === 'brain');
+    const brainSay = id => `${DNAME(id).replace(/ remote$/, '')} (${(DEF.get(id) || {}).where || 'local'})`;
+    for (const piece of pieces) {
+      const thinkers = piece.filter(p => (D(p.id).needs || []).includes('brain'));
+      if (!thinkers.length) continue;
+      const own = thinkers.filter(brainOf), shared = piece.map(brainOf).find(Boolean);
+      if (!shared) { add('needs', thinkers[0], 'This team needs a brain: attach one (Qwen or Glimmer, local or remote) to any tile \u2014 every tile that needs a brain will share it.', 'needs a brain', { mode: 'attach', need: 'brain' }); continue; }
+      if (thinkers.every(brainOf)) {   // each has its own: say each one's
+        for (const p of thinkers) notes.push(`${nm(p)} uses ${p.id === 'siren' ? 'her' : 'its'} own brain, ${brainSay(brainOf(p))}.`);
+        continue;
+      }
+      const sharers = thinkers.filter(p => !brainOf(p) || brainOf(p) === shared);
+      if (sharers.length > 1 || sharers.some(p => !brainOf(p))) notes.push(`${names(sharers)} ${sharers.length > 1 ? 'share' : 'uses'} the team\u2019s brain, ${brainSay(shared)}.`);
+      for (const p of own.filter(p => brainOf(p) !== shared)) notes.push(`${nm(p)} uses ${p.id === 'siren' ? 'her' : 'its'} own brain, ${brainSay(brainOf(p))}.`);
+    }
     for (const p of board) for (const need of D(p.id).needs || []) {
+      if (need === 'brain') continue;   // the team's, above
       const waive = (D(p.id).unlessFed || {})[need];
       if (waive && fedWith(p).has(waive)) continue;
       if (!p.att.has(need)) add('needs', p, `${nm(p)} needs ${DATA.needs[need]}: attach one onto ${nm(p)}.`, `needs ${DATA.needs[need].replace(/^an? /, '')}`, { mode: 'attach', need });
