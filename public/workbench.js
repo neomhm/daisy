@@ -41,7 +41,26 @@
   // square at its right says its role (style.css, "Roles"). ----
   const NS = 'http://www.w3.org/2000/svg';
   const sprite = (document.querySelector('svg > symbol') || {}).parentNode || document.body.appendChild(document.createElementNS(NS, 'svg'));
-  const drawing = d => {   // the page's own icon; for a tile with none, one drawn from its glyph
+  // A code tile shows "</>", drawn in the logo's pixels in the tile's own colour (currentColor), on no square.
+  const CODE_PX = [[2, 0], [1, 1], [0, 2], [1, 3], [2, 4], [7, 0], [6, 1], [5, 2], [4, 3], [3, 4], [9, 0], [10, 1], [11, 2], [10, 3], [9, 4]];
+  const codeSymbol = (id, x0, y0, p, size) => {
+    if (document.getElementById(id)) return id;
+    const sym = document.createElementNS(NS, 'symbol');
+    sym.id = id;
+    sym.setAttribute('viewBox', '0 0 40 40');
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('fill', 'currentColor');
+    for (const [c, r] of CODE_PX) {
+      const px = document.createElementNS(NS, 'rect');
+      [['x', x0 + c * p], ['y', y0 + r * p], ['width', size], ['height', size], ['rx', size * 0.25]].forEach(([k, v]) => px.setAttribute(k, v.toFixed(2)));
+      g.append(px);
+    }
+    sym.append(g);
+    sprite.append(sym);
+    return id;
+  };
+  const drawing = d => {   // the page's own icon; for a tile with none, one drawn from its glyph; for code, "</>"
+    if (d.kind === 'code') return codeSymbol('px-code', 4.6, 13.6, 2.6, 2.2);
     const id = `px-${d.id}`;
     if (document.getElementById(id)) return id;
     const sym = document.createElementNS(NS, 'symbol');
@@ -97,10 +116,13 @@
     Object.assign(b.dataset, { id: d.id, name: d.name, words: d.words, role: d.role, status: d.status,
       params: d.params, ms: d.ms, mb: d.mb, tags: d.tags || '', note: d.note || '' });
     b.style.setProperty('--tc', d.colour);
+    b.dataset.kind = d.kind || 'ai';
     const prof = profile(d);
     b.setAttribute('aria-label', `${d.name}: ${d.words[0].toLowerCase() + d.words.slice(1)}. ${roleSay(d)[0].toUpperCase() + roleSay(d).slice(1)}. ${d.note}.${prof ? ' ' + prof[0].toUpperCase() + prof.slice(1) + '.' : ''}`);
-    b.title = `${d.name}: ${d.words}${prof ? '\n' + prof[0].toUpperCase() + prof.slice(1) : ''}\n${d.note}`;
-    b.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true"><use href="#${drawing(d)}"/></svg>`;
+    const kindSay = { code: 'code: no brain, always does the same', hybrid: 'an AI model with code checks', data: 'your own data' }[d.kind] || 'an AI model';
+    b.title = `${d.name}: ${d.words}${prof ? '\n' + prof[0].toUpperCase() + prof.slice(1) : ''}\n${d.note}\n${kindSay[0].toUpperCase() + kindSay.slice(1)}`;
+    b.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true"><use href="#${drawing(d)}"/></svg>`
+      + (d.kind === 'hybrid' ? `<svg class="hy-mark" viewBox="0 0 40 40" aria-hidden="true"><use href="#${codeSymbol('px-code-mark', 2.8, 10.6, 3, 2.6)}"/></svg>` : '');
     return b;
   };
   {
@@ -139,6 +161,14 @@
       item.dataset.role = role;
       item.innerHTML = '<i></i>';
       item.append(r.label);
+      legend.append(item);
+    }
+    for (const [k, label] of [['ai', 'AI model'], ['code', 'code'], ['data', 'data']]) {   // and the three looks
+      const item = document.createElement('span');
+      item.dataset.kind = k;
+      item.className = 'lg-kind';
+      item.innerHTML = '<i></i>';
+      item.append(label);
       legend.append(item);
     }
     field.append(legend);
@@ -709,6 +739,13 @@
       if (onField(tile)) {
         place(tile, backToPanel(tile));
         if (last === tile) last = null;
+      } else if (mend && mend.mode === 'beside' && onField(mend.host)) {   // beside it: on its left first
+        const [c, r] = posOf(mend.host.parentElement);
+        const cell = [cellAt(c - 1, r), cellAt(c, r - 1), cellAt(c, r + 1), cellAt(c + 1, r)].find(x => x && !tileIn(x));
+        if (!cell) { say(`There is no free square beside ${mend.host.dataset.name}.`); return; }
+        place(tile, cell, { magnet: true });
+        last = tile;
+        endFix();
       } else if (mend && mend.mode === 'replace' && (tileIn(mend.cell) === mend.host || !tileIn(mend.cell))) {
         if (tileIn(mend.cell)) place(mend.host, backToPanel(mend.host));
         place(tile, mend.cell, { magnet: true });
@@ -849,12 +886,14 @@
     const names = ps => list([...new Set(ps.map(nm))]);
     const hub = p => !!(p && D(p.id).hub);
     const stageOf = new Map();
+    const lone = p => !!p && D(p.id).chat;   // a Chat window stacks with nothing: it is never an alternative
     for (const p of board) {
       if (stageOf.has(p) || hub(p)) continue;
       const st = { members: [], preds: new Set(), succs: new Set(), hubs: new Set() };
+      if (lone(p)) { st.members.push(p); stageOf.set(p, st); continue; }
       let r0 = p.r;
-      while (get(p.c, r0 - 1) && !hub(get(p.c, r0 - 1))) r0--;
-      for (let r = r0; get(p.c, r) && !hub(get(p.c, r)); r++) { st.members.push(get(p.c, r)); stageOf.set(get(p.c, r), st); }
+      while (get(p.c, r0 - 1) && !hub(get(p.c, r0 - 1)) && !lone(get(p.c, r0 - 1))) r0--;
+      for (let r = r0; get(p.c, r) && !hub(get(p.c, r)) && !lone(get(p.c, r)); r++) { st.members.push(get(p.c, r)); stageOf.set(get(p.c, r), st); }
     }
     const edges = [];
     for (const p of board) for (const [dc, dr] of [[1, 0], [0, 1]]) {
@@ -875,14 +914,17 @@
     // (1) a start and an end
     const sources = board.filter(p => !hub(p) && !stageOf.get(p).preds.size && !stageOf.get(p).hubs.size);
     const sinks = board.filter(p => !hub(p) && !stageOf.get(p).succs.size && !stageOf.get(p).hubs.size);
+    // Siren talks only inside a Chat window: the conversation starts and ends there
+    const chatless = board.filter(p => hub(p) && !around(p).some(q => D(q.id).chat));
+    for (const p of chatless) add('ends', p, `${nm(p)} talks only inside a Chat window: a conversation starts and ends there, so put a Chat window beside ${nm(p)}.`, 'no chat window', { mode: 'beside', ids: DATA.tiles.filter(d => d.chat).map(d => d.id) });
     if (!board.length) for (const p of full) add('ends', p, `${nm(p)} is a lens: it is not a model by itself; put it beside ${list((D(p.id).serves || []).map(DNAME))}.`, 'no model', { mode: 'none' });
-    if (board.length && !board.some(p => isStart(D(p.id)))) {
+    if (!chatless.length && board.length && !board.some(p => isStart(D(p.id)))) {
       for (const p of (sources.length ? sources : board)) {
         const d = D(p.id);
         add('ends', p, `Nothing starts this chain: ${d.name} ${d.in.length ? `needs ${kinds(d.in)}, and ` : ''}only a Starter can begin a chain.`, 'no start');
       }
     }
-    if (board.length && !board.some(p => isEnd(D(p.id)))) {
+    if (!chatless.length && board.length && !board.some(p => isEnd(D(p.id)))) {
       for (const p of (sinks.length ? sinks : board)) {
         const d = D(p.id);
         add('ends', p, `Nothing ends this chain: ${d.name} hands on ${kinds(d.out)}, and only a Finisher can give the result.`, 'no end');
@@ -911,7 +953,7 @@
       }
     }
     for (const p of board) {
-      if (hub(p)) continue;
+      if (hub(p) || D(p.id).role === 'both') continue;   // a start and an end at once may stand anywhere
       const d = D(p.id), st = stageOf.get(p);
       const before = st.preds.size > 0, after = st.succs.size > 0, called = st.hubs.size > 0;
       if (d.role === 'start' && before) add('order', p, `${d.name} cannot follow ${names([...st.preds])}: ${d.name} starts a chain, so nothing can come before ${d.name}.`, 'wrong order', { other: [...st.preds] });
@@ -974,10 +1016,15 @@
     const h = board.find(hub);
     const called = stages.filter(st => st.hubs.size);
     let path;
-    if (h && stages.every(st => st.hubs.size && !st.preds.size && !st.succs.size)) path = [nm(h), ...stages.map(says), ...(stages.length ? [nm(h)] : [])].join(' \u2192 ');
+    const chatSt = stages.filter(st => st.members.some(p => D(p.id).chat) && st.hubs.size && !st.succs.size);
+    const chatSay = chatSt.length ? chatSt.map(says).join(', ') : '';
+    if (h && stages.every(st => st.hubs.size && !st.preds.size && !st.succs.size)) {
+      const others = stages.filter(st => !chatSt.includes(st)).map(says);
+      path = [chatSay, nm(h), ...others, ...(others.length ? [nm(h)] : []), chatSay].filter(Boolean).join(' \u2192 ');
+    }
     else {
       const seenSt = new Set(), chains = [];
-      for (const st of stages.filter(x => !x.preds.size && (x.succs.size || !x.hubs.size))) {   // a tile Siren only calls is said with her
+      for (const st of stages.filter(x => !x.preds.size && (x.succs.size || !x.hubs.size) && !chatSt.includes(x))) {   // a tile Siren only calls is said with her
         const chain = [];
         for (let cur = st; cur;) {
           chain.push(says(cur));
@@ -988,7 +1035,8 @@
         }
         chains.push(chain.join(' \u2192 '));
       }
-      if (h && called.length) chains.push(`${nm(h)} calls ${list(called.map(says))}`);
+      const calledOthers = called.filter(st => !chatSt.includes(st));
+      if (h && called.length) chains.push(`${chatSay ? chatSay + ' \u21c4 ' : ''}${nm(h)}${calledOthers.length ? ', who calls ' + list(calledOthers.map(says)) : ''}`);
       path = chains.filter(Boolean).join('; ');
     }
     return { ok: !cat, cat, faults, all: errs, edges, path, notes: [...new Set(notes)] };
@@ -1002,6 +1050,7 @@
   const fitting = (b, fault) => {
     if (fault.mode === 'attach') return DATA.tiles.filter(d => d.gives === fault.need).map(d => d.id);
     if (fault.mode === 'lens') return [fault.lens];
+    if (fault.mode === 'beside') return fault.ids;
     if (fault.mode !== 'replace') return [];
     return tiles.filter(t => !isAtt(t) && !isLensT(t) && !onField(t)).map(t => t.dataset.id).filter(id => {
       const q = { id, c: fault.p.c, r: fault.p.r, att: new Set(D(id).needs || []) };
@@ -1030,6 +1079,7 @@
     if (fault.mode === 'none') what.textContent = '';
     else if (!ids.size) what.textContent = 'No tile in the panel fits there.';
     else if (fault.mode === 'attach') what.textContent = `Below: what can go onto ${host.dataset.name}. Press one to attach it.`;
+    else if (fault.mode === 'beside') what.textContent = `Below: what goes beside ${host.dataset.name}. Press it to put it there.`;
     else if (fault.mode === 'lens') what.textContent = `Below: the lens ${host.dataset.name} needs. Press it to put it beside ${host.dataset.name}.`;
     else what.textContent = `Below: the ${ids.size === 1 ? 'tile' : `${ids.size} tiles`} that could take ${host.dataset.name}’s place. Press one to swap it in.`;
     fixBox.hidden = false;

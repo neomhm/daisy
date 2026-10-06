@@ -1264,6 +1264,36 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .dock .wtile::before { display: none; }   /* docked, an attachment says what it is by where it sits */
 .wtile.is-ghost { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; transform-origin: top left; }
 
+/* Three looks (tiles.js "kind"). An AI model is filled with its colour, rounded, and glows softly,
+   as if alive: brains and the lens attach to these. CODE (no brain, always does the same) is a
+   blueprint: outlined in its colour, square corners, a faint grid, a "</>" instead of a creature,
+   no glow. A hybrid (a model plus code checks) is an AI tile with a small "</>" in its corner.
+   Data keeps its own look. On the dark field a code tile's ink is lightened to stay above 3:1. */
+.wtile[data-kind="ai"] svg, .wtile[data-kind="hybrid"] svg:not(.hy-mark) { animation: alive 5s ease-in-out infinite alternate; }
+@keyframes alive {
+  from { filter: drop-shadow(0 0 2px color-mix(in srgb, var(--tc) 35%, transparent)); }
+  to { filter: drop-shadow(0 0 7px color-mix(in srgb, var(--tc) 60%, transparent)); }
+}
+.wtile[data-kind="code"] {
+  --ink: color-mix(in srgb, var(--tc) 82%, #000);
+  border-radius: 2px;
+  color: var(--ink);
+  background-color: color-mix(in srgb, var(--tc) 9%, #fff);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--tc) 16%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--tc) 16%, transparent) 1px, transparent 1px);
+  background-size: 12.5% 12.5%;
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.cell .wtile[data-kind="code"] { --ink: color-mix(in srgb, var(--tc) 55%, #fff); background-color: color-mix(in srgb, var(--tc) 14%, #0e141a); }
+.wtile[data-kind="code"] svg { border-radius: 2px; }
+.cell .wtile[data-kind="code"].is-active { box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 2px rgba(255, 255, 255, .9); }
+.wtile .hy-mark { position: absolute; left: 6%; bottom: 6%; width: 30%; height: auto; aspect-ratio: 1; padding: 1px; box-sizing: border-box; border-radius: 3px; background: rgba(15, 20, 26, .78); color: #fff; }
+.field-legend .lg-kind i { border: 0; border-radius: 3px; background: #c9d4de; box-shadow: 0 0 6px rgba(201, 212, 222, .7); }
+.field-legend .lg-kind[data-kind="code"] i { border-radius: 0; background: transparent; box-shadow: inset 0 0 0 1.5px #c9d4de; }
+.field-legend .lg-kind[data-kind="data"] i { background: #5f6b7a; box-shadow: none; }
+.field-legend .lg-kind:first-of-type { margin-left: 10px; }
+
 /* A fitted joint (workbench.js, joints): the facing sides of two tiles that fit are notched, and a
    key in their two colours sits in both notches. The notch depths are animatable properties, so a
    new joint keys in. A pair that does not fit keeps the plain magnet bar. */
@@ -1271,7 +1301,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 @property --nr { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
 @property --nt { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
 @property --nb { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
-.wtile.is-keyed svg {
+.wtile.is-keyed svg:not(.hy-mark) {
   -webkit-mask:
     linear-gradient(#000 0 0) left center / var(--nl) 30% no-repeat,
     linear-gradient(#000 0 0) right center / var(--nr) 30% no-repeat,
@@ -1696,6 +1726,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing, .key-test .key-leds i, .is-writing .code-live::before, .cell .wtile.is-wrong { animation: none; }
   .code-wrap { transition: none; }
   .wtile.is-dragging, .wtile svg { transition: none; }
+  .wtile[data-kind] svg { animation: none !important; }
   .joint.is-keyed.is-new, .joint.is-lens.is-new { animation: none; }
 }
 
