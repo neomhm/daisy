@@ -103,9 +103,8 @@
   const sectionOf = d => (d.role === 'start' || d.role === 'both' || d.role === 'reader' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'finishers'
     : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.role === 'skill' ? 'skills' : d.gives === 'brain' ? 'brains' : 'data');
   const fillCap = (cap, d) => {
-    cap.innerHTML = '<b></b><span></span>';
-    cap.firstChild.textContent = d.name.toLowerCase();
-    cap.lastChild.textContent = d.words;
+    cap.innerHTML = '<span></span>';   // the panel shows what a tile does; its name is in its tooltip and label
+    cap.firstChild.textContent = d.words;
     const plan = (DATA.plans || {})[d.group];
     if (plan) { const tag = document.createElement('em'); tag.className = 'plan-tag'; tag.textContent = plan; cap.append(tag); }
   };
@@ -195,9 +194,8 @@
     sq.append(m);
     const cap = document.createElement('p');
     cap.className = 'cap';
-    cap.innerHTML = '<b></b><span></span>';
-    cap.firstChild.textContent = d.name.toLowerCase();
-    cap.lastChild.textContent = 'The result, shown in a chat box';
+    cap.innerHTML = '<span></span>';
+    cap.firstChild.textContent = 'The result, shown in a chat box';
     slot.append(sq, cap);
     grid.nextElementSibling.prepend(slot);
     mirrors.push([m, t]);
@@ -454,8 +452,170 @@
     lensHints();
     syncMirrors();
     teamBrains(all);
+    liveGuide();
     refilter();
   };
+  // ---- The live guide. Whenever a tile is placed, the square under it says at once whether it joins
+  // its neighbours rightly, by TesT's own rules: a soft green glow and a tick, or a soft red one and
+  // a cross whose title (or a press) gives the reason; a tile alone, or a chain still being built,
+  // says nothing. Only what is wrong NOW counts: an order the wrong way round, kinds that do not
+  // fit, a lens beside the wrong model. Then, beside a rightly placed tile, the free square to its
+  // right (and, on a wide screen, the one below it, for an alternative) shows faint "ghosts" of
+  // every tile that would fit there, each with one word; a press on a ghost places that tile. ----
+  const LIVE = new Set(['no fit', 'wrong order', 'misplaced lens']);
+  const WORD = { facts: 'facts', table: 'table', document: 'documents', image: 'image', design: 'design', plan: 'plan',
+    code: 'code', findings: 'checks', ranking: 'search', request: 'task', question: 'ask', text: 'chat', message: 'help', spec: 'answer', reading: 'reading' };
+  const wordOf = d => d.word || (d.role === 'lens' ? 'lens' : WORD[(d.out || [])[0]] || 'result');
+  const faultsAt = (b, at) => check(b).all.filter(e => LIVE.has(e.big) && (e.p === at || (e.other || []).includes(at)));
+  const markCell = (cell, faults) => {
+    cell.classList.remove('is-ok', 'is-bad');
+    cell.querySelectorAll(':scope > .fit-mark').forEach(x => x.remove());
+    if (!faults) return;
+    cell.classList.add(faults.length ? 'is-bad' : 'is-ok');
+    const m = document.createElement('button');
+    m.type = 'button';
+    m.className = 'fit-mark';
+    m.textContent = faults.length ? '\u2715' : '\u2713';
+    m.title = faults.length ? faults[0].sentence : 'This tile joins its neighbours rightly.';
+    m.setAttribute('aria-label', m.title);
+    m.addEventListener('click', e => { e.stopPropagation(); say(m.title, 4200); });
+    cell.append(m);
+  };
+  const liveVerdict = (b, at) => {   // null: nothing to say (alone); else the faults that involve it now
+    const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => b.some(p => p.c === at.c + dc && p.r === at.r + dr));
+    return near ? faultsAt(b, at) : null;
+  };
+  const ghostsFor = (b, at, cell) => {   // every panel tile that may stand in this free square, rightly
+    const [c, r] = posOf(cell);
+    return tiles.filter(t => !isAtt(t) && !onField(t) && !t.classList.contains('is-dragging')).filter(t => {
+      const q = { id: t.dataset.id, c, r, att: new Set(), attIds: new Set() };
+      const bb = [...b, q];
+      return !faultsAt(bb, q).length && !faultsAt(bb, bb.find(p => p.c === at.c && p.r === at.r)).length;
+    }).sort((x, y) => (defOf(x).in || []).includes('*') - (defOf(y).in || []).includes('*'));
+  };
+  const showGhosts = (cell, list) => {
+    if (!list.length) return;
+    let i = 0;
+    const g = document.createElement('div');
+    g.className = 'ghost';
+    g.dataset.all = list.map(t => t.dataset.id).join(' ');
+    const face = document.createElement('button');
+    face.type = 'button';
+    face.className = 'ghost-face';
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'ghost-more';
+    const draw = () => {
+      const t = list[i], d = defOf(t);
+      g.dataset.id = t.dataset.id;
+      g.style.setProperty('--tc', d.colour);
+      face.dataset.kind = d.kind || 'ai';
+      face.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true"><use href="#${drawing(d)}"/></svg><span class="ghost-word"></span>`;
+      face.querySelector('.ghost-word').textContent = wordOf(d);
+      face.setAttribute('aria-label', `Place ${d.name} here (${wordOf(d)})`);
+      face.title = `${d.name}: ${d.words}`;
+      more.textContent = `+${list.length - 1}`;
+      more.setAttribute('aria-label', `Show the next of ${list.length} tiles that fit here`);
+    };
+    face.addEventListener('click', e => {
+      e.stopPropagation();
+      const t = list[i];
+      if (!t || onField(t) || tileIn(cell)) return;
+      resetTest();
+      place(t, cell, { magnet: true });
+      last = t;
+      count();
+    });
+    more.addEventListener('click', e => { e.stopPropagation(); i = (i + 1) % list.length; draw(); });
+    g.append(face);
+    if (list.length > 1) g.append(more);
+    draw();
+    cell.append(g);
+    if (!still.matches) g.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
+  };
+  // ---- A complete team (a chain from a Starter to a Finisher, rightly ordered and fitting; what is
+  // still to attach does not matter here) gets a small "start" mark on its starter(s) and "end" on
+  // its finisher(s); FLOW then plays an arrow through it, in working order. ----
+  const COMPLETE_BLOCKERS = new Set(['ends', 'orphan', 'order', 'kinds']);
+  const chainOf = () => {
+    const b = board();
+    if (!b.length) return null;
+    const res = check(b);
+    if (res.all.some(e => COMPLETE_BLOCKERS.has(e.cat))) return null;
+    const st = p => res.stageOf.get(p);
+    const steps = res.board.filter(p => st(p));
+    const starts = steps.filter(p => !st(p).preds.size && isStart(D(p.id)) && (!res.hub || !st(p).hubs.size || D(p.id).chat || !st(p).succs.size === false));
+    const ends = steps.filter(p => !st(p).succs.size && isEnd(D(p.id)));
+    return { res, starts: starts.filter(p => !st(p).hubs.size || D(p.id).chat || st(p).succs.size), ends };
+  };
+  // The arrow's journey, as levels of hops [from tile, to tile] played one level after another.
+  const flowLevels = chain => {
+    const { res } = chain, st = p => res.stageOf.get(p), h = res.hub, levels = [];
+    const allStages = [...new Set([...res.stageOf.values()])];
+    const seen = new Set();
+    const pipeOn = frontier => {   // from these stages along the pipes, one level per step
+      while (frontier.length) {
+        const next = [...new Set(frontier.flatMap(x => [...x.succs].map(st)))].filter(x => !seen.has(x));
+        const hops = frontier.flatMap(x => [...x.succs].map(st).filter(y => next.includes(y)).flatMap(y => x.members.flatMap(g => y.members.map(m => [g, m]))));
+        if (hops.length) levels.push(hops);
+        next.forEach(x => seen.add(x));
+        frontier = next;
+      }
+    };
+    const chats = allStages.filter(x => x.members.some(p => D(p.id).chat) && x.hubs.size);
+    const sources = allStages.filter(x => !x.preds.size && !x.hubs.size);
+    sources.forEach(x => seen.add(x));
+    if (sources.length) pipeOn(sources);
+    if (h) {
+      chats.forEach(x => seen.add(x));
+      levels.push(chats.flatMap(x => x.members.filter(p => D(p.id).chat).map(p => [p, h])));
+      const called = allStages.filter(x => x.hubs.size && !chats.includes(x));
+      called.forEach(x => seen.add(x));
+      const calls = called.flatMap(x => x.members.map(m => [h, m]));
+      if (calls.length) levels.push(calls);
+      pipeOn(called.filter(x => x.succs.size));
+      const back = called.filter(x => !x.succs.size).flatMap(x => x.members.map(m => [m, h]));
+      if (back.length) levels.push(back);
+      levels.push(chats.flatMap(x => x.members.filter(p => D(p.id).chat).map(p => [h, p])));
+    }
+    return levels.filter(l => l.length);
+  };
+  const chainMarks = chain => {
+    grid.querySelectorAll('.chain-mark').forEach(x => x.remove());
+    keyFlow.classList.toggle('is-off', !chain);
+    keyFlow.setAttribute('aria-disabled', String(!chain));
+    if (!chain) return;
+    const put = (p, word) => {
+      const cell = p.tile.parentElement;
+      let m = cell.querySelector(':scope > .chain-mark');
+      if (!m) { m = document.createElement('i'); m.className = 'chain-mark'; cell.append(m); }
+      m.textContent = m.textContent ? m.textContent + ' \u00b7 ' + word : word;
+      m.dataset.mark = m.textContent;
+    };
+    chain.starts.forEach(p => put(p, 'start'));
+    chain.ends.forEach(p => put(p, 'end'));
+  };
+  const liveGuide = () => {
+    chainMarks(drag ? null : chainOf());
+    cells.forEach(cell => { markCell(cell, null); cell.querySelectorAll(':scope > .ghost').forEach(x => x.remove()); });
+    if (drag || !last || !onField(last)) return;
+    const b = board(), at = b.find(p => p.tile === last);
+    const verdict = liveVerdict(b, at);
+    markCell(last.parentElement, verdict);
+    if (verdict && verdict.length) return;   // ghosts only beside a tile that stands rightly
+    const [c, r] = posOf(last.parentElement);
+    const spots = [cellAt(c + 1, r), ...(phone.matches ? [] : [cellAt(c, r + 1)])].filter(x => x && !tileIn(x));
+    const role = last.dataset.role;   // below: true alternatives only, tiles of the same role
+    for (const cell of spots) showGhosts(cell, ghostsFor(b, at, cell).filter(t => cell === spots[0] && posOf(cell)[1] === posOf(last.parentElement)[1] || t.dataset.role === role));
+  };
+  // While a tile is dragged over a square, that square already says green or red.
+  const hoverVerdict = (tile, cell) => {
+    if (isAtt(tile)) return null;
+    const [c, r] = posOf(cell);
+    const q = { id: tile.dataset.id, c, r, att: new Set(docked(tile).map(givesOf)), attIds: new Set(docked(tile).map(x => x.dataset.id)) };
+    return liveVerdict([...board().filter(p => p.tile !== tile), q], q);
+  };
+
   // The team's brain: a tile that needs a brain and has none of its own gets a small faded copy of the
   // brain its team shares, at its corner, saying so; with no brain in the team, nothing is drawn.
   const teamBrains = all => {
@@ -627,7 +787,7 @@
   let drag = null, target = null, swallowClick = false;
   const clearTarget = () => {
     if (!target) return;
-    target.el.classList.remove('is-target', 'is-magnet', 'is-host');
+    target.el.classList.remove('is-target', 'is-magnet', 'is-host', 'is-ok', 'is-bad');
     target.el.style.removeProperty('--tc');
     target = null;
   };
@@ -705,6 +865,11 @@
       t.el.classList.add('is-target');
       t.el.classList.toggle('is-magnet', t.magnet);
       t.el.classList.toggle('is-host', !!t.host);
+      if (t.sq && t.sq.classList.contains('cell') && !t.host) {   // the live guide, before the drop
+        const v = hoverVerdict(tile, t.sq);
+        t.el.classList.toggle('is-ok', !!v && !v.length);
+        t.el.classList.toggle('is-bad', !!v && !!v.length);
+      }
       t.el.style.setProperty('--tc', getComputedStyle(tile).getPropertyValue('--tc'));
       if (t.magnet && t.sq && !still.matches) {   // the magnet pulls the tile a little toward its square
         const b = t.sq.getBoundingClientRect();
@@ -1138,7 +1303,7 @@
       if (h && called.length) chains.push(`${chatSay ? chatSay + ' \u21c4 ' : ''}${nm(h)}${calledOthers.length ? ', who calls ' + list(calledOthers.map(says)) : ''}`);
       path = chains.filter(Boolean).join('; ');
     }
-    return { ok: !cat, cat, faults, all: errs, edges, path, notes: [...new Set(notes)] };
+    return { ok: !cat, cat, faults, all: errs, edges, path, notes: [...new Set(notes)], stageOf, hub: h || null, board };
   };
   const board = () => cells.filter(tileIn).map(cell => {
     const t = tileIn(cell), [c, r] = posOf(cell);
@@ -1466,6 +1631,64 @@
   // screens count: each model loaded from its own folder, then, outward from the model that comes
   // earliest in the work, each one called with what the models joined to it hand on. It is
   // rewritten as tiles move: new lines are typed in, lines that go fold away. ----
+  // ---- FLOW, the fourth key: an arrow travels through the complete team in its working order,
+  // splitting at stacked alternatives and passing lenses and brains by (they are not steps); with
+  // reduced motion the path is drawn for a moment instead. Without a complete chain it says why. ----
+  const flowArrow = () => {
+    const chain = chainOf();
+    if (!chain) { say('FLOW needs a complete chain: a Starter, joined rightly, through to a Finisher.'); return; }
+    resetTest();
+    const levels = flowLevels(chain);
+    const S = parseFloat(grid.style.getPropertyValue('--cell')) || 96, G = parseFloat(grid.style.getPropertyValue('--gap')) || 12;
+    const ctr = p => [p.c * (S + G) + S / 2, p.r * (S + G) + S / 2];
+    const layer = document.createElement('div');
+    layer.className = 'flow-layer';
+    layer.dataset.levels = JSON.stringify(levels.map(l => l.map(([a, b]) => a.id + '>' + b.id)));
+    grid.append(layer);
+    keyFlow.classList.add('is-running');
+    const HOP = 520, done = () => { layer.remove(); keyFlow.classList.remove('is-running'); };
+    if (still.matches) {   // the path, drawn still for a moment
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('class', 'flow-path');
+      for (const [a, b] of levels.flat()) {
+        const l = document.createElementNS(NS, 'line');
+        const [x1, y1] = ctr(a), [x2, y2] = ctr(b);
+        [['x1', x1], ['y1', y1], ['x2', x2], ['y2', y2]].forEach(([k, v]) => l.setAttribute(k, v));
+        svg.append(l);
+      }
+      layer.append(svg);
+      setTimeout(done, 1800);
+      return;
+    }
+    levels.forEach((hops, k) => hops.forEach(([a, b]) => {
+      const [x1, y1] = ctr(a), [x2, y2] = ctr(b), ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+      const arrow = document.createElement('i');
+      arrow.className = 'flow-arrow';
+      layer.append(arrow);
+      arrow.animate([
+        { transform: `translate(${x1}px, ${y1}px) rotate(${ang}deg) scale(.6)`, opacity: 0 },
+        { transform: `translate(${x1 + (x2 - x1) * 0.15}px, ${y1 + (y2 - y1) * 0.15}px) rotate(${ang}deg)`, opacity: 1, offset: 0.15 },
+        { transform: `translate(${x1 + (x2 - x1) * 0.85}px, ${y1 + (y2 - y1) * 0.85}px) rotate(${ang}deg)`, opacity: 1, offset: 0.85 },
+        { transform: `translate(${x2}px, ${y2}px) rotate(${ang}deg) scale(.6)`, opacity: 0 },
+      ], { duration: HOP, delay: k * HOP, easing: 'ease-in-out', fill: 'both' });
+      setTimeout(() => { glow(b.id); b.tile.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.5)', offset: 0.4 }, { filter: 'brightness(1)' }], { duration: 380 }); }, (k + 1) * HOP - 60);
+    }));
+    setTimeout(done, levels.length * HOP + 400);
+  };
+  const keyFlow = (() => {
+    const k = document.createElement('button');
+    k.className = 'key key-flow is-off';
+    k.type = 'button';
+    k.setAttribute('aria-label', 'Flow: show the work travelling through the team');
+    k.setAttribute('aria-disabled', 'true');
+    k.innerHTML = '<span class="key-face"><svg class="key-icon is-wide" viewBox="0 0 31 19" aria-hidden="true">'
+      + [[0, 8], [4, 8], [8, 8], [12, 8], [16, 8], [20, 8], [16, 4], [20, 4], [24, 8], [16, 12], [20, 12], [12, 0], [12, 16], [28, 8]].filter(([x, y]) => !(x === 12 && (y === 0 || y === 16)))
+        .map(([x, y]) => `<rect x="${x}" y="${y}" width="3" height="3" rx=".8"/>`).join('')
+      + '</svg><span class="key-word">FLOW</span></span>';
+    bench.querySelector('.field-keys').append(k);
+    k.addEventListener('click', flowArrow);
+    return k;
+  })();
   const keyCode = bench.querySelector('.key-code');
   const codeWrap = bench.querySelector('.code-wrap');
   const view = codeWrap.querySelector('.code-view');

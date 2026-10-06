@@ -1266,6 +1266,41 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .dock .wtile::before { display: none; }   /* docked, an attachment says what it is by where it sits */
 .wtile.is-ghost { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; transform-origin: top left; }
 
+/* The live guide (workbench.js). The square under a just-placed or dragged tile glows softly green
+   (it joins rightly) or red (it does not), with a tick or a cross so colour is not the only sign;
+   the cross gives its reason when hovered or pressed. Ghosts: faint tiles in a free square, each
+   with one word, that a press places. A complete team marks its "start" and "end"; FLOW sends an
+   arrow through it. */
+.cell.is-ok, .cell.is-target.is-ok { box-shadow: 0 0 0 2px rgba(63, 201, 128, .85), 0 0 20px rgba(63, 201, 128, .4); }
+.cell.is-bad, .cell.is-target.is-bad { box-shadow: 0 0 0 2px rgba(255, 107, 99, .9), 0 0 20px rgba(255, 90, 80, .4); }
+.fit-mark {
+  position: absolute; left: -7px; top: -7px; z-index: 8;
+  display: grid; place-items: center; width: 18px; height: 18px; padding: 0;
+  border: 1.5px solid #fff; border-radius: 50%;
+  background: #1f8f55; color: #fff; font: 700 10px/1 var(--mono);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .5); cursor: help;
+}
+.cell.is-bad > .fit-mark { background: #c8372f; }
+.ghost { position: absolute; inset: 0; z-index: 2; }
+.ghost-face {
+  position: absolute; inset: 0; padding: 0; border: 1.5px dashed rgba(255, 255, 255, .55); border-radius: 9px;
+  background: transparent; opacity: .5; cursor: pointer; transition: opacity .15s;
+  color: color-mix(in srgb, var(--tc) 55%, #fff);
+}
+.ghost-face[data-kind="code"] { border-radius: 2px; }
+.ghost-face:hover, .ghost-face:focus-visible { opacity: .9; outline: none; }
+.ghost-face svg { display: block; width: 100%; height: 100%; border-radius: 8px; }
+.ghost-word { position: absolute; left: 50%; bottom: 5%; transform: translateX(-50%); padding: 1px 6px; border-radius: 999px; background: rgba(9, 13, 18, .85); color: #fff; font: 600 10px/1.4 var(--mono); white-space: nowrap; }
+.ghost-more { position: absolute; right: -6px; top: -6px; z-index: 3; padding: 1px 5px; border: 1px solid rgba(255, 255, 255, .6); border-radius: 999px; background: rgba(9, 13, 18, .9); color: #ffe2a8; font: 600 10px/1.4 var(--mono); cursor: pointer; }
+.chain-mark { position: absolute; left: 50%; top: -9px; z-index: 7; transform: translateX(-50%); padding: 0 6px; border-radius: 4px; background: #ffc14d; color: #1b1405; font: 400 11px/1.5 "AKIKI Pixel", var(--mono); white-space: nowrap; pointer-events: none; box-shadow: 0 0 10px rgba(255, 170, 40, .55); }
+.flow-layer { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
+.flow-arrow { position: absolute; left: 0; top: 0; width: 0; height: 0; border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-left: 16px solid #ffc14d; margin: -9px 0 0 -8px; filter: drop-shadow(0 0 6px rgba(255, 170, 40, .95)); transform-origin: 8px 9px; }
+.flow-path { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.flow-path line { stroke: #ffc14d; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 2 7; filter: drop-shadow(0 0 4px rgba(255, 170, 40, .9)); }
+.key-word { font: 400 20px/1 "AKIKI Pixel", var(--mono); letter-spacing: .04em; text-shadow: 0 0 6px rgba(255, 170, 40, .85); }
+.key-flow.is-off .key-face { filter: saturate(.3) brightness(.7); }
+.key-flow.is-running .key-face { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .17), inset 0 0 0 1px rgba(255, 193, 77, .6), 0 0 20px rgba(255, 170, 40, .3); }
+
 /* Three looks (tiles.js "kind"). An AI model is filled with its colour, rounded, and glows softly,
    as if alive: brains and the lens attach to these. CODE (no brain, always does the same) is a
    blueprint: outlined in its colour, square corners, a faint grid, a "</>" instead of a creature,
@@ -1723,7 +1758,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   .bench { grid-template-columns: minmax(0, 1fr); height: auto; }
   .splitter { display: none; }
   .field { padding: 48px 12px 16px; row-gap: 18px; }
-  .field-keys { position: static; grid-template-columns: repeat(3, minmax(0, 112px)); gap: 12px; width: 100%; justify-content: center; transform: none; }   /* under the squares, side by side */
+  .field-keys { position: static; grid-template-columns: repeat(4, minmax(0, 112px)); gap: 12px; width: 100%; justify-content: center; transform: none; }   /* under the squares, side by side */
   .key { height: 72px; }
   .tray-scroll { overflow: visible; }
   .field-legend { position: static; gap: 4px 12px; }

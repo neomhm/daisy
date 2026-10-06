@@ -3,7 +3,8 @@
    akikiSnap(target, next): a short wheel or trackpad scroll down from the top glides the page to
    `target`, and a short one up from the target's top glides it back; scrolls inside scrollable parts
    stay there; the paired CSS snapping is switched off during the glide. `next` is an optional button
-   that glides down. On phones the page scrolls freely. */
+   that glides down. A swipe on a tablet does the same at those two edges. On phones the page scrolls
+   freely. */
 window.akikiSnap = (bench, next) => {
 
   const html = document.documentElement;
@@ -51,6 +52,23 @@ window.akikiSnap = (bench, next) => {
     e.preventDefault();
     if (!gliding) glide(down ? at : 0);
   }, { passive: false });
+
+  // Touch on a wide screen (a tablet): a swipe that starts where nothing inside can scroll that way
+  // (the tiles panel already at its top, say) glides between the two screens too. Without this the
+  // page's snapping pulled it straight back to the workbench, and the board could not be reached.
+  let touch = null;
+  window.addEventListener('touchstart', e => {
+    if (!wide.matches || e.touches.length !== 1) { touch = null; return; }
+    touch = { y: e.touches[0].clientY, target: e.target, at: scrollY, up: inner(e.target, -1), down: inner(e.target, 1) };
+  }, { passive: true });
+  window.addEventListener('touchend', e => {
+    if (!touch || gliding) { touch = null; return; }
+    const dy = (e.changedTouches[0] || {}).clientY - touch.y, at = benchAt(), t = touch;
+    touch = null;
+    if (!(Math.abs(dy) > 40)) return;
+    if (dy > 0 && !t.up && t.at >= at - 2 && t.at <= at + 2) glide(0);          // finger down at the workbench's top: back to the first screen
+    else if (dy < 0 && !t.down && t.at <= 2) glide(at);                         // finger up on the first screen: to the workbench
+  }, { passive: true });
 
   if (next) next.addEventListener('click', e => { e.preventDefault(); glide(benchAt()); });
 };
