@@ -100,7 +100,7 @@
     if (d.heads) parts.push('her roles: ' + d.heads.map(h => `${h.does} (${h.status})`).join(', '));
     return parts.join('; ');
   };
-  const sectionOf = d => (d.role === 'start' || d.role === 'both' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'finishers'
+  const sectionOf = d => (d.role === 'start' || d.role === 'both' || d.role === 'reader' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'finishers'
     : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.role === 'skill' ? 'skills' : d.gives === 'brain' ? 'brains' : 'data');
   const fillCap = (cap, d) => {
     cap.innerHTML = '<b></b><span></span>';
@@ -177,6 +177,32 @@
   let test = null;   // the test running, if any (see "The keys" below)
   const home = new Map(tiles.map(t => [t, t.parentElement]));
   const squares = [...tray.querySelectorAll('.tray-slot .sq')];
+  // The Chat window is both where a conversation starts and where a result can be shown, so it is
+  // offered in the Finishers too: a mirror of the one tile, which stands in for it (press or drag).
+  const mirrors = [];
+  for (const d of DATA.tiles.filter(x => x.chat)) {
+    const t = tiles.find(x => x.dataset.id === d.id), grid = [...tray.querySelectorAll('.tray-head')].find(h => h.textContent === 'Finishers');
+    if (!t || !grid) continue;
+    const slot = document.createElement('div');
+    slot.className = 'tray-slot is-mirror-slot';
+    slot.dataset.home = d.id + '-out';
+    const sq = document.createElement('div');
+    sq.className = 'sq';
+    const m = t.cloneNode(true);
+    m.classList.add('is-mirror');
+    m.dataset.mirror = d.id;
+    m.setAttribute('aria-label', `${d.name}, as a finisher: the result is shown in a chat box. Press to place the ${d.name}.`);
+    sq.append(m);
+    const cap = document.createElement('p');
+    cap.className = 'cap';
+    cap.innerHTML = '<b></b><span></span>';
+    cap.firstChild.textContent = d.name.toLowerCase();
+    cap.lastChild.textContent = 'The result, shown in a chat box';
+    slot.append(sq, cap);
+    grid.nextElementSibling.prepend(slot);
+    mirrors.push([m, t]);
+  }
+  const syncMirrors = () => mirrors.forEach(([m, t]) => m.closest('.tray-slot').classList.toggle('is-empty', !home.get(t).contains(t)));
 
   // The field's squares, COLS x ROWS of them; rebuilt when the grid's size changes.
   const cells = [];
@@ -340,10 +366,10 @@
     const x = defOf(a), y = defOf(b);
     if (x.hub || y.hub) {   // Siren and a specialist she calls
       const [h, o] = x.hub ? [x, y] : [y, x];
-      return (o.role === 'start' || fitsKinds(h.out, o.in)) && (o.role === 'end' || fitsKinds(o.out, h.in));
+      return (o.role === 'start' || o.role === 'reader' || fitsKinds(h.out, o.in)) && (o.role === 'end' || fitsKinds(o.out, h.in));
     }
     if (across) return x.role !== 'end' && y.role !== 'start' && fitsKinds(x.out, y.in);
-    return x.role === y.role && (x.role === 'start' || x.in.some(k => y.in.includes(k)));   // alternatives take the same work
+    return x.role === y.role && (x.role === 'start' || x.role === 'reader' || x.in.some(k => y.in.includes(k)));   // alternatives take the same work
   };
   const joints = (active = activeGroup) => {
     grid.querySelectorAll('.joint').forEach(j => j.remove());
@@ -426,6 +452,7 @@
     joints(group);
     writeCode(group, all.length - (group.length ? 1 : 0));
     lensHints();
+    syncMirrors();
     refilter();
   };
   // When a model with lenses is the one being worked on, the panel marks its lenses: a solid ring for
@@ -456,7 +483,7 @@
   const docked = host => (docks.has(host) ? [...docks.get(host).children] : []);
   const hostOf = chip => { for (const [h, d] of docks) if (d.contains(chip)) return h; return null; };
   const givesOf = t => defOf(t).gives;
-  const wants = host => { const d = defOf(host); return [...(d.needs || []), ...(d.takes || [])]; };
+  const wants = host => { const d = defOf(host); return [...(d.needs || []), ...(d.startNeeds || []), ...(d.takes || [])]; };
   const canDock = (host, att) => !!host && !isAtt(host) && onField(host) && wants(host).includes(givesOf(att))
     && !docked(host).some(c => c !== att && givesOf(c) === givesOf(att));
   const original = id => tiles.find(t => t.dataset.id === id);
@@ -625,7 +652,7 @@
   };
 
   const start = (e, tile) => {
-    const r = tile.getBoundingClientRect();
+    const r = (drag.rectFrom || tile).getBoundingClientRect();
     if (isAtt(tile) && !hostOf(tile)) {   // from the panel: the copy is dragged, the tile stays
       tile = drag.tile = copyOf(tile);
       drag.from = null;
@@ -767,6 +794,17 @@
     tile.addEventListener('blur', hot(false));
   }
   tiles.forEach(wire);
+  for (const [m, t] of mirrors) {   // the mirror hands every press and drag to the tile it stands for
+    m.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || drag || !home.get(t).contains(t)) return;
+      drag = { tile: t, id: e.pointerId, x0: e.clientX, y0: e.clientY, moving: false, rectFrom: m };
+      window.addEventListener('pointermove', onMove, { passive: false });
+      window.addEventListener('pointerup', onEnd);
+      window.addEventListener('pointercancel', onEnd);
+    });
+    m.addEventListener('dragstart', e => e.preventDefault());
+    m.addEventListener('click', () => { if (!swallowClick && !drag && home.get(t).contains(t)) t.click(); });
+  }
 
   bench.querySelector('.field-clear').addEventListener('click', () => {
     placing.forEach(clearTimeout);   // a team still being placed stops
@@ -868,7 +906,7 @@
   // goes; (4) every tile having the attachments it needs. Each fault names the tile at fault (p),
   // and the tile it could not follow (other) when there is one. ----
   const D = id => DEF.get(id);
-  const isStart = d => d.role === 'start' || d.role === 'both';
+  const isStart = d => d.role === 'start' || d.role === 'both' || d.role === 'reader';   // a reader may start
   const isEnd = d => d.role === 'end' || d.role === 'both';
   const kinds = ks => orList(ks.map(k => (k === '*' ? 'any result' : DATA.kinds[k] || k)));
   const fitsKinds = (out, inn) => out.length > 0 && (inn.includes('*') || out.some(k => inn.includes(k)));
@@ -958,7 +996,7 @@
       const before = st.preds.size > 0, after = st.succs.size > 0, called = st.hubs.size > 0;
       if (d.role === 'start' && before) add('order', p, `${d.name} cannot follow ${names([...st.preds])}: ${d.name} starts a chain, so nothing can come before ${d.name}.`, 'wrong order', { other: [...st.preds] });
       else if (d.role === 'end' && after) add('order', p, `Nothing can follow ${d.name}: ${d.name} ends a chain, and ${names([...st.succs])} ${st.succs.size > 1 ? 'are' : 'is'} after ${d.name}.`, 'wrong order', { other: [...st.succs] });
-      else if (d.role !== 'start' && !before && !called) add('order', p, `Nothing comes before ${d.name}: ${d.name} needs ${kinds(d.in)}, from a start tile on the left or from Siren beside it.`, 'no start');
+      else if (d.role !== 'start' && d.role !== 'reader' && !before && !called) add('order', p, `Nothing comes before ${d.name}: ${d.name} needs ${kinds(d.in)}, from a start tile on the left or from Siren beside it.`, 'no start');
       else if (d.role !== 'end' && !after && !called) add('order', p, `What ${d.name} gives goes nowhere: ${d.name} hands on ${kinds(d.out)}, and a chain must end in a tile that gives the result.`, 'dead end');
     }
     // (3) every two touching tiles fit
@@ -975,7 +1013,7 @@
       } else {
         for (const m of stageOf.get(e.to).members) {
           const h = D(e.from.id), x = D(m.id);
-          if (x.role !== 'start' && !fitsKinds(h.out, x.in)) add('kinds', m, `${h.name} cannot call ${x.name}: ${h.name} gives ${kinds(h.out)}, ${x.name} needs ${kinds(x.in)}.`, 'no fit', { other: [e.from] });
+          if (x.role !== 'start' && !(x.role === 'reader' && !stageOf.get(m).preds.size) && !fitsKinds(h.out, x.in)) add('kinds', m, `${h.name} cannot call ${x.name}: ${h.name} gives ${kinds(h.out)}, ${x.name} needs ${kinds(x.in)}.`, 'no fit', { other: [e.from] });
           else if (x.role !== 'end' && !fitsKinds(x.out, h.in)) add('kinds', m, `${x.name} cannot answer ${h.name}: ${x.name} gives ${kinds(x.out)}, ${h.name} needs ${kinds(h.in)}.`, 'no fit', { other: [e.from] });
         }
       }
@@ -988,8 +1026,30 @@
       }
     }
     // (4) every tile has what it needs: its attachments, then its lenses
+    const fedWith = p => new Set([...(stageOf.get(p) || { preds: [] }).preds].flatMap(q => D(q.id).out));
     for (const p of board) for (const need of D(p.id).needs || []) {
+      const waive = (D(p.id).unlessFed || {})[need];
+      if (waive && fedWith(p).has(waive)) continue;
       if (!p.att.has(need)) add('needs', p, `${nm(p)} needs ${DATA.needs[need]}: attach one onto ${nm(p)}.`, `needs ${DATA.needs[need].replace(/^an? /, '')}`, { mode: 'attach', need });
+    }
+    // a Chat window at the end of a chain, with no Siren: the result is shown in a chat box
+    for (const p of board.filter(q => D(q.id).chat && stageOf.get(q).preds.size && !stageOf.get(q).hubs.size)) {
+      const got = [...new Set([...stageOf.get(p).preds].flatMap(q => D(q.id).out))];
+      notes.push(`The ${kinds(got).replace(/^an? /, '')} ${got.length > 1 || /s$/.test(got[0]) ? 'are' : 'is'} shown in the Chat window, a chat box.`);
+    }
+    // a reader with nothing before it starts the chain from its own attachment; fed, it needs none
+    for (const p of board) {
+      const d = D(p.id);
+      if (d.role !== 'reader' || hub(p)) continue;
+      const fed = [...stageOf.get(p).preds];
+      if (fed.length) {
+        const a = D(fed[0].id), got = a.out.filter(k => d.in.includes(k));
+        if (fed.length === 1 && got.length && stageOf.get(p).succs.size) notes.push(`${d.name} reads the ${kinds(got).replace(/^an? /, '')} ${a.name} brings and hands ${kinds(d.out).replace(/^an? /, '')} to ${names([...stageOf.get(p).succs])}.`);
+        continue;
+      }
+      for (const need of d.startNeeds || []) {
+        if (!p.att.has(need)) add('needs', p, `${d.name} has nothing to read: attach ${DATA.needs[need]} onto ${d.name}, or put a tile that brings ${kinds(d.in)} before ${d.name}.`, `needs ${DATA.needs[need].replace(/^an? /, '')}`, { mode: 'attach', need });
+      }
     }
     for (const p of board) {
       const L = D(p.id).lenses;
@@ -1376,10 +1436,10 @@
   const codeCount = codeWrap.querySelector('.code-count');
   // For each model: what it is given when a team starts with it, what it hands on, and how early
   // in the work it comes, from its role and its kinds in tiles.js.
-  const RANK = { start: 0, both: 0, middle: 1, end: 2 };
+  const RANK = { start: 0, both: 0, reader: 0, middle: 1, end: 2 };
   const role = t => {
     const d = defOf(t);
-    const given = d.role === 'both' ? 'message' : d.role === 'start' ? (d.needs || [])[0] || 'source' : (d.in || [])[0] || 'data';
+    const given = d.role === 'both' ? 'message' : d.role === 'start' ? (d.needs || [])[0] || 'source' : d.role === 'reader' ? (d.startNeeds || d.in || [])[0] || 'source' : (d.in || [])[0] || 'data';
     return [given === '*' ? 'result' : given, (d.out || [])[0] || 'result', RANK[d.role] ?? 1];
   };
   const colour = id => { const t = tiles.find(x => x.dataset.id === id); return t ? t.style.getPropertyValue('--tc') : ''; };

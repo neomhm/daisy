@@ -4,7 +4,10 @@
    marks each tile's ROLE with a small square, and its TesT key checks a team against these rules. Edit a tile
    here and both pages follow; nothing about a tile is written anywhere else.
 
-   role      start      takes the data in; only a start can begin a chain (a chat, a feeder, a scanner,
+   role      reader     a starter OR a function: with nothing before it, it starts the chain from what is
+                        attached to it ("startNeeds", e.g. a Documents folder); after a tile that brings
+                        what it accepts ("in"), it works on that instead and needs no attachment
+             start      takes the data in; only a start can begin a chain (a chat, a feeder, a scanner,
                         or a model that reads your files or your database)
              middle     works on what the tile on its left hands it, and hands its own work on
              end        gives the result (a chat's answer, an image, an API, a port)
@@ -28,6 +31,8 @@
    kind      ai (a trained model; the default) | code (no brain, always does the same) | hybrid (a model
              plus code checks) | data (your own data). The panel draws each kind its own way.
    chat      the Chat window: where a conversation starts and ends; Siren works only beside one
+   unlessFed a need waived when the tile before it brings that kind ({ documents: 'document' }: Lily needs
+             no folder when a Feeder or a Scanner hands her documents)
    status    working (built, figures measured) | design (designed, not built) | notbuilt (named by
              Laurent, not designed yet) | yours (your own data: no figures of its own)
    params, ms, mb   millions of parameters, milliseconds per call, megabytes on disk; "" when there
@@ -39,6 +44,7 @@
 window.AKIKI_TILES = {
   roles: {
     start: { label: 'starter', say: 'starts a chain' },
+    reader: { label: 'starter or function', say: 'starts a chain from what is attached to it, or works on what the tile before it brings' },
     middle: { label: 'function', say: 'works in the middle of a chain' },
     end: { label: 'finisher', say: 'finishes a chain with a result' },
     both: { label: 'starter + finisher', say: 'starts and finishes a chain' },
@@ -67,11 +73,11 @@ window.AKIKI_TILES = {
       status: 'working', params: '', ms: '24500', mb: '', tags: 'website',
       note: 'a planning prompt and its checker on the brain you attach; 17 to 32 s per call on the 27B, counted as 24.5 s' },
     { id: 'orchid', name: 'Orchid', words: 'Finds the facts', group: 'flowers', colour: '#c2549e',
-      role: 'start', in: [], out: ['facts'], needs: ['documents'], lenses: { best: ['magnolia'] },
+      role: 'reader', in: ['document'], out: ['facts'], needs: [], startNeeds: ['documents'], lenses: { best: ['magnolia'] },
       status: 'working', params: '32.8', ms: '77', mb: '131', tags: 'documents',
       note: '32.8M parameters, 131 MB, 77 ms per chunk' },
     { id: 'tulip', name: 'Tulip', words: 'Imports spreadsheets', group: 'flowers', colour: '#3aa56f',
-      role: 'start', in: [], out: ['table'], needs: ['documents'], lenses: { best: ['magnolia'] },
+      role: 'reader', in: ['document'], out: ['table'], needs: [], startNeeds: ['documents'], lenses: { best: ['magnolia'] },
       status: 'working', params: '61.6', ms: '120', mb: '', tags: 'database documents',
       note: '61.6M parameters, 0.12 s per sheet' },
     { id: 'jasmine', kind: 'hybrid', name: 'Jasmine', words: 'Dresses the site', group: 'flowers', colour: '#a06fc2',
@@ -103,7 +109,7 @@ window.AKIKI_TILES = {
       status: 'working', params: '', ms: '400', mb: '', tags: 'website checks',
       note: 'code checks, no size of her own; 0.2 to 0.6 s per audit, counted as 0.4 s' },
     { id: 'lily', name: 'Lily', words: 'Makes the logo', group: 'flowers', colour: '#e65b56',
-      role: 'end', in: ['facts', 'document', 'design'], out: ['image'], needs: ['documents'], lenses: { best: ['magnolia'] },
+      role: 'end', in: ['facts', 'document', 'design'], out: ['image'], needs: ['documents'], unlessFed: { documents: 'document' }, lenses: { best: ['magnolia'] },
       status: 'design', params: '', ms: '', mb: '', tags: 'website documents',
       note: 'not built yet, no figures' },
     // Butterfly's insects (PLAN 2): all in design
@@ -111,7 +117,7 @@ window.AKIKI_TILES = {
       role: 'middle', in: ['text', 'request'], out: ['plan'], needs: ['brain'], takes: ['memory'],
       status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'in design, no figures yet' },
     { id: 'cricket', name: 'Cricket', words: 'Asks first', group: 'insects', colour: '#3aa56f',
-      role: 'start', in: [], out: ['request'], needs: [],
+      role: 'reader', in: ['text'], out: ['request'], needs: [],
       status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'in design, no figures yet' },
     { id: 'bees', name: 'Bees', words: 'Write the code', group: 'insects', colour: '#f0a444',
       role: 'middle', in: ['plan', 'request', 'ranking'], out: ['code'], needs: ['brain'], takes: ['memory'],
@@ -173,7 +179,7 @@ window.AKIKI_TILES = {
       role: 'both', in: ['*'], out: ['text', 'question', 'request'], needs: [],
       status: 'notbuilt', params: '', ms: '', mb: '', tags: 'voice code', note: 'code, not built yet' },
     { id: 'feeder', kind: 'code', name: 'Feeder', words: 'Feeds your documents (RAG)', group: 'io', colour: '#6a7480',
-      role: 'start', in: [], out: ['document'], needs: ['documents'], glyph: ['X.X.X', '.....', 'XXXXX', '.XHX.', '..X..'],
+      role: 'reader', in: ['document'], out: ['document'], needs: [], startNeeds: ['documents'], glyph: ['X.X.X', '.....', 'XXXXX', '.XHX.', '..X..'],
       status: 'notbuilt', params: '', ms: '', mb: '', tags: 'documents', note: 'not built yet' },
     { id: 'scanner', name: 'Scanner', words: 'Reads paper and photos', group: 'io', colour: '#6a7480',
       role: 'start', in: [], out: ['document'], needs: [], glyph: ['XXXXX', 'X...X', 'HHHHH', 'X...X', 'XXXXX'],

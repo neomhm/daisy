@@ -1259,6 +1259,8 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   pointer-events: none;
 }
 .wtile[data-role="both"]::before { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
+.wtile[data-role="reader"] { --rc: var(--role-start); }
+.wtile[data-role="reader"]::before { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-middle) 50%); }   /* a starter or a function */
 .wtile[data-role="attachment"]::before { background: transparent; }
 .wtile[data-role="lens"]::before { border-radius: 50%; background: var(--role-lens); }   /* a lens: a round mark */
 .dock .wtile::before { display: none; }   /* docked, an attachment says what it is by where it sits */
@@ -1352,6 +1354,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .field-legend i { box-sizing: border-box; width: 11px; height: 11px; border: 2px solid #fff; border-radius: 3px; background: var(--role-middle); }   /* the role squares, as on the tiles */
 .field-legend [data-role="start"] i { background: var(--role-start); }
 .field-legend [data-role="end"] i { background: var(--role-end); }
+.field-legend [data-role="reader"] i { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-middle) 50%); }
 .field-legend [data-role="both"] i { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
 .field-legend [data-role="attachment"] i { background: transparent; }
 .field-legend [data-role="lens"] i { border-radius: 50%; background: var(--role-lens); }
