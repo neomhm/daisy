@@ -1237,7 +1237,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
    end) is split in both, and an attachment (a brain, a database, a folder) has a hollow square.
    The square has a white edge and a faint dark outline, so it reads on light and dark tiles alike;
    each role colour is above 4.5:1 against that white edge. */
-.bench { --role-start: #1f6fd1; --role-middle: #b35f00; --role-end: #0d7f86; --role-att: #5f6b7a; }
+.bench { --role-start: #1f6fd1; --role-middle: #b35f00; --role-end: #0d7f86; --role-att: #5f6b7a; --role-lens: #7048c8; }
 .wtile { --rc: var(--role-middle); }
 .wtile[data-role="start"] { --rc: var(--role-start); }
 .wtile[data-role="end"] { --rc: var(--role-end); }
@@ -1260,6 +1260,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 }
 .wtile[data-role="both"]::before { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
 .wtile[data-role="attachment"]::before { background: transparent; }
+.wtile[data-role="lens"]::before { border-radius: 50%; background: var(--role-lens); }   /* a lens: a round mark */
 .dock .wtile::before { display: none; }   /* docked, an attachment says what it is by where it sits */
 .wtile.is-ghost { position: fixed; left: 0; top: 0; z-index: 100; pointer-events: none; transform-origin: top left; }
 
@@ -1289,6 +1290,16 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .wtile svg { transition: --nl .32s cubic-bezier(.3, 1.4, .5, 1), --nr .32s cubic-bezier(.3, 1.4, .5, 1), --nt .32s cubic-bezier(.3, 1.4, .5, 1), --nb .32s cubic-bezier(.3, 1.4, .5, 1); }
 .joint.is-keyed { z-index: 3; border-radius: 2px; opacity: 1; background: linear-gradient(var(--dir), var(--a) 0 50%, var(--b) 50%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); }
 .joint.is-keyed.is-active { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6), 0 0 10px color-mix(in srgb, var(--a) 70%, transparent); }
+/* A lens on the model it serves: a glass lens across the gap, not the key that passes work on. */
+.joint.is-lens {
+  z-index: 3;
+  opacity: 1;
+  border: 2px solid rgba(255, 255, 255, .85);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .75), rgba(184, 160, 255, .45) 45%, rgba(112, 72, 200, .55));
+  box-shadow: 0 0 0 1px rgba(112, 72, 200, .7), 0 0 14px rgba(160, 130, 255, .55);
+}
+.joint.is-lens.is-new { animation: key-in .5s .12s cubic-bezier(.3, 1.5, .5, 1) both; }
 .joint.is-keyed.is-new { animation: key-in .5s .12s cubic-bezier(.3, 1.5, .5, 1) both; }
 @keyframes key-in { from { transform: scale(.2); opacity: 0; filter: brightness(2); } 55% { opacity: 1; } }
 
@@ -1313,6 +1324,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .field-legend [data-role="end"] i { background: var(--role-end); }
 .field-legend [data-role="both"] i { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
 .field-legend [data-role="attachment"] i { background: transparent; }
+.field-legend [data-role="lens"] i { border-radius: 50%; background: var(--role-lens); }
 .field-tip { position: absolute; left: 50%; top: 46px; z-index: 8; max-width: min(460px, calc(100% - 32px)); margin: 0; padding: 7px 13px; border-radius: 10px; background: rgba(9, 13, 18, .92); box-shadow: 0 0 0 1px rgba(255, 193, 77, .5); color: #ffe2a8; font: 12px/1.4 var(--mono); text-align: center; transform: translateX(-50%); pointer-events: none; }
 .field-tip[hidden] { display: none; }
 
@@ -1568,6 +1580,10 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .cap { margin: 0; min-height: 2.7em; color: var(--fg-muted); font-size: 11px; line-height: 1.3; text-align: center; }
 .cap b { display: block; color: #2f4d5c; font: 400 13px/1.2 "AKIKI Pixel", var(--mono); }
 .tray-slot.is-empty .cap { visibility: hidden; }
+.plan-tag { display: table; margin: 3px auto 0; padding: 0 5px; border-radius: 4px; background: #eef1f4; color: #57606a; font: 600 9.5px/1.6 var(--mono); font-style: normal; letter-spacing: .03em; }
+/* The lenses of the model being worked on (workbench.js, lensHints): solid ring = it needs this lens, dashed = works best with it. */
+.tray-slot.is-lens-need .sq { box-shadow: 0 0 0 3px var(--role-lens), 0 0 14px rgba(112, 72, 200, .45); }
+.tray-slot.is-lens-best .sq { outline: 2px dashed var(--role-lens); outline-offset: 3px; }
 
 /* The code (workbench.js). The CODE key opens an editor above the screens that writes, live, the
    Python joining the team on the field: each model loaded from its own folder, then called with
@@ -1680,7 +1696,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   .cell.is-target.is-magnet, .joint.is-new, .screen.is-changing, .key-test .key-leds i, .is-writing .code-live::before, .cell .wtile.is-wrong { animation: none; }
   .code-wrap { transition: none; }
   .wtile.is-dragging, .wtile svg { transition: none; }
-  .joint.is-keyed.is-new { animation: none; }
+  .joint.is-keyed.is-new, .joint.is-lens.is-new { animation: none; }
 }
 
 /* Home, second screen: the workbench, under the board. A little scroll either way settles the

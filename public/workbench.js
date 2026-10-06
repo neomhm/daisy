@@ -34,6 +34,7 @@
   const DEF = new Map(DATA.tiles.map(d => [d.id, d]));
   const defOf = t => DEF.get(t.dataset.id);
   const isAtt = t => t.dataset.role === 'attachment';
+  const isLensT = t => t.dataset.role === 'lens';
   const orList = words => (words.length < 3 ? words.join(' or ') : words.slice(0, -1).join(', ') + ' or ' + words[words.length - 1]);
 
   // ---- The panel's tiles, built from tiles.js. Each is its own icon, in its own colour; a small
@@ -68,6 +69,25 @@
     return id;
   };
   const roleSay = d => DATA.roles[d.role].say;
+  const DNAME = id => (DEF.get(id) || { name: id }).name;
+  // A tile's profile, in its tooltip and in what it says: what it needs, and the lenses it works best with.
+  const profile = d => {
+    const parts = [];
+    const needs = [...(d.needs || []).map(n => DATA.needs[n]), ...((d.lenses || {}).needs || []).map(x => `${DNAME(x.lens)}${x.why ? ' ' + x.why : ''}`)];
+    if (needs.length) parts.push('needs: ' + needs.join(', '));
+    if ((d.lenses || {}).best) parts.push('works best with: ' + d.lenses.best.map(DNAME).join(', '));
+    if (d.serves) parts.push('a lens for ' + d.serves.map(DNAME).join(', '));
+    return parts.join('; ');
+  };
+  const sectionOf = d => (d.role === 'start' || d.role === 'both' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'finishers'
+    : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.gives === 'brain' ? 'brains' : 'data');
+  const fillCap = (cap, d) => {
+    cap.innerHTML = '<b></b><span></span>';
+    cap.firstChild.textContent = d.name.toLowerCase();
+    cap.lastChild.textContent = d.words;
+    const plan = (DATA.plans || {})[d.group];
+    if (plan) { const tag = document.createElement('em'); tag.className = 'plan-tag'; tag.textContent = plan; cap.append(tag); }
+  };
   const makeTile = d => {
     const b = document.createElement('button');
     b.className = 'wtile';
@@ -75,7 +95,9 @@
     Object.assign(b.dataset, { id: d.id, name: d.name, words: d.words, role: d.role, status: d.status,
       params: d.params, ms: d.ms, mb: d.mb, tags: d.tags || '', note: d.note || '' });
     b.style.setProperty('--tc', d.colour);
-    b.setAttribute('aria-label', `${d.name}: ${d.words[0].toLowerCase() + d.words.slice(1)}. ${roleSay(d)[0].toUpperCase() + roleSay(d).slice(1)}. ${d.note}.`);
+    const prof = profile(d);
+    b.setAttribute('aria-label', `${d.name}: ${d.words[0].toLowerCase() + d.words.slice(1)}. ${roleSay(d)[0].toUpperCase() + roleSay(d).slice(1)}. ${d.note}.${prof ? ' ' + prof[0].toUpperCase() + prof.slice(1) + '.' : ''}`);
+    b.title = `${d.name}: ${d.words}${prof ? '\n' + prof[0].toUpperCase() + prof.slice(1) : ''}\n${d.note}`;
     b.innerHTML = `<svg viewBox="0 0 40 40" aria-hidden="true"><use href="#${drawing(d)}"/></svg>`;
     return b;
   };
@@ -83,8 +105,8 @@
     const scroll = tray.querySelector('.tray-scroll');
     const level = scroll.dataset.head || '2';
     scroll.querySelectorAll('.tray-head, .tray-grid').forEach(x => x.remove());
-    for (const g of DATA.groups) {
-      const mine = DATA.tiles.filter(d => d.group === g.id);
+    for (const g of DATA.sections) {
+      const mine = DATA.tiles.filter(d => sectionOf(d) === g.id);
       if (!mine.length) continue;
       const head = document.createElement('h' + level);
       head.className = 'tray-head';
@@ -100,9 +122,7 @@
         sq.append(makeTile(d));
         const cap = document.createElement('p');
         cap.className = 'cap';
-        cap.innerHTML = '<b></b><span></span>';
-        cap.firstChild.textContent = d.name.toLowerCase();
-        cap.lastChild.textContent = d.words;
+        fillCap(cap, d);
         slot.append(sq, cap);
         box.append(slot);
       }
@@ -310,7 +330,13 @@
         keys.add(key);
         const j = document.createElement('i');
         j.className = 'joint';
-        if (pairFits(a, b, !!dc)) {   // a key in two notches
+        const lens = isLensT(a) ? [a, b] : isLensT(b) ? [b, a] : null;
+        if (lens && (defOf(lens[0]).serves || []).includes(lens[1].dataset.id)) {   // a lens on its model: a lens-shaped link
+          j.classList.add('is-lens');
+          const L = S * 0.42, T = G + S * 0.1;
+          if (dc) Object.assign(j.style, { left: (c * (S + G) + S + G / 2 - T / 2) + 'px', top: (r * (S + G) + (S - L) / 2) + 'px', width: T + 'px', height: L + 'px' });
+          else Object.assign(j.style, { left: (c * (S + G) + (S - L) / 2) + 'px', top: (r * (S + G) + S + G / 2 - T / 2) + 'px', width: L + 'px', height: T + 'px' });
+        } else if (!lens && pairFits(a, b, !!dc)) {   // a key in two notches
           j.classList.add('is-keyed');
           if (dc) { sides.get(a).r = NOTCH; sides.get(b).l = NOTCH; } else { sides.get(a).b = NOTCH; sides.get(b).t = NOTCH; }
           const D = S * NOTCH / 100, L = S * KEYLEN, e = Math.max(1.5, S * 0.025);
@@ -367,7 +393,27 @@
     activeGroup = group;
     joints(group);
     writeCode(group, all.length - (group.length ? 1 : 0));
+    lensHints();
     refilter();
+  };
+  // When a model with lenses is the one being worked on, the panel marks its lenses: a solid ring for
+  // a lens it needs, a dashed one for a lens it works best with; and the field says so once.
+  let hintedFor = null;
+  const lensHints = () => {
+    const host = last && onField(last) && defOf(last).lenses ? last : null;
+    const L = host ? defOf(host).lenses : {};
+    const need = new Set((L.needs || []).map(x => x.lens)), best = new Set(L.best || []);
+    for (const t of tiles.filter(isLensT)) {
+      const slot = home.get(t).closest('.tray-slot');
+      slot.classList.toggle('is-lens-need', need.has(t.dataset.id));
+      slot.classList.toggle('is-lens-best', best.has(t.dataset.id));
+    }
+    if (host && hintedFor !== host && !placing.length) {
+      hintedFor = host;
+      const p = profile(defOf(host));
+      say(`${host.dataset.name} ${p.replace(/^needs: /, 'needs ').replace(/; works best with: /, '; works best with ')}. Its lenses are marked in the panel.`, 4200);
+    }
+    if (!host) hintedFor = null;
   };
 
   // ---- Attachments. A brain, a database or a documents folder is not a link in the chain: a copy of
@@ -445,7 +491,7 @@
   const setCaption = (slot, tile) => {
     slot.classList.toggle('is-empty', !tile);
     const cap = slot.querySelector('.cap');
-    if (tile) cap.innerHTML = `<b>${tile.dataset.name.toLowerCase()}</b><span>${tile.dataset.words}</span>`;
+    if (tile) fillCap(cap, defOf(tile));
   };
   const place = (tile, sq, { magnet = false } = {}) => {
     const from = tile.getBoundingClientRect();
@@ -473,6 +519,11 @@
       .finished.then(done, done);
   };
 
+  // A free square beside a model for its lens: below or above first, so the chain's left and right stay free.
+  const lensSpot = host => {
+    const [c, r] = posOf(host.parentElement);
+    return [cellAt(c, r + 1), cellAt(c, r - 1), cellAt(c - 1, r), cellAt(c + 1, r)].find(x => x && !tileIn(x)) || null;
+  };
   // Where a click sends a panel tile: beside the group being built, else the middle of the field.
   const nextCell = () => {
     const all = groups();
@@ -643,6 +694,16 @@
       if (hostOf(tile)) { undock(tile); count(); return; }
       if (mend && mend.mode === 'attach' && onField(mend.host)) { dockOnto(copyOf(tile), mend.host); endFix(); count(); return; }
       if (isAtt(tile)) { attachByClick(tile); return; }
+      if (isLensT(tile) && !onField(tile)) {   // a lens goes beside the model it serves (the one at fault first)
+        const host = mend && mend.mode === 'lens' && onField(mend.host) ? mend.host
+          : [last, ...tiles.filter(onField)].find(h => h && onField(h) && (defOf(tile).serves || []).includes(h.dataset.id) && neighbours(h.parentElement).some(n => !tileIn(n)));
+        const cell = host ? lensSpot(host) : nextCell();
+        if (!cell) { say(`There is no free square beside ${host ? host.dataset.name : 'the team'}.`); return; }
+        place(tile, cell, { magnet: true });
+        if (mend) endFix();
+        count();
+        return;
+      }
       if (onField(tile)) {
         place(tile, backToPanel(tile));
         if (last === tile) last = null;
@@ -773,9 +834,15 @@
   const kinds = ks => orList(ks.map(k => (k === '*' ? 'any result' : DATA.kinds[k] || k)));
   const fitsKinds = (out, inn) => out.length > 0 && (inn.includes('*') || out.some(k => inn.includes(k)));
   const ORDER = ['ends', 'orphan', 'order', 'kinds', 'needs'];
-  const check = board => {
+  const isLensD = p => D(p.id).role === 'lens';
+  const check = full => {
+    const board = full.filter(p => !isLensD(p));   // lenses sit beside their model: not steps of the chain
     const at = new Map(board.map(p => [p.c + ',' + p.r, p]));
     const get = (c, r) => at.get(c + ',' + r);
+    const atAll = new Map(full.map(p => [p.c + ',' + p.r, p]));
+    const getAll = (c, r) => atAll.get(c + ',' + r);
+    const around = p => [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dc, dr]) => getAll(p.c + dc, p.r + dr)).filter(Boolean);
+    const notes = [];
     const nm = p => D(p.id).name;
     const names = ps => list([...new Set(ps.map(nm))]);
     const hub = p => !!(p && D(p.id).hub);
@@ -806,21 +873,22 @@
     // (1) a start and an end
     const sources = board.filter(p => !hub(p) && !stageOf.get(p).preds.size && !stageOf.get(p).hubs.size);
     const sinks = board.filter(p => !hub(p) && !stageOf.get(p).succs.size && !stageOf.get(p).hubs.size);
-    if (!board.some(p => isStart(D(p.id)))) {
+    if (!board.length) for (const p of full) add('ends', p, `${nm(p)} is a lens: it is not a model by itself; put it beside ${list((D(p.id).serves || []).map(DNAME))}.`, 'no model', { mode: 'none' });
+    if (board.length && !board.some(p => isStart(D(p.id)))) {
       for (const p of (sources.length ? sources : board)) {
         const d = D(p.id);
-        add('ends', p, `Nothing starts this chain: ${d.name} ${d.in.length ? `needs ${kinds(d.in)}, and ` : ''}only a start tile (blue) can begin a chain.`, 'no start');
+        add('ends', p, `Nothing starts this chain: ${d.name} ${d.in.length ? `needs ${kinds(d.in)}, and ` : ''}only a Starter can begin a chain.`, 'no start');
       }
     }
-    if (!board.some(p => isEnd(D(p.id)))) {
+    if (board.length && !board.some(p => isEnd(D(p.id)))) {
       for (const p of (sinks.length ? sinks : board)) {
         const d = D(p.id);
-        add('ends', p, `Nothing ends this chain: ${d.name} hands on ${kinds(d.out)}, and only an end tile (teal) can give the result.`, 'no end');
+        add('ends', p, `Nothing ends this chain: ${d.name} hands on ${kinds(d.out)}, and only a Finisher can give the result.`, 'no end');
       }
     }
     // (2) one piece; then the order
     const pieces = [], seen = new Set();
-    for (const p of board) {
+    for (const p of full) {
       if (seen.has(p)) continue;
       const piece = [], todo = [p];
       seen.add(p);
@@ -828,7 +896,7 @@
         const q = todo.pop();
         piece.push(q);
         for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          const n = get(q.c + dc, q.r + dr);
+          const n = getAll(q.c + dc, q.r + dr);
           if (n && !seen.has(n)) { seen.add(n); todo.push(n); }
         }
       }
@@ -868,9 +936,31 @@
         }
       }
     }
-    // (4) every tile has what it needs
+    // a lens works only touching a model it serves
+    for (const p of full.filter(isLensD)) {
+      const near = around(p);
+      if (near.length && !near.some(q => (D(p.id).serves || []).includes(q.id))) {
+        add('order', p, `${nm(p)} works only beside ${list(D(p.id).serves.map(DNAME))}: it is beside ${names(near)}.`, 'misplaced lens', { mode: 'none' });
+      }
+    }
+    // (4) every tile has what it needs: its attachments, then its lenses
     for (const p of board) for (const need of D(p.id).needs || []) {
       if (!p.att.has(need)) add('needs', p, `${nm(p)} needs ${DATA.needs[need]}: attach one onto ${nm(p)}.`, `needs ${DATA.needs[need].replace(/^an? /, '')}`, { mode: 'attach', need });
+    }
+    for (const p of board) {
+      const L = D(p.id).lenses;
+      if (!L) continue;
+      const has = new Set(around(p).filter(isLensD).map(q => q.id));
+      for (const x of L.needs || []) {
+        if (has.has(x.lens)) continue;
+        if (x.unless && (p.attIds || new Set()).has(x.unless)) { notes.push(`${nm(p)} does not need ${DNAME(x.lens)} on ${DNAME(x.unless)}.`); continue; }
+        add('needs', p, `${nm(p)} needs ${DNAME(x.lens)}${x.why ? ' ' + x.why : ''}: put ${DNAME(x.lens)} beside ${nm(p)}.`, 'needs a lens', { mode: 'lens', lens: x.lens });
+      }
+      const missing = (L.best || []).filter(id => !has.has(id));
+      if (missing.length) notes.push(`${nm(p)} works best with ${list(missing.map(DNAME))}${missing.length < (L.best || []).length ? '' : ''}.`);
+    }
+    for (const p of board) for (const id of p.attIds || []) {
+      if ((DEF.get(id) || {}).where === 'remote') notes.push(`${nm(p)} thinks on ${DNAME(id)}: its data leaves this PC unless that server is yours.`);
     }
     const flow = (a, b) => a.p.c - b.p.c || a.p.r - b.p.r;
     const cat = ORDER.find(c => errs.some(e => e.cat === c));
@@ -885,7 +975,7 @@
     if (h && stages.every(st => st.hubs.size && !st.preds.size && !st.succs.size)) path = [nm(h), ...stages.map(says), ...(stages.length ? [nm(h)] : [])].join(' \u2192 ');
     else {
       const seenSt = new Set(), chains = [];
-      for (const st of stages.filter(x => !x.preds.size)) {
+      for (const st of stages.filter(x => !x.preds.size && (x.succs.size || !x.hubs.size))) {   // a tile Siren only calls is said with her
         const chain = [];
         for (let cur = st; cur;) {
           chain.push(says(cur));
@@ -899,18 +989,19 @@
       if (h && called.length) chains.push(`${nm(h)} calls ${list(called.map(says))}`);
       path = chains.filter(Boolean).join('; ');
     }
-    return { ok: !cat, cat, faults, all: errs, edges, path };
+    return { ok: !cat, cat, faults, all: errs, edges, path, notes: [...new Set(notes)] };
   };
   const board = () => cells.filter(tileIn).map(cell => {
     const t = tileIn(cell), [c, r] = posOf(cell);
-    return { id: t.dataset.id, c, r, att: new Set(docked(t).map(givesOf)), tile: t };
+    return { id: t.dataset.id, c, r, att: new Set(docked(t).map(givesOf)), attIds: new Set(docked(t).map(x => x.dataset.id)), tile: t };
   });
   // The tiles from the panel that could stand where a fault is: put in that square, nothing at that
   // place breaks the order or the fit any more (what it needs can be attached afterwards).
   const fitting = (b, fault) => {
     if (fault.mode === 'attach') return DATA.tiles.filter(d => d.gives === fault.need).map(d => d.id);
+    if (fault.mode === 'lens') return [fault.lens];
     if (fault.mode !== 'replace') return [];
-    return tiles.filter(t => !isAtt(t) && !onField(t)).map(t => t.dataset.id).filter(id => {
+    return tiles.filter(t => !isAtt(t) && !isLensT(t) && !onField(t)).map(t => t.dataset.id).filter(id => {
       const q = { id, c: fault.p.c, r: fault.p.r, att: new Set(D(id).needs || []) };
       const res = check(b.map(p => (p === fault.p ? q : p)));
       return !res.all.some(e => (e.cat === 'ends' || e.cat === 'order' || e.cat === 'kinds') && (e.p === q || (e.other || []).includes(q)));
@@ -937,6 +1028,7 @@
     if (fault.mode === 'none') what.textContent = '';
     else if (!ids.size) what.textContent = 'No tile in the panel fits there.';
     else if (fault.mode === 'attach') what.textContent = `Below: what can go onto ${host.dataset.name}. Press one to attach it.`;
+    else if (fault.mode === 'lens') what.textContent = `Below: the lens ${host.dataset.name} needs. Press it to put it beside ${host.dataset.name}.`;
     else what.textContent = `Below: the ${ids.size === 1 ? 'tile' : `${ids.size} tiles`} that could take ${host.dataset.name}’s place. Press one to swap it in.`;
     fixBox.hidden = false;
     if (fault.mode !== 'none' && ids.size) setKind('fix');
@@ -1148,7 +1240,9 @@
         verdict(b, false, '1 model', res.path.length <= 34 ? res.path : `${n} tiles in order`);
         const unbuilt = [...new Set([...main, ...main.flatMap(docked)].filter(t => t.dataset.status === 'design' || t.dataset.status === 'notbuilt').map(t => t.dataset.name))];
         const sentence = `${res.path}: the order is right, every two touching tiles fit and every tile has what it needs, so ${n === 1 ? 'this tile makes' : `these ${n} tiles make`} one model.`
-          + (unbuilt.length ? ` It cannot run yet: ${list(unbuilt)} ${unbuilt.length > 1 ? 'are' : 'is'} not built.` : ' It works as one model.');
+          + (unbuilt.length ? ` It cannot run yet: ${list(unbuilt)} ${unbuilt.length > 1 ? 'are' : 'is'} not built.` : ' It works as one model.')
+          + main.filter(t => t.dataset.status === 'gate').map(t => ` ${t.dataset.name} has passed her gate but is not in use yet.`).join('')
+          + (res.notes.length ? ' Note: ' + res.notes.join(' ') : '');
         said.textContent = 'Test: ' + sentence;
         showPass(sentence);
         if (sampleRun) sampleRun(recipe(res));   // later: a sample through the real models (see HOOK)
@@ -1239,8 +1333,10 @@
   const colour = id => { const t = tiles.find(x => x.dataset.id === id); return t ? t.style.getPropertyValue('--tc') : ''; };
 
   // The lines of team.py, each a list of [kind, text] (a model's name also carries its colour).
-  const teamPy = (group, loose) => {
+  const teamPy = (all, loose) => {
     const out = [];
+    const group = all.filter(t => !isLensT(t));   // a lens is loaded with its model, not called as a step
+    const lensesOf = t => neighbours(t.parentElement).map(tileIn).filter(u => u && isLensT(u) && all.includes(u) && (defOf(u).serves || []).includes(t.dataset.id));
     const add = (model, ...tokens) => out.push({ model, tokens, key: (model || '') + '|' + tokens.map(t => t[1]).join('') });
     const mdl = id => ['mdl', id, colour(id)];
     add(null, ['com', '# Joined live on the workbench.']);
@@ -1266,7 +1362,9 @@
     for (const t of order) {   // squares side by side are always a step apart outward, never level
       const id = t.dataset.id;
       const note = t.dataset.params === '' && t.dataset.note ? t.dataset.note.split(/[,;]/)[0] : '';
-      const with_ = docked(t).flatMap(c => [['op', ', '], ['prm', givesOf(c)], ['op', '='], ['str', `"${c.dataset.id}"`]]);
+      const ls = lensesOf(t).map(u => `"${u.dataset.id}"`);
+      const with_ = [...docked(t).flatMap(c => [['op', ', '], ['prm', givesOf(c)], ['op', '='], ['str', `"${c.dataset.id}"`]]),
+        ...(ls.length ? [['op', ', '], ['prm', 'lenses'], ['op', '=['], ['str', ls.join(', ')], ['op', ']']] : [])];
       add(id, mdl(id), ['op', ' = '], ['fn', 'load'], ['op', '('], ['str', `"${id}"`], ...with_, ['op', ')'], ...(note ? [['com', `  # ${note}`]] : []));
     }
     add(null);

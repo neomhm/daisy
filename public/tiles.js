@@ -13,6 +13,11 @@
                         to her, so "Siren, Daisy, Siren" is one Siren with Daisy beside her
              attachment not part of the chain: it snaps ONTO a tile that needs it (a brain, a
                         database, a documents folder)
+             lens       a full tile that serves ONE kind of model ("serves"): placed touching that model,
+                        it sharpens it, joined by a lens joint, and is not a step of the chain
+   lenses    on a model: { needs: [...], best: [...] }: the lenses it cannot work without, and the
+             ones it works best with. A need may carry "unless": an attachment that makes it a
+             "works best with" instead (Daisy on PLAN's own tables does not need MAGNOLIA).
    in, out   the kinds of data a tile accepts and hands on (see KINDS). "*" in "in" means any result.
              Two tiles side by side fit when the left one's out shares a kind with the right one's in.
    needs     attachments the tile cannot work without; "takes" lists ones it may use if given
@@ -27,10 +32,11 @@
    Every role, kind and need below is a PROPOSAL (2026-10-06) for Laurent to correct. */
 window.AKIKI_TILES = {
   roles: {
-    start: { label: 'starts', say: 'starts a chain' },
-    middle: { label: 'middle', say: 'works in the middle of a chain' },
-    end: { label: 'ends', say: 'ends a chain with a result' },
-    both: { label: 'starts + ends', say: 'starts and ends a chain' },
+    start: { label: 'starter', say: 'starts a chain' },
+    middle: { label: 'function', say: 'works in the middle of a chain' },
+    end: { label: 'finisher', say: 'finishes a chain with a result' },
+    both: { label: 'starter + finisher', say: 'starts and finishes a chain' },
+    lens: { label: 'lens', say: 'is a lens: it sharpens the one model it serves, touching it' },
     attachment: { label: 'attaches to a tile', say: 'attaches onto a tile that needs it' },
   },
   // Each kind as a sentence says it: "Tulip gives a table, Lily needs facts".
@@ -41,13 +47,13 @@ window.AKIKI_TILES = {
     message: 'a message to a person',
   },
   needs: { brain: 'a brain', database: 'a database', documents: 'a documents folder', memory: 'a memory' },
-  groups: [
-    { id: 'flowers', head: 'Daisy’s flowers' },
-    { id: 'insects', head: 'Butterfly’s insects' },
-    { id: 'sea', head: 'Siren’s sea creatures' },
-    { id: 'attach', head: 'Brains and your data' },
-    { id: 'io', head: 'Starts and ends, not built yet' },
+  // The panel is ordered by what a tile is FOR (workbench.js puts each tile in its section from its
+  // role); "group" says which plan a tile comes from, shown as a small PLAN tag.
+  sections: [
+    { id: 'starters', head: 'Starters' }, { id: 'functions', head: 'Functions' }, { id: 'finishers', head: 'Finishers' },
+    { id: 'lenses', head: 'Lenses & add-ons' }, { id: 'brains', head: 'Brains' }, { id: 'data', head: 'Data' },
   ],
+  plans: { flowers: 'PLAN 1', insects: 'PLAN 2', sea: 'PLAN 3' },
   tiles: [
     // Daisy's flowers (PLAN)
     { id: 'bouquet', name: 'Bouquet', words: 'Plans the work', group: 'flowers', colour: '#35adb0',
@@ -68,12 +74,13 @@ window.AKIKI_TILES = {
       note: '3.4M parameters, 13.5 MB; about 9 ms per design, measured on a network her size' },
     { id: 'daisy', name: 'Daisy', words: 'Answers questions', group: 'flowers', colour: '#ec8e4a',
       role: 'middle', in: ['question', 'reading', 'table', 'plan'], out: ['table', 'spec'], needs: ['database'],
+      lenses: { needs: [{ lens: 'magnolia', unless: 'plantables', why: 'on an unfamiliar database' }], best: ['values', 'checker', 'path'] },
       status: 'working', params: '27.1', ms: '270', mb: '108', tags: 'database',
       note: '27.1M parameters, 108 MB, 0.27 s from question to rows' },
-    { id: 'magnolia', name: 'Magnolia', words: 'Reads databases', group: 'flowers', colour: '#de7c95',
-      role: 'start', in: [], out: ['reading'], needs: ['database'],
-      status: 'working', params: '0.9', ms: '1800', mb: '', tags: 'database',
-      note: '0.9M parameters, 1.8 s per database' },
+    { id: 'magnolia', name: 'MAGNOLIA', words: 'Reads what an unfamiliar database\u2019s names mean', group: 'flowers', colour: '#de7c95',
+      role: 'lens', serves: ['daisy'], scope: 'scope lens', in: [], out: [], needs: [],
+      status: 'gate', params: '0.9', ms: '1800', mb: '', tags: 'database lenses',
+      note: 'trained, gate passed, not yet in use; 0.9M parameters, 1.8 s per database' },
     { id: 'iris', name: 'Iris', words: 'Watches live sites', group: 'flowers', colour: '#7c8acb',
       role: 'end', in: ['design'], out: ['findings'], needs: [],
       status: 'working', params: '3.4', ms: '14', mb: '', tags: 'website checks',
@@ -119,22 +126,57 @@ window.AKIKI_TILES = {
       role: 'both', hub: true, in: ['*'], out: ['question', 'request', 'text'], needs: ['brain'],
       status: 'design', params: '', ms: '', mb: '', tags: 'voice', note: 'designed, not built or measured yet' },
     // Attachments: brains, and your own data
-    { id: 'qwen27b', name: 'Qwen 27B', words: 'A brain', group: 'attach', colour: '#5f6b7a',
-      role: 'attachment', gives: 'brain', glyph: ['.X.X.', 'XXXXX', 'XHXHX', 'XXXXX', '.X.X.'],
+    // Brains: each one LOCAL (on your PC) or REMOTE (a server you reach); pick the one you mean.
+    { id: 'qwen27b', name: 'Qwen 27B', words: 'Local: on your PC, data stays here, 17.7 GB', group: 'attach', colour: '#5f6b7a',
+      role: 'attachment', gives: 'brain', where: 'local', glyph: ['.X.X.', 'XXXXX', 'XHXHX', 'XXXXX', '.X.X.'],
       status: 'working', params: '27000', ms: '', mb: '17700', tags: 'brains',
-      note: '27B class, 17.7 GB of weights; the engine Bouquet runs on today' },
-    { id: 'glimmer', name: 'Muse Glimmer', words: 'A brain', group: 'attach', colour: '#5f6b7a',
-      role: 'attachment', gives: 'brain', glyph: ['X.X.X', '.XHX.', 'XHHHX', '.XHX.', 'X.X.X'],
+      note: 'local: 27B class, 17.7 GB of weights on this PC, the engine Bouquet runs on today; its speed depends on your PC' },
+    { id: 'qwen27b-remote', name: 'Qwen 27B remote', words: 'Remote: your cluster or a server; needs a connection; data leaves this PC unless the server is yours', group: 'attach', colour: '#4f6f8f',
+      role: 'attachment', gives: 'brain', where: 'remote', glyph: ['.X.X.', 'XXXXX', 'XHXHX', 'XXXXX', 'H.H.H'],
+      status: 'working', params: '27000', ms: '', mb: '0', tags: 'brains',
+      note: 'remote: 27B class, no weights on this PC; speed not measured yet' },
+    { id: 'glimmer', name: 'Muse Glimmer', words: 'Local: on your PC, data stays here; size not measured yet', group: 'attach', colour: '#5f6b7a',
+      role: 'attachment', gives: 'brain', where: 'local', glyph: ['X.X.X', '.XHX.', 'XHHHX', '.XHX.', 'X.X.X'],
       status: 'working', params: '', ms: '', mb: '', tags: 'brains',
-      note: 'a general model by Meta, not measured on this page yet' },
+      note: 'local: a general model by Meta, not measured on this page yet' },
+    { id: 'glimmer-remote', name: 'Muse Glimmer remote', words: 'Remote: your cluster or a server; needs a connection; data leaves this PC unless the server is yours', group: 'attach', colour: '#4f6f8f',
+      role: 'attachment', gives: 'brain', where: 'remote', glyph: ['X.X.X', '.XHX.', 'XHHHX', '.XHX.', 'H.H.H'],
+      status: 'working', params: '', ms: '', mb: '0', tags: 'brains',
+      note: 'remote: a general model by Meta, no weights on this PC; not measured yet' },
     { id: 'database', name: 'Database', words: 'Your own data', group: 'attach', colour: '#5f6b7a',
       role: 'attachment', gives: 'database', glyph: ['.XXX.', 'X...X', 'XHHHX', 'X...X', '.XXX.'],
       status: 'yours', params: '', ms: '', mb: '', tags: 'database',
       note: 'your own database (SQLite, PostgreSQL or MySQL), read only' },
+    { id: 'plantables', name: 'PLAN tables', words: 'PLAN\u2019s own tables, already understood', group: 'attach', colour: '#5f6b7a',
+      role: 'attachment', gives: 'database', glyph: ['XXXXX', 'X.X.X', 'XXXXX', 'X.H.X', 'XXXXX'],
+      status: 'yours', params: '', ms: '', mb: '', tags: 'database',
+      note: 'the tables PLAN itself writes, whose names Daisy already knows' },
     { id: 'folder', name: 'Documents', words: 'Your files', group: 'attach', colour: '#5f6b7a',
       role: 'attachment', gives: 'documents', glyph: ['XX...', 'XXXXX', 'X...X', 'X.H.X', 'XXXXX'],
       status: 'yours', params: '', ms: '', mb: '', tags: 'documents',
       note: 'a folder of your documents and spreadsheets, read only' },
+    // Lenses: each serves one kind of model and sits touching it. Designed, not built yet.
+    { id: 'values', name: 'Values lens', words: 'Matches the values in a question to the ones stored', colour: '#6c5fb0',
+      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['X...X', '.X.X.', '..H..', '.X.X.', 'X...X'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
+    { id: 'path', name: 'Path lens', words: 'Finds how the tables join', colour: '#6c5fb0',
+      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['XX...', '.X...', '.XHX.', '...X.', '...XX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
+    { id: 'checker', name: 'Checker lens', words: 'Checks a query before it runs', colour: '#6c5fb0',
+      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['....X', '...X.', 'X.H..', '.X...', '.....'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
+    { id: 'time', name: 'Time lens', words: 'Reads dates and periods such as \u201clast quarter\u201d', colour: '#6c5fb0',
+      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['.XXX.', 'X.X.X', 'X.HXX', 'X...X', '.XXX.'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
+    { id: 'language', name: 'Language lens', words: 'Reads questions asked in other languages', colour: '#6c5fb0',
+      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['XXXXX', '..X..', '.XHX.', 'X...X', 'X...X'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
+    { id: 'explain', name: 'Explanation lens', words: 'Says in plain words what an answer shows', colour: '#6c5fb0',
+      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['XXXXX', 'X...X', 'X.H.X', 'XXXXX', 'X....'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
+    { id: 'privacy', name: 'Privacy lens', words: 'Keeps personal data out of answers', colour: '#6c5fb0',
+      role: 'lens', serves: ['daisy'], in: [], out: [], needs: [], glyph: ['.XXX.', 'X...X', 'XXXXX', 'XXHXX', 'XXXXX'],
+      status: 'design', params: '', ms: '', mb: '', tags: 'lenses', note: 'designed, not built yet' },
     // Starts and ends Laurent named, not built yet
     { id: 'feeder', name: 'Feeder', words: 'Feeds your documents (RAG)', group: 'io', colour: '#6a7480',
       role: 'start', in: [], out: ['document'], needs: ['documents'], glyph: ['X.X.X', '.....', 'XXXXX', '.XHX.', '..X..'],
@@ -154,9 +196,9 @@ window.AKIKI_TILES = {
   // PROPOSALS (2026-10-06), for Laurent to correct.
   presets: [
     { id: 'daisy', name: 'Daisy', plan: 'PLAN 1', colour: '#ec8e4a',
-      say: 'PLAN 1: Orchid and Tulip read the owner\u2019s files for Bouquet, who plans the site; Jasmine dresses it; Iris, Thistle and Lily finish it. Magnolia reads the database for Daisy, who answers the owner through Siren.',
+      say: 'PLAN 1: Orchid and Tulip read the owner\u2019s files for Bouquet, who plans the site; Jasmine dresses it; Iris, Thistle and Lily finish it. MAGNOLIA, a lens, reads the database for Daisy, who answers the owner through Siren.',
       tiles: [
-        ['magnolia', 2, 1, ['database']], ['daisy', 3, 1, ['database']],
+        ['magnolia', 2, 1], ['daisy', 3, 1, ['database']],
         ['siren', 3, 2, ['qwen27b']], ['iris', 5, 2],
         ['orchid', 2, 3, ['folder']], ['bouquet', 3, 3, ['qwen27b']], ['jasmine', 4, 3], ['thistle', 5, 3],
         ['tulip', 2, 4, ['folder']], ['lily', 5, 4, ['folder']],
@@ -167,7 +209,7 @@ window.AKIKI_TILES = {
         ['bees', 2, 1, ['qwen27b']],
         ['cricket', 0, 2], ['bouquet', 1, 2, ['qwen27b']], ['ants', 2, 2], ['mantis', 3, 2, ['qwen27b']],
         ['dragonfly', 4, 2, ['folder']], ['ladybug', 5, 2, ['qwen27b']], ['firefly', 6, 2],
-        ['butterfly', 1, 3, ['qwen27b', 'cicada']], ['daisy', 2, 3, ['database']],
+        ['butterfly', 1, 3, ['qwen27b', 'cicada']], ['daisy', 2, 3, ['database']], ['magnolia', 2, 4],
       ] },
     { id: 'siren', name: 'Siren', plan: 'PLAN 3', colour: '#2b7fd4',
       say: 'PLAN 3: Siren talks with the person and calls the specialists beside her: Daisy (fed by Tulip), Dragonfly, Orchid, and Bouquet, who hands the work on to Bees, Mantis and Firefly.',
@@ -175,7 +217,7 @@ window.AKIKI_TILES = {
         ['dragonfly', 3, 2, ['folder']],
         ['tulip', 1, 3, ['folder']], ['daisy', 2, 3, ['database']], ['siren', 3, 3, ['qwen27b']],
         ['bouquet', 4, 3, ['glimmer']], ['bees', 5, 3, ['qwen27b']], ['mantis', 6, 3, ['qwen27b']], ['firefly', 7, 3],
-        ['orchid', 3, 4, ['folder']],
+        ['orchid', 3, 4, ['folder']], ['magnolia', 2, 4],
       ] },
   ],
 };
