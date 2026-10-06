@@ -72,7 +72,7 @@ window.AKIKI_TILES = {
       status: 'working', params: '61.6', ms: '120', mb: '', tags: 'database documents',
       note: '61.6M parameters, 0.12 s per sheet' },
     { id: 'jasmine', name: 'Jasmine', words: 'Dresses the site', group: 'flowers', colour: '#a06fc2',
-      role: 'middle', in: ['facts', 'plan'], out: ['design'], needs: [],
+      role: 'middle', in: ['facts', 'plan'], out: ['design'], needs: [], lenses: { best: ['magnolia'] },
       status: 'working', params: '3.4', ms: '9', mb: '13.5', tags: 'website',
       note: '3.4M parameters, 13.5 MB; about 9 ms per design, measured on a network her size' },
     { id: 'daisy', name: 'Daisy', words: 'Answers questions', group: 'flowers', colour: '#ec8e4a',
@@ -81,7 +81,7 @@ window.AKIKI_TILES = {
       status: 'working', params: '27.1', ms: '270', mb: '108', tags: 'database',
       note: '27.1M parameters, 108 MB, 0.27 s from question to rows' },
     { id: 'magnolia', name: 'MAGNOLIA', words: 'The lens: adapts to the model it serves and to the data it reads', group: 'flowers', colour: '#de7c95',
-      role: 'lens', serves: ['daisy', 'tulip', 'orchid', 'bouquet', 'dragonfly'], in: [], out: [], needs: [],
+      role: 'lens', serves: ['daisy', 'tulip', 'orchid', 'bouquet', 'dragonfly', 'lily', 'jasmine'], in: [], out: [], needs: [],
       adapts: 'what she does depends on the model she touches and the data attached to it: beside Daisy on an unfamiliar database she reads its names; on PLAN tables she is optional',
       heads: [
         { does: 'reading unfamiliar names', status: 'trained, gate passed, not yet in use' },
@@ -100,7 +100,7 @@ window.AKIKI_TILES = {
       status: 'working', params: '', ms: '400', mb: '', tags: 'website checks',
       note: 'code checks, no size of her own; 0.2 to 0.6 s per audit, counted as 0.4 s' },
     { id: 'lily', name: 'Lily', words: 'Makes the logo', group: 'flowers', colour: '#e65b56',
-      role: 'end', in: ['facts', 'document', 'design'], out: ['image'], needs: ['documents'],
+      role: 'end', in: ['facts', 'document', 'design'], out: ['image'], needs: ['documents'], lenses: { best: ['magnolia'] },
       status: 'design', params: '', ms: '', mb: '', tags: 'website documents',
       note: 'not built yet, no figures' },
     // Butterfly's insects (PLAN 2): all in design
