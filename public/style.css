@@ -613,6 +613,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   /* sliding back, a box stays on top until it is home */
   transition: transform .45s cubic-bezier(.2, .8, .2, 1), z-index 0s .45s;
 }
+.stack-box[data-plan] { box-shadow: 0 0 0 var(--hairline) var(--border), inset 0 calc(.03 * var(--u)) 0 var(--pc); }   /* the plan's own colour along the top edge */
 .stack-box:hover { background: var(--bg-subtle); text-decoration: none; }
 .stack-box:hover .stack-name { color: var(--link); }
 .stack-box:focus-visible,
@@ -1709,3 +1710,12 @@ html:has(> body.home) { scroll-snap-type: y mandatory; scroll-padding-top: calc(
   .home .bench { height: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .board-next { animation: none; } }
+
+/* The Siren page: the animated squares, then the profiles under them. The same little-scroll glide as the
+   home page (snap.js does it on a wide screen), but the profiles are taller than a screen, so there the
+   page is never held to a stop: the snapping is for phones only, and only pulls from near a stop. */
+html:has(> body.snap) { scroll-snap-type: none; scroll-padding-top: calc(37px + var(--hairline)); }
+@media (max-width: 700px) { html:has(> body.snap) { scroll-snap-type: y proximity; } }
+.snap .stack { scroll-snap-align: start; scroll-margin-top: 100px; }   /* the margin reaches past the header: the squares snap to the very top */
+.snap #voice { scroll-snap-align: start; }
+@media (max-width: 700px) { html:has(> body.snap) { scroll-padding-top: calc(30px + env(safe-area-inset-top)); } }
