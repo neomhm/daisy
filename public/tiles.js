@@ -4,11 +4,10 @@
    marks each tile's ROLE with a lettered badge (I, Fn, O), and its TesT key checks a team against these rules. Edit a tile
    here and both pages follow; nothing about a tile is written anywhere else.
 
-   role      reader     an input OR a function: with nothing before it, it starts the chain from what is
-                        attached to it ("startNeeds", e.g. a Documents folder); after a tile that brings
-                        what it accepts ("in"), it works on that instead and needs no attachment
-             start      takes the data in; only a start can begin a chain (a chat, a feeder, a scanner,
-                        or a model that reads your files or your database)
+   role      start      an input: a way data or a request comes in (a chat, a feeder, a file upload, a
+                        scanner, an inbox); only an input can begin a chain. A model that READS what an
+                        input brings (Orchid, Tulip, Cricket) is a function, never an input (Laurent,
+                        2026-10-07: "orchid on its own can do nothing. it reads a rag folder, or an upload")
              middle     works on what the tile on its left hands it, and hands its own work on
              end        gives the result (a chat's answer, an image, an API, a port)
              both       a start and an end at once (Siren: drawn in two colours). With "hub": true,
@@ -35,6 +34,8 @@
              no folder when a Feeder or a Scanner hands her documents)
    brain     a brain is the TEAM's: one brain attached to any tile serves every tile of the connected team
              that needs one; a brain attached straight onto a tile is that tile's own (an override)
+   reads     on a function that reads what an input brings: { after: the inputs to put before it, pron }.
+             TesT refuses a chain that begins with it, naming those inputs, and says what it reads
    word      the one word a tile's ghost shows on the field (what it adds next)
    status    working (built, figures measured) | design (designed, not built) | notbuilt (named by
              Laurent, not designed yet) | yours (your own data: no figures of its own)
@@ -49,10 +50,11 @@
              colour on dark, no square), instead of "</>"
 
    Every role, kind and need below is a PROPOSAL (2026-10-06) for Laurent to correct. */
+// Orchid and Tulip read documents: whatever input brings them (Feeder, File upload, Scanner, E-mail inbox, Web page)
+const READS_DOCS = { after: 'a Folder (Feeder), a File upload or another input', pron: 'she' };
 window.AKIKI_TILES = {
   roles: {
     start: { label: 'input', say: 'starts a chain' },
-    reader: { label: 'input or function', say: 'starts a chain from what is attached to it, or works on what the tile before it brings' },
     middle: { label: 'function', say: 'works in the middle of a chain' },
     end: { label: 'output', say: 'gives the result at the end of a chain' },
     both: { label: 'input + output', say: 'starts a chain and gives its result' },
@@ -85,11 +87,11 @@ window.AKIKI_TILES = {
       status: 'working', params: '', ms: '24500', mb: '', tags: 'website',
       note: 'a planning prompt and its checker on the brain you attach; 17 to 32 s per call on the 27B, counted as 24.5 s' },
     { id: 'orchid', word: 'facts', name: 'Orchid', words: 'Finds the facts', group: 'flowers', colour: '#c2549e',
-      role: 'reader', in: ['document'], out: ['facts'], needs: [], startNeeds: ['documents'], lenses: { best: ['magnolia'] },
+      role: 'middle', in: ['document'], out: ['facts'], needs: [], reads: READS_DOCS, lenses: { best: ['magnolia'] },
       status: 'working', params: '32.8', ms: '77', mb: '131', tags: 'documents',
       note: '32.8M parameters, 131 MB, 77 ms per chunk' },
     { id: 'tulip', word: 'table', name: 'Tulip', words: 'Imports spreadsheets', group: 'flowers', colour: '#3aa56f',
-      role: 'reader', in: ['document'], out: ['table'], needs: [], startNeeds: ['documents'], lenses: { best: ['magnolia'] }, writesCode: 'Python',
+      role: 'middle', in: ['document'], out: ['table'], needs: [], reads: READS_DOCS, lenses: { best: ['magnolia'] }, writesCode: 'Python',
       status: 'working', params: '61.6', ms: '120', mb: '', tags: 'database documents',
       note: '61.6M parameters, 0.12 s per sheet' },
     { id: 'jasmine', word: 'design', kind: 'hybrid', name: 'Jasmine', words: 'Dresses the site', group: 'flowers', colour: '#a06fc2',
@@ -129,7 +131,7 @@ window.AKIKI_TILES = {
       role: 'middle', in: ['text', 'request'], out: ['plan'], needs: ['brain'], takes: ['memory'],
       status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'in design, no figures yet' },
     { id: 'cricket', word: 'clarify', name: 'Cricket', words: 'Asks first', group: 'insects', colour: '#3aa56f',
-      role: 'reader', in: ['text'], out: ['request'], needs: [],
+      role: 'middle', in: ['text'], out: ['request'], needs: [], reads: { after: 'a Chat window, a Messaging app or a Microphone', pron: 'it' },
       status: 'design', params: '', ms: '', mb: '', tags: 'code', note: 'in design, no figures yet' },
     { id: 'bees', word: 'code', name: 'Bees', words: 'Write the code', group: 'insects', colour: '#f0a444',
       role: 'middle', in: ['plan', 'request', 'ranking'], out: ['code'], needs: ['brain'], takes: ['memory'], writesCode: 'code',
@@ -222,7 +224,7 @@ window.AKIKI_TILES = {
       role: 'start', in: [], out: ['document', 'image'], needs: [], pixels: ['....X....', '...XXX...', '..X.X.X..', '....X....', '....X....', 'X.......X', 'X.......X', 'XXXXXXXXX'],
       status: 'design', params: '', ms: '', mb: '', tags: 'documents code', note: 'designed, not built yet' },
     { id: 'feeder', word: 'feed', kind: 'code', name: 'Feeder', words: 'Feeds your documents (RAG)', group: 'io', colour: '#6a7480',
-      role: 'reader', in: ['document'], out: ['document'], needs: [], startNeeds: ['documents'], glyph: ['X.X.X', '.....', 'XXXXX', '.XHX.', '..X..'],
+      role: 'start', in: [], out: ['document'], needs: ['documents'], glyph: ['X.X.X', '.....', 'XXXXX', '.XHX.', '..X..'],
       status: 'notbuilt', params: '', ms: '', mb: '', tags: 'documents', note: 'not built yet' },
     { id: 'webhook', word: 'webhook', kind: 'code', name: 'Webhook', words: 'An API call or webhook starts the work', group: 'io', colour: '#4a86c8',
       role: 'start', in: [], out: ['request', 'text'], needs: [], pixels: ['.X...X.', '.X...X.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...', '...X...'],
@@ -296,28 +298,28 @@ window.AKIKI_TILES = {
   // PROPOSALS (2026-10-06), for Laurent to correct.
   presets: [
     { id: 'daisy', name: 'Daisy', plan: 'PLAN 1', colour: '#ec8e4a',
-      say: 'PLAN 1: the owner talks in the Chat window, where Siren answers; Orchid and Tulip, coordinated by the brain, read the owner\u2019s files for Bouquet, who plans the site; Jasmine dresses it; Iris, Thistle and Lily, coordinated by the brain, finish it. MAGNOLIA, a lens, reads the database for Daisy, who answers the owner through Siren.',
+      say: 'PLAN 1: the owner talks in the Chat window, where Siren answers; the Feeder brings the owner\u2019s files, which Orchid and Tulip, coordinated by the brain, read for Bouquet, who plans the site; Jasmine dresses it; Iris, Thistle and Lily, coordinated by the brain, finish it. MAGNOLIA, a lens, reads the database for Daisy, who answers the owner through Siren.',
       tiles: [
         ['magnolia', 2, 1], ['daisy', 3, 1, ['database']],
         ['chat', 2, 2], ['siren', 3, 2], ['iris', 5, 2],
-        ['orchid', 2, 3, ['folder']], ['bouquet', 3, 3, ['qwen27b']], ['jasmine', 4, 3], ['thistle', 5, 3],
-        ['tulip', 2, 4, ['folder']], ['lily', 5, 4, ['folder']],
+        ['feeder', 1, 3, ['folder']], ['orchid', 2, 3], ['bouquet', 3, 3, ['qwen27b']], ['jasmine', 4, 3], ['thistle', 5, 3],
+        ['tulip', 2, 4], ['lily', 5, 4, ['folder']],
       ] },
     { id: 'butterfly', name: 'Butterfly', plan: 'PLAN 2', colour: '#2fb39a',
-      say: 'PLAN 2: Cricket clarifies the request; Bouquet and Butterfly, coordinated by the brain, plan; Bees, Ants and Daisy (for SQL), coordinated by the brain, write; Mantis audits; Dragonfly finds the suspect lines; Ladybug debugs; Firefly calls for help.',
+      say: 'PLAN 2: the request arrives in the Chat window and Cricket clarifies it; Bouquet and Butterfly, coordinated by the brain, plan; Bees, Ants and Daisy (for SQL), coordinated by the brain, write; Mantis audits; Dragonfly and Ladybug, coordinated by the brain, find the suspect lines and debug them; Firefly calls for help.',
       tiles: [
-        ['bees', 2, 1],
-        ['cricket', 0, 2], ['bouquet', 1, 2, ['qwen27b']], ['ants', 2, 2], ['mantis', 3, 2],
-        ['dragonfly', 4, 2, ['folder']], ['ladybug', 5, 2], ['firefly', 6, 2],
-        ['butterfly', 1, 3, ['cicada']], ['daisy', 2, 3, ['database']], ['magnolia', 2, 4],
+        ['bees', 3, 1],
+        ['chat', 0, 2], ['cricket', 1, 2], ['bouquet', 2, 2, ['qwen27b']], ['ants', 3, 2], ['mantis', 4, 2],
+        ['dragonfly', 5, 2, ['folder']], ['firefly', 6, 2],
+        ['butterfly', 2, 3, ['cicada']], ['daisy', 3, 3, ['database']], ['ladybug', 5, 3], ['magnolia', 3, 4],
       ] },
     { id: 'siren', name: 'Siren', plan: 'PLAN 3', colour: '#2b7fd4',
-      say: 'PLAN 3: the person talks in the Chat window; Siren, beside it, calls the specialists around her: Daisy (fed by Tulip), Orchid, and Bouquet and Dragonfly, coordinated by the brain, who hand the work on to Bees, Mantis and Firefly.',
+      say: 'PLAN 3: the person talks in the Chat window; Siren, beside it, calls the specialists around her: Orchid, who reads the files the Feeder brings; Daisy, fed by Tulip, who reads an uploaded spreadsheet; and Bouquet, who hands the work on to Dragonfly and Bees, coordinated by the brain, then to Mantis and Firefly.',
       tiles: [
-        ['chat', 3, 2], ['dragonfly', 4, 2, ['folder']],
-        ['tulip', 1, 3, ['folder']], ['daisy', 2, 3, ['database']], ['siren', 3, 3, ['qwen27b']],
-        ['bouquet', 4, 3], ['bees', 5, 3], ['mantis', 6, 3], ['firefly', 7, 3],
-        ['magnolia', 2, 4], ['orchid', 3, 4, ['folder']],
+        ['feeder', 2, 2, ['folder']], ['orchid', 3, 2], ['dragonfly', 5, 2, ['folder']],
+        ['chat', 2, 3], ['siren', 3, 3, ['qwen27b']], ['bouquet', 4, 3], ['bees', 5, 3], ['mantis', 6, 3], ['firefly', 7, 3],
+        ['upload', 1, 4], ['tulip', 2, 4], ['daisy', 3, 4, ['database']],
+        ['magnolia', 3, 5],
       ] },
   ],
 };

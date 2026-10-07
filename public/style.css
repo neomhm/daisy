@@ -1235,8 +1235,8 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
    lettered, says its role: I an input (blue) takes the data in, Fn a function
    (amber) works on it, O an output (teal) gives the result, in the site's mono capitals (the pixel
    font is unicase, and these are capitals). The three share one badge: the same
-   square, size, edge and letters, only the colour and the letter change. A tile that can play two
-   roles is split in both colours and says both ("I/Fn", "I/O") in the panel; on the field it wears the
+   square, size, edge and letters, only the colour and the letter change. The Chat window, both an
+   input and an output, is split in both colours and says both in the panel; on the field it wears the
    one it plays (workbench.js sets data-badge and data-plays). An attachment (a brain, a database, a
    folder) keeps a small hollow square, the lens a small round mark. The badge has a white edge and a
    faint dark outline, so it reads on light and dark tiles alike; each role colour is above 4.5:1
@@ -1284,8 +1284,6 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
   white-space: nowrap;
 }
 .wtile[data-role="both"]::before { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
-.wtile[data-role="reader"] { --rc: var(--role-start); }
-.wtile[data-role="reader"]::before { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-middle) 50%); }   /* a starter or a function */
 .wtile[data-role="attachment"]::before { background: transparent; }
 .wtile[data-role="lens"]::before { border-radius: 50%; background: var(--role-lens); }   /* a lens: a round mark */
 .wtile[data-plays="start"]::before { background: var(--role-start); }   /* on the field: the role it plays now */
@@ -1426,7 +1424,6 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 .field-legend i { box-sizing: border-box; width: 11px; height: 11px; border: 2px solid #fff; border-radius: 3px; background: var(--role-middle); }   /* the role squares, as on the tiles */
 .field-legend [data-role="start"] i { background: var(--role-start); }
 .field-legend [data-role="end"] i { background: var(--role-end); }
-.field-legend [data-role="reader"] i { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-middle) 50%); }
 .field-legend [data-role="both"] i { background: linear-gradient(135deg, var(--role-start) 50%, var(--role-end) 50%); }
 .field-legend [data-role="attachment"] i { background: transparent; }
 .field-legend [data-role="lens"] i { border-radius: 50%; background: var(--role-lens); }

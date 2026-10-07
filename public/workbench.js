@@ -113,9 +113,10 @@
     return id;
   };
   const roleSay = d => DATA.roles[d.role].say;
-  // The role badge at a tile's top right (style.css, "Roles"): S a starter, Fn a function, O an output.
-  // A tile that can be either says both in the panel; on the field it says the one it plays (roleBadges).
-  const BADGE = { start: 'I', middle: 'Fn', end: 'O', reader: 'I/Fn', both: 'I/O' };   // I an input (Laurent, 2026-10-07: was S, a starter)
+  // The role badge at a tile's top right (style.css, "Roles"): I an input, Fn a function, O an output.
+  // The Chat window, both an input and an output, says both in the panel; on the field it says the one
+  // it plays (roleBadges). A model that reads what an input brings (Orchid, Tulip, Cricket) is a function.
+  const BADGE = { start: 'I', middle: 'Fn', end: 'O', both: 'I/O' };   // I an input (Laurent, 2026-10-07: was S, a starter)
   const BADGE_SAY = { I: 'input', Fn: 'function', O: 'output' };
   const DNAME = id => (DEF.get(id) || { name: id }).name;
   // A tile's profile, in its tooltip and in what it says: what it needs, and the lenses it works best with.
@@ -129,7 +130,7 @@
     if (d.heads) parts.push('her roles: ' + d.heads.map(h => `${h.does} (${h.status})`).join(', '));
     return parts.join('; ');
   };
-  const sectionOf = d => (d.role === 'start' || d.role === 'both' || d.role === 'reader' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'outputs'
+  const sectionOf = d => (d.role === 'start' || d.role === 'both' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'outputs'
     : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.role === 'skill' || d.gives === 'skill' ? 'skills' : d.gives === 'brain' ? 'brains' : 'data');
   const fillCap = (cap, d) => {
     cap.innerHTML = '<span></span>';   // the panel shows what a tile does; its name is in its tooltip and label
@@ -419,16 +420,17 @@
   // before it touches another.
   let jointKeys = new Set(), activeGroup = [];
   const NOTCH = 8, KEYLEN = 0.3;   // the notch: 8% of the tile deep, 30% of its side long
+  // a specialist Siren calls may be fed by a tile on its own left (Feeder -> Orchid): it reads that
+  const fedOnField = t => { const [c, r] = posOf(t.parentElement), l = tileIn(cellAt(c - 1, r)); return !!l && !defOf(l).hub && defOf(l).role !== 'end'; };
   const pairFits = (a, b, across) => {
     const x = defOf(a), y = defOf(b);
     if (x.hub || y.hub) {   // Siren and a specialist she calls
       const [h, o] = x.hub ? [x, y] : [y, x];
-      return (o.role === 'start' || o.role === 'reader' || fitsKinds(h.out, o.in)) && (o.role === 'end' || fitsKinds(o.out, h.in));
+      return (o.role === 'start' || fedOnField(o === x ? a : b) || fitsKinds(h.out, o.in)) && (o.role === 'end' || fitsKinds(o.out, h.in));
     }
     if (across) return x.role !== 'end' && y.role !== 'start' && fitsKinds(x.out, y.in);
-    const fn = r => r === 'middle' || r === 'reader';
-    if (fn(x.role) && fn(y.role) && (x.role === 'middle' || y.role === 'middle')) return true;   // two functions: one team
-    return x.role === y.role && (x.role === 'start' || x.role === 'reader' || x.in.some(k => y.in.includes(k)));   // a team of the same role (inputs, outputs)
+    if (x.role === 'middle' && y.role === 'middle') return true;   // two functions: one team
+    return x.role === y.role && (x.role === 'start' || x.in.some(k => y.in.includes(k)));   // a team of the same role (inputs, outputs)
   };
   const joints = (active = activeGroup) => {
     grid.querySelectorAll('.joint').forEach(j => j.remove());
@@ -480,20 +482,17 @@
     jointKeys = keys;
   };
 
-  // On the field, a tile that can play two roles wears the letter of the one it plays now: a reader fed
-  // by the tile before it, or called by Siren, is a function (Fn), else an input (I); the Chat window
-  // after a chain is an output (O), before one an input (I), and beside Siren both (I/O). In the panel
-  // it says both again.
+  // On the field, the Chat window wears the letter of the role it plays now: after a chain an output
+  // (O), before one an input (I), and beside Siren both (I/O). In the panel it says both again.
   const roleBadges = () => {
     const res = check(board());
     for (const t of tiles) {
       const d = defOf(t);
-      if (d.role !== 'reader' && d.role !== 'both') continue;
+      if (d.role !== 'both') continue;
       const p = onField(t) ? res.board.find(x => x.tile === t) : null;
       const st = p && res.stageOf.get(p);
       let plays = null;
-      if (st && d.role === 'reader') plays = st.preds.size || st.hubs.size ? 'middle' : 'start';
-      else if (st && !st.hubs.size) plays = st.preds.size ? 'end' : st.succs.size ? 'start' : null;
+      if (st && !st.hubs.size) plays = st.preds.size ? 'end' : st.succs.size ? 'start' : null;
       t.dataset.badge = plays ? BADGE[plays] : BADGE[d.role];
       if (plays) t.dataset.plays = plays; else delete t.dataset.plays;
     }
@@ -723,10 +722,10 @@
     const spots = [cellAt(c + 1, r), ...(phone.matches ? [] : [cellAt(c, r + 1)])].filter(x => x && !tileIn(x));
     // below: under a function, the functions that can join its team; under an input or an output, another of its role, for the same pool
     const role = last.dataset.role, res0 = check(b), st0 = res0.stageOf.get(at);
-    const isFn = role === 'middle' || (role === 'reader' && !!st0 && st0.preds.size > 0);
+    const isFn = role === 'middle';
     for (const cell of spots) {
       const below = !(cell === spots[0] && posOf(cell)[1] === posOf(last.parentElement)[1]);
-      let list = ghostsFor(b, at, cell).filter(t => !below || (isFn ? t.dataset.role === 'middle' || t.dataset.role === 'reader' : t.dataset.role === role));
+      let list = ghostsFor(b, at, cell).filter(t => !below || (t.dataset.role === role));
       // to the right of a team that writes code in several languages, with no Checker yet: the Checker first
       if (!below && st0 && st0.team && st0.members.filter(p => defOf(p.tile).writesCode).length > 1 && ![...st0.succs].some(q => defOf(q.tile).checker)) {
         list = [...list.filter(t => defOf(t).checker), ...list.filter(t => !defOf(t).checker)];
@@ -790,7 +789,7 @@
   const docked = host => (docks.has(host) ? [...docks.get(host).children] : []);
   const hostOf = chip => { for (const [h, d] of docks) if (d.contains(chip)) return h; return null; };
   const givesOf = t => defOf(t).gives;
-  const wants = host => { const d = defOf(host); return [...(d.needs || []), ...(d.startNeeds || []), ...(d.takes || [])]; };
+  const wants = host => { const d = defOf(host); return [...(d.needs || []), ...(d.takes || [])]; };
   const canDock = (host, att) => !!host && !isAtt(host) && onField(host)
     && (wants(host).includes(givesOf(att)) || (givesOf(att) === 'brain' && ['ai', 'hybrid'].includes(host.dataset.kind) && !isLensT(host))
       || (givesOf(att) === 'skill' && (defOf(att).serves || []).includes(host.dataset.id)))
@@ -1270,7 +1269,7 @@
   // goes; (4) every tile having the attachments it needs. Each fault names the tile at fault (p),
   // and the tile it could not follow (other) when there is one. ----
   const D = id => DEF.get(id);
-  const isStart = d => d.role === 'start' || d.role === 'both' || d.role === 'reader';   // a reader may start
+  const isStart = d => d.role === 'start' || d.role === 'both';   // only an input begins a chain
   const isEnd = d => d.role === 'end' || d.role === 'both';
   const kinds = ks => orList(ks.map(k => (k === '*' ? 'any result' : DATA.kinds[k] || k)));
   const fitsKinds = (out, inn) => out.length > 0 && (inn.includes('*') || out.some(k => inn.includes(k)));
@@ -1334,9 +1333,14 @@
     const chatless = board.filter(p => hub(p) && !around(p).some(q => D(q.id).chat));
     for (const p of chatless) add('ends', p, `${nm(p)} talks only inside a Chat window: a conversation starts and ends there, so put a Chat window beside ${nm(p)}.`, 'no chat window', { mode: 'beside', ids: DATA.tiles.filter(d => d.chat).map(d => d.id) });
     if (!board.length) for (const p of full) add('ends', p, `${nm(p)} is a lens: it is not a model by itself; put it beside ${list((D(p.id).serves || []).map(DNAME))}.`, 'no model', { mode: 'none' });
+    // A model that reads what an input brings (Orchid, Tulip, Cricket) cannot begin a chain: say which
+    // inputs go before it, and offer them (Laurent, 2026-10-07: "orchid on its own can do nothing")
+    const readsSay = d => `${d.name} cannot start a chain: ${d.reads.pron} reads what an input brings. Put ${d.reads.after} before ${{ she: 'her', he: 'him' }[d.reads.pron] || 'it'}.`;
+    const readsIds = d => DATA.tiles.filter(x => (x.role === 'start' || x.role === 'both') && fitsKinds(x.out, d.in)).map(x => x.id);
     if (!chatless.length && board.length && !board.some(p => isStart(D(p.id)))) {
       for (const p of (sources.length ? sources : board)) {
         const d = D(p.id);
+        if (d.reads && d.role === 'middle') { add('ends', p, readsSay(d), 'no start', { mode: 'beside', ids: readsIds(d) }); continue; }
         add('ends', p, `Nothing starts this chain: ${d.name} ${d.in.length ? `needs ${kinds(d.in)}, and ` : ''}only an Input can begin a chain.`, 'no start');
       }
     }
@@ -1374,15 +1378,16 @@
       const before = st.preds.size > 0, after = st.succs.size > 0, called = st.hubs.size > 0;
       if (d.role === 'start' && before) add('order', p, `${d.name} cannot follow ${names([...st.preds])}: ${d.name} starts a chain, so nothing can come before ${d.name}.`, 'wrong order', { other: [...st.preds] });
       else if (d.role === 'end' && after) add('order', p, `Nothing can follow ${d.name}: ${d.name} ends a chain, and ${names([...st.succs])} ${st.succs.size > 1 ? 'are' : 'is'} after ${d.name}.`, 'wrong order', { other: [...st.succs] });
-      else if (d.role !== 'start' && d.role !== 'reader' && !before && !called) add('order', p, `Nothing comes before ${d.name}: ${d.name} needs ${kinds(d.in)}, from a start tile on the left or from Siren beside it.`, 'no start');
+      else if (d.role !== 'start' && !before && !called && d.reads) add('order', p, readsSay(d), 'no start', { mode: 'beside', ids: readsIds(d) });
+      else if (d.role !== 'start' && !before && !called) add('order', p, `Nothing comes before ${d.name}: ${d.name} needs ${kinds(d.in)}, from a start tile on the left or from Siren beside it.`, 'no start');
       else if (d.role !== 'end' && !after && !called) add('order', p, `What ${d.name} gives goes nowhere: ${d.name} hands on ${kinds(d.out)}, and a chain must end in a tile that gives the result.`, 'dead end');
     }
     // An Input straight into an Output (Laurent, 2026-10-07: input -> function -> output): an input only
     // brings the data in, an output gives the result of the work, so a Function goes between them. A pure
-    // input is a starter, the Chat window where a conversation starts, or a code reader (the Feeder) with
-    // nothing before it; a model that reads (Orchid, Tulip, Cricket) does work of its own and counts as a function.
+    // input is a starter (the Feeder among them) or the Chat window where a conversation starts; a model
+    // that reads (Orchid, Tulip, Cricket) does work of its own and is a function.
     const pureIn = p => { const d = D(p.id), st = stageOf.get(p);
-      return !!st && !st.preds.size && !st.hubs.size && (d.role === 'start' || d.role === 'both' || (d.role === 'reader' && (d.kind || 'ai') === 'code')); };
+      return !!st && !st.preds.size && !st.hubs.size && (d.role === 'start' || d.role === 'both'); };
     const playsOut = p => { const d = D(p.id), st = stageOf.get(p); return !!st && !st.hubs.size && (d.role === 'end' || (d.role === 'both' && st.preds.size > 0)); };
     for (const e of edges.filter(x => x.type === 'pipe')) {
       const L = stageOf.get(e.from), R = stageOf.get(e.to);
@@ -1425,7 +1430,7 @@
       } else {
         for (const m of stageOf.get(e.to).members) {
           const h = D(e.from.id), x = D(m.id);
-          if (x.role !== 'start' && !(x.role === 'reader' && !stageOf.get(m).preds.size) && !fitsKinds(h.out, x.in)) add('kinds', m, `${h.name} cannot call ${x.name}: ${h.name} gives ${kinds(h.out)}, ${x.name} needs ${kinds(x.in)}.`, 'no fit', { other: [e.from] });
+          if (x.role !== 'start' && !stageOf.get(m).preds.size && !fitsKinds(h.out, x.in)) add('kinds', m, `${h.name} cannot call ${x.name}: ${h.name} gives ${kinds(h.out)}, ${x.name} needs ${kinds(x.in)}.`, 'no fit', { other: [e.from] });
           else if (x.role !== 'end' && !fitsKinds(x.out, h.in)) add('kinds', m, `${x.name} cannot answer ${h.name}: ${x.name} gives ${kinds(x.out)}, ${h.name} needs ${kinds(h.in)}.`, 'no fit', { other: [e.from] });
         }
       }
@@ -1487,19 +1492,14 @@
       const got = [...new Set([...stageOf.get(p).preds].flatMap(q => D(q.id).out))];
       notes.push(`The ${kinds(got).replace(/^an? /, '')} ${got.length > 1 || /s$/.test(got[0]) ? 'are' : 'is'} shown in the Chat window, a chat box.`);
     }
-    // a reader with nothing before it starts the chain from its own attachment; fed, it needs none
+    // a model that reads, fed by the input before it, says what it reads and where its work goes
     for (const p of board) {
       const d = D(p.id);
-      if (d.role !== 'reader' || hub(p)) continue;
+      if (!d.reads || d.role !== 'middle' || hub(p)) continue;
       const fed = [...stageOf.get(p).preds];
-      if (fed.length) {
-        const a = D(fed[0].id), got = a.out.filter(k => d.in.includes(k));
-        if (fed.length === 1 && got.length && stageOf.get(p).succs.size) notes.push(`${d.name} reads the ${kinds(got).replace(/^an? /, '')} ${a.name} brings and hands ${kinds(d.out).replace(/^an? /, '')} to ${names([...stageOf.get(p).succs])}.`);
-        continue;
-      }
-      for (const need of d.startNeeds || []) {
-        if (!p.att.has(need)) add('needs', p, `${d.name} has nothing to read: attach ${DATA.needs[need]} onto ${d.name}, or put a tile that brings ${kinds(d.in)} before ${d.name}.`, `needs ${DATA.needs[need].replace(/^an? /, '')}`, { mode: 'attach', need });
-      }
+      if (fed.length !== 1) continue;
+      const a = D(fed[0].id), got = a.out.filter(k => d.in.includes(k));
+      if (got.length && stageOf.get(p).succs.size) notes.push(`${d.name} reads the ${kinds(got).replace(/^an? /, '')} ${a.name} brings and hands ${kinds(d.out).replace(/^an? /, '')} to ${names([...stageOf.get(p).succs])}.`);
     }
     for (const p of board) {
       const L = D(p.id).lenses;
@@ -2108,10 +2108,10 @@
   const codeCount = codeWrap.querySelector('.code-count');
   // For each model: what it is given when a team starts with it, what it hands on, and how early
   // in the work it comes, from its role and its kinds in tiles.js.
-  const RANK = { start: 0, both: 0, reader: 0, middle: 1, end: 2 };
+  const RANK = { start: 0, both: 0, middle: 1, end: 2 };
   const role = t => {
     const d = defOf(t);
-    const given = d.role === 'both' ? 'message' : d.role === 'start' ? (d.needs || [])[0] || 'source' : d.role === 'reader' ? (d.startNeeds || d.in || [])[0] || 'source' : (d.in || [])[0] || 'data';
+    const given = d.role === 'both' ? 'message' : d.role === 'start' ? (d.needs || [])[0] || 'source' : (d.in || [])[0] || 'data';
     return [given === '*' ? 'result' : given, (d.out || [])[0] || 'result', RANK[d.role] ?? 1];
   };
   const colour = id => { const t = tiles.find(x => x.dataset.id === id); return t ? t.style.getPropertyValue('--tc') : ''; };
