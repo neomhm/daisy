@@ -1295,7 +1295,7 @@ html { scroll-padding-top: calc(var(--row-c, 37px) + var(--tab-c, 32px) + 12px);
 /* The live guide (workbench.js). The square under a just-placed or dragged tile glows softly green
    (it joins rightly) or red (it does not), with a tick or a cross so colour is not the only sign;
    the cross gives its reason when hovered or pressed. Ghosts: faint tiles in a free square, each
-   with one word, that a press places. A complete team marks its "start" and "end"; FLOW sends an
+   with one word, that a press places. A complete team marks its "input" and "output"; FLOW sends an
    arrow through it. */
 .cell.is-ok, .cell.is-target.is-ok { box-shadow: 0 0 0 2px rgba(63, 201, 128, .85), 0 0 20px rgba(63, 201, 128, .4); }
 .cell.is-bad, .cell.is-target.is-bad { box-shadow: 0 0 0 2px rgba(255, 107, 99, .9), 0 0 20px rgba(255, 90, 80, .4); }

@@ -615,9 +615,10 @@
     cell.append(g);
     if (!still.matches) g.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' });
   };
-  // ---- A complete team (a chain from a Starter to an Output, rightly ordered and fitting; what is
-  // still to attach does not matter here) gets a small "start" mark on its starter(s) and "end" on
-  // its output(s); FLOW then plays an arrow through it, in working order. ----
+  // ---- A complete team (a chain from an Input to an Output, rightly ordered and fitting; what is
+  // still to attach does not matter here) gets a small "input" mark on its input(s) and "output" on
+  // its output(s) (Laurent, 2026-10-07: were "start" and "end"); FLOW then plays an arrow through it,
+  // in working order. ----
   const COMPLETE_BLOCKERS = new Set(['ends', 'orphan', 'order', 'kinds']);
   const chainOf = () => {
     const b = board();
@@ -707,8 +708,8 @@
       m.textContent = m.textContent ? m.textContent + ' \u00b7 ' + word : word;
       m.dataset.mark = m.textContent;
     };
-    chain.starts.forEach(p => put(p, 'start'));
-    chain.ends.forEach(p => put(p, 'end'));
+    chain.starts.forEach(p => put(p, 'input'));
+    chain.ends.forEach(p => put(p, 'output'));
   };
   const liveGuide = () => {
     chainMarks(drag ? null : chainOf());
