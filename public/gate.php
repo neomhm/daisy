@@ -20,7 +20,16 @@ ob_start();   // nothing printed by accident (a server warning, say) may stop th
 
    When signing in fails, the screen says why: the name, the password, nothing reaching the server
    (with what the server did receive), or (right after a good sign-in) the sign-in not being kept by
-   the browser or not read back by the server. */
+   the browser or not read back by the server.
+   SESSIONS AND TRY-IT TICKETS (2026-10-08): the cookie also carries a random SESSION id (32 hex) and
+   the IDENTITY of who signed in, both under its signature (exp.sid.identity.signature), so two
+   browsers are told apart. While the gate has one shared name and password the identity is
+   "shared:<name>"; per-person accounts would set the person's own id in gate_identity_for() and
+   nothing else changes. A cookie of the older form (exp.signature) still signs in and is given a
+   session id the next time a page is loaded. POST /gate.php?ticket gives a signed-in page ONE
+   ticket for ONE request to Daisy's try-it service (see tryit_ticket below); the secret that signs
+   tickets is never in this repository: it is the file /home/akiki/.akiki-tryit-secret, and the
+   service's address is /home/akiki/.akiki-tryit-url. Without both, Try it says it is not switched on. */
 
 const GATE_USER = 'Tul1p';
 const GATE_HASH = '$2y$13$n3k3Jytb7kIXmH5IjPkXvOGKar7A9HyTxeS9xl6kKA8lw3zZd.dsm';
@@ -46,17 +55,57 @@ function gate_key() {
   return null;
 }
 
-function gate_sign($exp, $key) {
+// The password's bcrypt hash: the file /home/akiki/.akiki-gate-hash when it is there (outside the site and
+// this public repository: put a new, long password's hash there and the one below stops counting), else GATE_HASH.
+function gate_hash() {
+  $f = dirname(__DIR__) . '/.akiki-gate-hash';
+  if (@is_file($f) && @is_readable($f)) {
+    $h = trim((string) @file_get_contents($f, false, null, 0, 200));
+    if (preg_match('/^\$2y\$\d\d\$[.\/A-Za-z0-9]{53}$/D', $h)) return $h;
+  }
+  return GATE_HASH;
+}
+function gate_sign($exp, $key) {   // the older cookie form, still accepted
   return hash_hmac('sha256', 'akiki-gate|' . $exp, $key);
 }
-
-// The sign-in cookie this request brought: 'ok', 'none', 'old' (expired) or 'bad' (not signed with our key).
-function gate_cookie_state($key) {
+function gate_sign2($exp, $sid, $ident, $key) {
+  return hash_hmac('sha256', 'akiki-gate|v2|' . $exp . '|' . $sid . '|' . $ident, $key);
+}
+// Who signed in, as the try-it service is told: the HOOK for per-person accounts (return the
+// person's own id here, 1-48 of a-z 0-9 _ : -). Today there is one shared name.
+function gate_identity_for($user) {
+  return 'shared:' . substr(preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $user)), 0, 40);
+}
+function gate_new_sid() {
+  return bin2hex(random_bytes(16));
+}
+function gate_cookie_value($exp, $sid, $ident, $key) {
+  return $exp . '.' . $sid . '.' . $ident . '.' . gate_sign2($exp, $sid, $ident, $key);
+}
+// The sign-in cookie this request brought: ['state' => 'ok' | 'none' | 'old' (expired) | 'bad' (not
+// signed with our key), 'exp', 'sid', 'ident']; sid is null for a cookie of the older form.
+function gate_cookie_read($key) {
+  $r = ['state' => 'bad', 'exp' => 0, 'sid' => null, 'ident' => null];
   $c = isset($_COOKIE[GATE_COOKIE]) ? (string) $_COOKIE[GATE_COOKIE] : '';
-  if ($c === '') return 'none';
-  if (!preg_match('/^(\d{10})\.([0-9a-f]{64})$/', $c, $m)) return 'bad';
-  if ((int) $m[1] < time()) return 'old';
-  return hash_equals(gate_sign($m[1], $key), $m[2]) ? 'ok' : 'bad';
+  if ($c === '') { $r['state'] = 'none'; return $r; }
+  if (preg_match('/^(\d{10})\.([0-9a-f]{32})\.([a-z0-9_:-]{1,48})\.([0-9a-f]{64})$/D', $c, $m)) {
+    if (!hash_equals(gate_sign2($m[1], $m[2], $m[3], $key), $m[4])) return $r;
+    return ['state' => ((int) $m[1] < time()) ? 'old' : 'ok', 'exp' => (int) $m[1], 'sid' => $m[2], 'ident' => $m[3]];
+  }
+  if (preg_match('/^(\d{10})\.([0-9a-f]{64})$/D', $c, $m)) {
+    if (!hash_equals(gate_sign($m[1], $key), $m[2])) return $r;
+    return ['state' => ((int) $m[1] < time()) ? 'old' : 'ok', 'exp' => (int) $m[1], 'sid' => null, 'ident' => gate_identity_for(GATE_USER), 'old' => $c];
+  }
+  return $r;
+}
+// A cookie of the older form, signed in: given a session id (its expiry kept). -> the session id.
+function gate_upgrade(&$read, $key) {
+  if ($read['state'] !== 'ok' || $read['sid'] !== null) return $read['sid'];
+  // derived from the old cookie itself, so one old cookie is ONE session however often it is replayed
+  // without taking the new cookie (review 2026-10-08)
+  $read['sid'] = substr(hash_hmac('sha256', 'akiki-gate|sid|' . $read['old'], $key), 0, 32);
+  gate_cookie(gate_cookie_value($read['exp'], $read['sid'], $read['ident'], $key), $read['exp']);
+  return $read['sid'];
 }
 
 function gate_cookie($value, $exp) {
@@ -118,6 +167,58 @@ function gate_saw() {
     . ', PHP ' . PHP_VERSION;
 }
 
+// ---- TRY IT: one ticket for one request to Daisy's service (the Workbench's "Try it").
+// The page asks POST /gate.php?ticket with the header X-Akiki-Ticket: 1 (a header of our own: another
+// site's page cannot send it without a CORS preflight, which this file never answers) and the body
+// {"h": "<sha256 hex of the exact request it will send to the service>"}. A signed-in browser gets
+// {"ok": true, "ticket", "rid", "exp", "service"}: the ticket is
+//   v1.SID.IDENTITY.RID.EXP.H.MAC   MAC = HMAC-SHA256(secret, "akiki-tryit|v1|SID|IDENTITY|RID|EXP|H")
+// with RID 128 random bits and EXP at most 60 s away; the service accepts it once, for that body
+// only, before EXP. The secret (64 hex) is the file .akiki-tryit-secret next to the site's folder,
+// never in this repository; the service's address is the file .akiki-tryit-url beside it.
+const TRYIT_TTL = 60;
+const TRYIT_PAGE_ORIGINS = ['https://akiki.ai', 'https://www.akiki.ai'];
+function tryit_out($status, $data) {
+  http_response_code($status);
+  header('Content-Type: application/json; charset=utf-8');
+  header('Cache-Control: no-store');
+  header('X-Content-Type-Options: nosniff');
+  echo json_encode($data);
+}
+function tryit_file($name, $rx, $private = false) {
+  $f = dirname(__DIR__) . '/' . $name;
+  if (!@is_file($f) || !@is_readable($f)) return null;
+  if ($private && (@fileperms($f) & 0077)) return null;   // the secret: readable by its owner only (chmod 600), as the service demands
+  $v = trim((string) @file_get_contents($f, false, null, 0, 512));
+  return preg_match($rx, $v) ? $v : null;
+}
+function tryit_ticket($key) {
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Allow: POST'); tryit_out(405, ['ok' => false]); return; }
+  $origin = isset($_SERVER['HTTP_ORIGIN']) ? (string) $_SERVER['HTTP_ORIGIN'] : '';
+  $site = isset($_SERVER['HTTP_SEC_FETCH_SITE']) ? (string) $_SERVER['HTTP_SEC_FETCH_SITE'] : '';
+  if (($origin !== '' && !in_array($origin, TRYIT_PAGE_ORIGINS, true)) || ($site !== '' && $site !== 'same-origin')
+      || !isset($_SERVER['HTTP_X_AKIKI_TICKET']) || $_SERVER['HTTP_X_AKIKI_TICKET'] !== '1') {
+    tryit_out(403, ['ok' => false]);
+    return;
+  }
+  $read = gate_cookie_read($key);
+  if ($read['state'] !== 'ok') { tryit_out(401, ['ok' => false, 'why' => 'signin']); return; }
+  $sid = (string) gate_upgrade($read, $key);
+  $ident = (string) $read['ident'];
+  if (!preg_match('/^[0-9a-f]{32}$/D', $sid) || !preg_match('/^[a-z0-9_:-]{1,48}$/D', $ident)) { tryit_out(401, ['ok' => false, 'why' => 'signin']); return; }
+  $raw = (string) @file_get_contents('php://input', false, null, 0, 600);
+  $body = json_decode($raw, true);
+  $h = is_array($body) && isset($body['h']) && is_string($body['h']) ? $body['h'] : '';
+  if (!preg_match('/^[0-9a-f]{64}$/D', $h)) { tryit_out(400, ['ok' => false]); return; }
+  $secret = tryit_file('.akiki-tryit-secret', '/^[0-9a-f]{64}$/D', true);
+  $service = tryit_file('.akiki-tryit-url', '#^https://[a-z0-9.-]+(:[0-9]{2,5})?/[A-Za-z0-9/_.-]*$#D');
+  if ($secret === null || $service === null) { tryit_out(503, ['ok' => false, 'why' => 'off']); return; }
+  $rid = bin2hex(random_bytes(16));
+  $exp = (string) (time() + TRYIT_TTL);
+  $mac = hash_hmac('sha256', "akiki-tryit|v1|$sid|$ident|$rid|$exp|$h", $secret);
+  tryit_out(200, ['ok' => true, 'ticket' => "v1.$sid.$ident.$rid.$exp.$h.$mac", 'rid' => $rid, 'exp' => (int) $exp, 'service' => $service]);
+}
+
 header('X-Robots-Tag: noindex, nofollow');
 header('Vary: Cookie');
 $key = gate_key();
@@ -128,6 +229,10 @@ if ($key === null) {
   exit;
 }
 
+if (isset($_GET['ticket'])) {
+  tryit_ticket($key);
+  exit;
+}
 if (isset($_GET['signout'])) {
   gate_cookie('', 1);
   header('Location: /', true, 303);
@@ -136,16 +241,17 @@ if (isset($_GET['signout'])) {
 
 $failed = '';   // why signing in just failed: 'name', 'password' or 'empty'
 $saw = '';
-$cookie = gate_cookie_state($key);
+$read = gate_cookie_read($key);
+$cookie = $read['state'];
 $to = gate_local(isset($_POST['to']) ? $_POST['to'] : gate_here());   // the page to go on to
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   list($user, $pass) = gate_credentials();
   $name_ok = hash_equals(strtolower(GATE_USER), $user);
-  $pass_ok = password_verify($pass, GATE_HASH);   // checked whatever the name, every time
+  $pass_ok = password_verify($pass, gate_hash());   // checked whatever the name, every time
   $ok = $name_ok && $pass_ok;
   if ($ok) {
     $exp = time() + GATE_DAYS * 86400;
-    gate_cookie($exp . '.' . gate_sign($exp, $key), $exp);
+    gate_cookie(gate_cookie_value($exp, gate_new_sid(), gate_identity_for(GATE_USER), $key), $exp);
   } else {
     usleep(900000);   // slows down guessing
     $failed = ($user === '' && $pass === '') ? 'empty' : ($name_ok ? 'password' : 'name');
@@ -166,6 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Location: /', true, 303);   // signed in already: on to the site
     exit;
   }
+  gate_upgrade($read, $key);
   $file = gate_page();
   if ($file === null) {
     http_response_code(404);

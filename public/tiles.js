@@ -30,6 +30,14 @@
    kind      ai (a trained model; the default) | code (no brain, always does the same) | hybrid (a model
              plus code checks) | data (your own data). The panel draws each kind its own way.
    chat      the Chat window: where a conversation starts and ends; Siren works only beside one
+   fallback  a need met by something built in when nothing is attached: { database: { say, as } } (Daisy
+             "needs to know the tables": a Database attached, else the built-in SAMPLE of PLAN's tables, or
+             tables pasted in the chat when you try her). TesT passes with a note saying which; "as" is the
+             attachment the fallback counts as for her lens rule (the sample is PLAN tables)
+   needsSay  how a need reads in a tile's profile, when it is not just its name ({ database: '...' })
+   tryit     the Text output: the end of a chain a visitor can TRY for real (Chat window, Daisy, Text output):
+             workbench.js shows a Try it key, which opens a chat whose answers come from Daisy on our
+             machine, asked through a ticket the sign-in gives for each request (gate.php ?ticket)
    unlessFed a need waived when the tile before it brings that kind ({ documents: 'document' }: Lily needs
              no folder when a Feeder or a Scanner hands her documents)
    brain     a brain is the TEAM's: one brain attached to any tile serves every tile of the connected team
@@ -100,6 +108,8 @@ window.AKIKI_TILES = {
       note: '3.4M parameters, 13.5 MB; about 9 ms per design, measured on a network her size' },
     { id: 'daisy', word: 'answer', name: 'Daisy', words: 'Answers questions', group: 'flowers', colour: '#ec8e4a',
       role: 'middle', in: ['question', 'reading', 'table', 'plan'], out: ['table', 'spec'], needs: ['database'], writesCode: 'SQL',
+      needsSay: { database: 'to know the tables (a Database, the built-in sample of PLAN\u2019s tables, or tables pasted in the chat)' },
+      fallback: { database: { say: 'the built-in sample of PLAN\u2019s tables (a made-up salon); attach a Database, or paste tables in the chat when you try her', as: 'plantables' } },
       lenses: { needs: [{ lens: 'magnolia', unless: 'plantables', why: 'on an unfamiliar database' }] },
       status: 'working', params: '27.1', ms: '270', mb: '108', tags: 'database',
       note: '27.1M parameters, 108 MB, 0.27 s from question to rows' },
@@ -253,6 +263,9 @@ window.AKIKI_TILES = {
     { id: 'webform', word: 'form', kind: 'code', name: 'Web form', words: 'Takes what someone fills in on a web form', group: 'io', colour: '#4a86c8',
       role: 'start', in: [], out: ['text', 'request'], needs: [], pixels: ['XXXXXXXXX', 'X.......X', 'X.XXXXX.X', 'X.......X', 'X.XXXXX.X', 'X.......X', 'XXXXXXXXX', '......XXX'],
       status: 'design', params: '', ms: '', mb: '', tags: 'website code', note: 'designed, not built yet' },
+    { id: 'text-out', word: 'text', kind: 'code', tryit: true, name: 'Text output', words: 'Shows the answer as text: what the model wrote, its code and its result', group: 'io', colour: '#2f9a94',
+      role: 'end', in: ['*'], out: [], needs: [], pixels: ['XXXXXXXXX', 'X.......X', 'X.XX.XX.X', 'X.......X', 'X.XXXX..X', 'X.......X', 'X.XX....X', 'XXXXXXXXX'],
+      status: 'working', params: '', ms: '', mb: '', tags: 'code', note: 'code: a chat screen that shows the reply as text (after Daisy: her spec, the SQL, and rows on the sample)' },
     { id: 'speech', word: 'speak', kind: 'code', name: 'Speech', words: 'Reads the result aloud', group: 'io', colour: '#2f9a94',
       role: 'end', in: ['*'], out: [], needs: [], pixels: ['....X..X.', '...XX...X', '.XXXX.X.X', '.XXXX.X.X', '.XXXX.X.X', '...XX...X', '....X..X.'],
       status: 'design', params: '', ms: '', mb: '', tags: 'voice code', note: 'designed, not built yet' },

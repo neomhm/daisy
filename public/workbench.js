@@ -122,7 +122,7 @@
   // A tile's profile, in its tooltip and in what it says: what it needs, and the lenses it works best with.
   const profile = d => {
     const parts = [];
-    const needs = [...(d.needs || []).map(n => DATA.needs[n]), ...((d.lenses || {}).needs || []).map(x => `${DNAME(x.lens)}${x.why ? ' ' + x.why : ''}`)];
+    const needs = [...(d.needs || []).map(n => (d.needsSay || {})[n] || DATA.needs[n]), ...((d.lenses || {}).needs || []).map(x => `${DNAME(x.lens)}${x.why ? ' ' + x.why : ''}`)];
     if (needs.length) parts.push('needs: ' + needs.join(', '));
     if ((d.lenses || {}).best) parts.push('works best with: ' + d.lenses.best.map(DNAME).join(', '));
     const andList = w => (w.length < 3 ? w.join(' and ') : w.slice(0, -1).join(', ') + ' and ' + w[w.length - 1]);   // `list` is defined further down
@@ -341,7 +341,7 @@
       const cv = this.canvas, dpr = window.devicePixelRatio || 1;
       const W = cv.clientWidth, H = cv.clientHeight;
       if (!W || !H) return;
-      if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+      if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }   // above the keys only the HEIGHT changes (a short screen)
       const x = cv.getContext('2d');
       x.setTransform(dpr, 0, 0, dpr, 0, 0);
       x.clearRect(0, 0, W, H);
@@ -388,18 +388,18 @@
       this.raf = requestAnimationFrame(step);
     }
   }
-  const sizeMeter = new Meter(tray.querySelector('[data-meter="size"]'), m => (
+  const sizeMeter = new Meter(bench.querySelector('[data-meter="size"]'), m => (
     m >= 1000
       ? { text: (m / 1000).toFixed(2), unit: 'B', spoken: (m / 1000).toFixed(2) + ' billion parameters' }
       : { text: m.toFixed(1), unit: 'M', spoken: m.toFixed(1) + ' million parameters' }));
-  const msMeter = new Meter(tray.querySelector('[data-meter="latency"]'), v => (
+  const msMeter = new Meter(bench.querySelector('[data-meter="latency"]'), v => (
     { text: String(Math.round(v)), unit: 'ms', spoken: Math.round(v) + ' milliseconds' }));
-  const mbMeter = new Meter(tray.querySelector('[data-meter="weights"]'), mb => (
+  const mbMeter = new Meter(bench.querySelector('[data-meter="weights"]'), mb => (
     mb > 10000
       ? { text: (mb / 1000).toFixed(2), unit: 'GB', spoken: (mb / 1000).toFixed(2) + ' gigabytes' }
       : { text: mb.toFixed(1), unit: 'MB', spoken: mb.toFixed(1) + ' megabytes' }));
   const meters = [sizeMeter, msMeter, mbMeter];
-  const note = tray.querySelector('.meter-note');
+  const note = bench.querySelector('.meter-note');   // the screens stand above the keys, at the field's left
 
   // ---- Groups of joined tiles, the magnet bars, and the counting. ----
   let last = null;   // the tile moved last: its group is the one counted
@@ -530,6 +530,7 @@
     if (timeOnly.length) parts.push(`${list(timeOnly)} ${timeOnly.length > 1 ? 'add' : 'adds'} time but no size.`);
     if (noFile.length) parts.push(`No size on disk measured yet for ${list(noFile)}.`);
     note.textContent = parts.join(' ');
+    note.title = note.textContent;   // the note is cut to three lines beside the keys: the whole of it on hover
     note.hidden = !parts.length;
     activeGroup = group;
     roleBadges();
@@ -703,7 +704,9 @@
     }
     return levels.filter(l => l.length);
   };
+  let tryRefresh = null;   // the Try it key's state (see "Try it" further down), set once that key exists
   const chainMarks = chain => {
+    if (tryRefresh) tryRefresh(chain);
     grid.querySelectorAll('.chain-mark').forEach(x => x.remove());
     keyFlow.classList.toggle('is-off', !chain);
     keyFlow.setAttribute('aria-disabled', String(!chain));
@@ -775,7 +778,13 @@
   const lensHints = () => {
     const host = last && onField(last) && defOf(last).lenses ? last : null;
     const L = host ? defOf(host).lenses : {};
-    const need = new Set((L.needs || []).map(x => x.lens)), best = new Set(L.best || []);
+    // a lens need with an "unless" is no need when that attachment is there, or when a built-in fallback
+    // standing in for the need counts as it (Daisy on the sample: MAGNOLIA optional), as TesT says
+    const att = new Set(host ? docked(host).map(x => x.dataset.id) : []), gives = new Set(host ? docked(host).map(givesOf) : []);
+    const fb = host ? defOf(host).fallback || {} : {};
+    const waived = x => !!x.unless && (att.has(x.unless) || Object.entries(fb).some(([n, f]) => f.as === x.unless && !gives.has(n)));
+    const need = new Set((L.needs || []).filter(x => !waived(x)).map(x => x.lens));
+    const best = new Set([...(L.best || []), ...(L.needs || []).filter(waived).map(x => x.lens)]);
     for (const t of tiles.filter(isLensT)) {
       const slot = home.get(t).closest('.tray-slot');
       slot.classList.toggle('is-lens-need', need.has(t.dataset.id));
@@ -1283,6 +1292,8 @@
   const fitsKinds = (out, inn) => out.length > 0 && (inn.includes('*') || out.some(k => inn.includes(k)));
   const ORDER = ['ends', 'orphan', 'order', 'kinds', 'needs'];
   const isLensD = p => D(p.id).role === 'lens';
+  // what a tile's built-in fallback counts as, when it stands in for a need nothing is attached for
+  const fallbackAs = p => { const fb = D(p.id).fallback || {}; const n = (D(p.id).needs || []).find(k => fb[k] && !p.att.has(k)); return n ? fb[n].as : null; };
   const check = full => {
     const board = full.filter(p => !isLensD(p));   // lenses sit beside their model: not steps of the chain
     const at = new Map(board.map(p => [p.c + ',' + p.r, p]));
@@ -1493,6 +1504,8 @@
       if (need === 'brain') continue;   // the team's, above
       const waive = (D(p.id).unlessFed || {})[need];
       if (waive && fedWith(p).has(waive)) continue;
+      const fb = (D(p.id).fallback || {})[need];   // met by something built in (Daisy: the sample of PLAN's tables)
+      if (!p.att.has(need) && fb) { notes.push(`${nm(p)} uses ${fb.say}.`); continue; }
       if (!p.att.has(need)) add('needs', p, `${nm(p)} needs ${DATA.needs[need]}: attach one onto ${nm(p)}.`, `needs ${DATA.needs[need].replace(/^an? /, '')}`, { mode: 'attach', need });
     }
     // a Chat window at the end of a chain, with no Siren: the result is shown in a chat box
@@ -1515,7 +1528,7 @@
       const has = new Set(around(p).filter(isLensD).map(q => q.id));
       for (const x of L.needs || []) {
         if (has.has(x.lens)) continue;
-        if (x.unless && (p.attIds || new Set()).has(x.unless)) { notes.push(`${DNAME(x.lens)} is optional for ${nm(p)} on ${DNAME(x.unless)}.`); continue; }
+        if (x.unless && ((p.attIds || new Set()).has(x.unless) || fallbackAs(p) === x.unless)) { notes.push(`${DNAME(x.lens)} is optional for ${nm(p)} on ${DNAME(x.unless)}.`); continue; }
         add('needs', p, `${nm(p)} needs ${DNAME(x.lens)}${x.why ? ' ' + x.why : ''}: put ${DNAME(x.lens)} beside ${nm(p)}.`, 'needs a lens', { mode: 'lens', lens: x.lens });
       }
       const missing = (L.best || []).filter(id => !has.has(id));
@@ -1559,6 +1572,19 @@
       path = chains.filter(Boolean).join('; ');
     }
     return { ok: !cat, cat, faults, all: errs, edges, path, notes: [...new Set(notes)], stageOf, hub: h || null, board };
+  };
+  // A chain a visitor can TRY for real: it passes TesT and has Daisy between a Chat window and a tile
+  // marked "tryit" in tiles.js (the Text output), joined side by side. -> { chat, model, out } or null.
+  const tryChainOf = res => {
+    if (!res || !res.ok) return null;
+    for (const e of res.edges) {
+      if (e.type !== 'pipe' || e.from.id !== 'daisy' || !D(e.to.id).tryit) continue;
+      const st = res.stageOf.get(e.from);
+      if (!st || st.team) continue;
+      const before = res.edges.find(f => f.type === 'pipe' && f.to === e.from && D(f.from.id).chat);
+      if (before) return { chat: before.from, model: e.from, out: e.to };
+    }
+    return null;
   };
   const board = () => cells.filter(tileIn).map(cell => {
     const t = tileIn(cell), [c, r] = posOf(cell);
@@ -1968,11 +1994,13 @@
           wave.animate([{ transform: 'scale(1)', opacity: 0.9 }, { transform: 'scale(1.25)', opacity: 0 }], { duration: 950, easing: 'cubic-bezier(.2, .8, .2, 1)', fill: 'forwards' });
         }
         verdict(b, false, '1 model', res.path.length <= 34 ? res.path : `${n} tiles in order`);
-        const unbuilt = [...new Set([...main, ...main.flatMap(docked)].filter(t => t.dataset.status === 'design' || t.dataset.status === 'notbuilt').map(t => t.dataset.name))];
+        const tryable = tryChainOf(res);   // Chat window, Daisy, Text output: the chat is the Try it screen
+        const unbuilt = [...new Set([...main, ...main.flatMap(docked)].filter(t => (t.dataset.status === 'design' || t.dataset.status === 'notbuilt') && !(tryable && t === tryable.chat.tile)).map(t => t.dataset.name))];
         const sentence = `${res.path}: the order is right, every two touching tiles fit and every tile has what it needs, so ${n === 1 ? 'this tile makes' : `these ${n} tiles make`} one model.`
           + (unbuilt.length ? ` It cannot run yet: ${list(unbuilt)} ${unbuilt.length > 1 ? 'are' : 'is'} not built.` : ' It works as one model.')
           + main.filter(t => t.dataset.status === 'gate').map(t => ` ${t.dataset.name} has passed her gate but is not in use yet.`).join('')
-          + (res.notes.length ? ' Note: ' + res.notes.join(' ') : '');
+          + (res.notes.length ? ' Note: ' + res.notes.join(' ') : '')
+          + (tryable ? ' Press Try it to ask Daisy a question for real.' : '');
         said.textContent = 'Test: ' + sentence;
         showPass(sentence);
         if (sampleRun) sampleRun(recipe(res));   // later: a sample through the real models (see HOOK)
@@ -2308,12 +2336,243 @@
   const openCode = open => {
     keyCode.setAttribute('aria-expanded', String(open));
     codeWrap.classList.toggle('is-open', open);
+    if (open && tryWrap.classList.contains('is-open')) openTry(false);   // one panel above the screens at a time
     codeWrap.inert = !open;
     if (open) writeCode(codeAt[0], codeAt[1], true);   // typed out afresh each time it opens
   };
   keyCode.addEventListener('click', () => openCode(keyCode.getAttribute('aria-expanded') !== 'true'));
   codeWrap.querySelector('.code-close').addEventListener('click', () => { openCode(false); keyCode.focus(); });
   codeWrap.addEventListener('keydown', e => { if (e.key === 'Escape') { openCode(false); keyCode.focus(); } });
+  // ---- Try it (Laurent, 2026-10-08): on a chain that passes TesT, Chat window -> Daisy -> Text output,
+  // the Try it key opens a chat screen (the Text output) in the panel. What is typed goes to Daisy as it
+  // is; her spec, the SQL code makes of it (and the rows, on the built-in sample), or her refusal or her
+  // question back, are shown under it. Daisy runs on our own machine, not in the page: for EACH question
+  // the page first asks the sign-in (POST /gate.php?ticket, with the sha256 of the exact request) for a
+  // ticket naming this browser's session, who signed in and a new random request id, good for 60 s and
+  // for that request only; the service checks it and answers once. Everything shown is put in as text
+  // (textContent), never as markup. The status of each answer is read before its body. ----
+  const TICKET_URL = '/gate.php?ticket';
+  const TRY_SAMPLES = ['top 3 clients by revenue', 'clients in Lyon', 'how many no-shows per month?', 'which services take longer than an hour?', 'cancel all bookings for tomorrow'];
+  const TRY_MAX = 600, TRY_TABLES_MAX = 16000, TRY_WAIT = 30000;
+  const keyTry = (() => {
+    const k = document.createElement('button');
+    k.className = 'key key-try is-off';
+    k.type = 'button';
+    k.setAttribute('aria-label', 'Try it: ask Daisy a question for real');
+    k.setAttribute('aria-disabled', 'true');
+    k.setAttribute('aria-expanded', 'false');
+    k.innerHTML = '<span class="key-face"><svg class="key-icon" viewBox="0 0 15 19" aria-hidden="true">'
+      + [[0, 0], [0, 4], [0, 8], [0, 12], [0, 16], [4, 4], [4, 8], [4, 12], [8, 8], [4, 0], [4, 16], [8, 4], [8, 12], [12, 8]].filter(([x, y]) => !((x === 4 && (y === 0 || y === 16)) || (x === 8 && (y === 4 || y === 12))))
+        .map(([x, y]) => `<rect x="${x}" y="${y}" width="3" height="3" rx=".8"/>`).join('')
+      + '</svg><span class="key-word">TRY</span></span>';
+    bench.querySelector('.field-keys').append(k);
+    return k;
+  })();
+  const tryWrap = document.createElement('div');
+  tryWrap.className = 'try-wrap';
+  tryWrap.inert = true;
+  tryWrap.innerHTML = '<section class="try" aria-label="Text output: try Daisy">'
+    + '<div class="try-bar"><span class="try-tab"><svg class="try-badge" viewBox="0 0 9 8" aria-hidden="true"><path fill="currentColor" d="M0 0h9v1H0zM0 7h9v1H0zM0 1h1v6H0zM8 1h1v6H8zM2 2h2v1H2zM5 2h2v1H5zM2 4h4v1H2z"/></svg>Text output</span>'
+    + '<span class="try-model"></span><button class="try-close" type="button" aria-label="Close the chat"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1l8 8M9 1L1 9"/></svg></button></div>'
+    + '<div class="try-log" role="log" aria-live="polite" tabindex="0"></div>'
+    + '<form class="try-form" novalidate><p class="try-tables"></p><div class="try-samples"></div>'
+    + '<label class="try-ask"><span class="sr-only">Your question for Daisy</span><textarea class="try-text" rows="2" maxlength="' + TRY_MAX + '" placeholder="Ask Daisy about the tables, in English"></textarea></label>'
+    + '<details class="try-paste"><summary>Paste your own tables</summary><p class="try-help">One block per table: a line <b>table clients</b>, then the column names, then the rows (commas, tabs or a Markdown table). Daisy 1.4 knows PLAN’s table names: bookings, invoice_ledger, clients, staff, services, products, opening_hours. Rows from pasted tables are not shown back.</p>'
+    + '<label><span class="sr-only">Your tables</span><textarea class="try-paste-text" rows="5" maxlength="' + TRY_TABLES_MAX + '" spellcheck="false" placeholder="table clients&#10;id, name, city&#10;1, Ann Lee, Lyon"></textarea></label></details>'
+    + '<div class="try-row"><span class="try-state" aria-live="polite"></span><button class="try-send" type="submit">Send</button></div></form></section>';
+  const codeWrapEl = bench.querySelector('.code-wrap');
+  codeWrapEl.after(tryWrap);
+  const tryLog = tryWrap.querySelector('.try-log'), tryForm = tryWrap.querySelector('.try-form');
+  const tryText = tryWrap.querySelector('.try-text'), tryPaste = tryWrap.querySelector('.try-paste-text');
+  const trySend = tryWrap.querySelector('.try-send'), tryStateEl = tryWrap.querySelector('.try-state');
+  tryWrap.querySelector('.try-model').textContent = 'Daisy 1.4';
+  for (const q of TRY_SAMPLES) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'try-sample';
+    b.textContent = q;
+    b.addEventListener('click', () => { tryText.value = q; tryText.focus(); });
+    tryWrap.querySelector('.try-samples').append(b);
+  }
+  let tryNow = null, tryBusy = false, tryGreeted = false;
+  const tryEl = (tag, cls, text, parent) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = String(text); if (parent) parent.append(e); return e; };
+  const tryScroll = () => { tryLog.scrollTop = tryLog.scrollHeight; };
+  const trySys = (text, bad) => { tryEl('p', 'try-msg is-system' + (bad ? ' is-bad' : ''), text, tryLog); tryScroll(); };
+  const tryTablesSay = () => {
+    const att = tryNow ? tryNow.model.attIds || new Set() : new Set();
+    if (att.has('database')) return 'Your Database stays on your PC: this try reads the built-in sample (a made-up salon in PLAN’s tables), or the tables you paste below.';
+    if (att.has('plantables')) return 'PLAN tables attached: this try reads the built-in sample of PLAN’s tables (a made-up salon), or the tables you paste below.';
+    return 'Tables: the built-in sample of PLAN’s tables, a made-up salon (bookings, invoices, clients, staff, services, opening hours), or the tables you paste below.';
+  };
+  const openTry = open => {
+    keyTry.setAttribute('aria-expanded', String(open));
+    tryWrap.classList.toggle('is-open', open);
+    tryWrap.inert = !open;
+    if (!open) return;
+    if (keyCode.getAttribute('aria-expanded') === 'true') openCode(false);
+    tryWrap.querySelector('.try-tables').textContent = tryTablesSay();
+    if (!tryGreeted) {
+      tryGreeted = true;
+      trySys('You are trying Daisy 1.4 for real. What you type goes to her as it is; she answers with a spec, code turns it into SQL and runs it read-only on the sample, whose today is 26 Sep 2026. When she does not know, she says so; when unsure, she asks back. What you type is not kept: each request is logged by its id, time and size only.');
+    }
+    setTimeout(() => {
+      if (phone.matches) tryWrap.scrollIntoView({ block: 'start', behavior: still.matches ? 'auto' : 'smooth' });   // the panel is under the field on a phone
+      tryText.focus({ preventScroll: phone.matches });
+    }, 60);
+  };
+  tryRefresh = chain => {
+    tryNow = chain && chain.res ? tryChainOf(chain.res) : null;
+    keyTry.classList.toggle('is-off', !tryNow);
+    keyTry.setAttribute('aria-disabled', String(!tryNow));
+    if (tryWrap.classList.contains('is-open')) tryWrap.querySelector('.try-tables').textContent = tryTablesSay();   // a Database attached while open
+    tryState();
+  };
+  const tryState = () => {
+    trySend.disabled = tryBusy || !tryNow;
+    tryStateEl.textContent = tryBusy ? 'Daisy is answering…' : tryNow ? '' : 'Put back Chat window → Daisy → Text output to ask.';
+  };
+  keyTry.addEventListener('click', () => {
+    if (keyTry.getAttribute('aria-expanded') === 'true') { openTry(false); return; }   // an open chat always closes
+    if (!tryNow) { say('Try it needs a chain that passes TesT: Chat window → Daisy → Text output, side by side.', 4200); return; }
+    openTry(keyTry.getAttribute('aria-expanded') !== 'true');
+  });
+  tryWrap.querySelector('.try-close').addEventListener('click', () => { openTry(false); keyTry.focus(); });
+  tryWrap.addEventListener('keydown', e => { if (e.key === 'Escape' && !e.isComposing) { openTry(false); keyTry.focus(); } });
+  tryText.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); tryForm.requestSubmit ? tryForm.requestSubmit() : trySend.click(); } });
+  const tryHex = async str => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)))].map(x => x.toString(16).padStart(2, '0')).join('');
+  const LOCAL_PAGE = location.protocol === 'http:' && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);   // a test on this machine only
+  const tryServiceOk = u => typeof u === 'string' && (/^https:\/\/[a-z0-9.-]+(:\d{2,5})?\/[A-Za-z0-9/_.-]*$/.test(u) || (LOCAL_PAGE && /^http:\/\/127\.0\.0\.1(:\d{2,5})?\/[A-Za-z0-9/_.-]*$/.test(u)));
+  // One request: the status first, then the body, both inside the same 30 s (a reply whose headers arrive
+  // and whose body never does must not keep the page busy); redirects are refused, so the ticket and the
+  // question go to the address that was checked and nowhere else (review 2026-10-08). -> { r, body }
+  // where body is the parsed JSON or null; a dead connection or the time running out throws.
+  const tryFetch = async (url, opts) => {
+    const ac = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = ac ? setTimeout(() => ac.abort(), TRY_WAIT) : 0;
+    try {
+      const r = await fetch(url, { ...opts, redirect: 'error', ...(ac ? { signal: ac.signal } : {}) });
+      let body = null;
+      try { body = await r.json(); } catch (e) { if (e && e.name === 'AbortError') throw e; body = null; }
+      return { r, body };
+    } finally { clearTimeout(timer); }
+  };
+  const arr = x => (Array.isArray(x) ? x : []);
+  const txt = x => (x == null ? '' : typeof x === 'object' ? JSON.stringify(x) : String(x));
+  const tryCode = (label, text, parent) => {
+    if (!text) return;
+    const box = tryEl('div', 'try-code', null, parent);
+    tryEl('span', 'try-code-label', label, box);
+    tryEl('pre', null, txt(text), box);
+  };
+  const tryRows = (cols, rows, truncated, parent) => {
+    cols = arr(cols); rows = arr(rows).filter(Array.isArray);
+    if (!cols.length) return;
+    if (!rows.length) { tryEl('p', 'try-none', 'No rows.', parent); return; }
+    const wrap = tryEl('div', 'try-rows', null, parent);
+    const table = tryEl('table', null, null, wrap);
+    const head = tryEl('tr', null, null, tryEl('thead', null, null, table));
+    for (const c of cols) tryEl('th', null, txt(c), head);
+    const body = tryEl('tbody', null, null, table);
+    for (const r of rows) { const tr = tryEl('tr', null, null, body); for (const v of r) tryEl('td', v == null ? 'is-null' : null, v == null ? '—' : txt(v), tr); }
+    if (truncated) tryEl('p', 'try-none', 'Only the first rows are shown.', parent);
+  };
+  // Her reply, built off the page and put in only when whole: a reply of an unexpected shape draws
+  // nothing half-way (review 2026-10-08).
+  const tryShow = out => {
+    const box = tryEl('div', 'try-msg is-daisy');
+    const v = out.verdict === 'answer' || out.verdict === 'ask-back' ? out.verdict : 'cannot';
+    tryEl('span', 'try-verdict', v === 'answer' ? 'Answer' : v === 'ask-back' ? 'Asks back' : 'Cannot answer', box).dataset.verdict = v;
+    if (v === 'answer') {
+      tryEl('p', 'try-say', txt(out.explanation) || 'Her answer, checked and run.', box);
+      tryCode('Her spec', out.spec_real || out.spec, box);
+      tryCode('SQL', out.sql, box);
+      if (out.rows_shown) tryRows(out.columns, out.rows, out.truncated, box);
+      else tryEl('p', 'try-none', 'Rows are shown for the sample only: run this SQL on your own copy of the tables.', box);
+      if (out.confidence === 'check this') tryEl('p', 'try-note', 'Check this: code found something to look at.', box);
+      for (const n of arr(out.notes)) tryEl('p', 'try-note', txt(n), box);
+    } else if (v === 'ask-back') {
+      tryEl('p', 'try-say', txt(out.hint) || 'She is not sure she read the question right. Did you mean one of these?', box);
+      for (const c of arr(out.choices)) {
+        const one = tryEl('div', 'try-choice', null, box);
+        if (!c || typeof c !== 'object') { tryEl('p', null, txt(c), one); continue; }
+        tryEl('p', null, txt(c.explanation) || 'Another reading', one);
+        tryCode('SQL', c.sql, one);
+        if (out.rows_shown) tryRows(c.columns, c.rows, false, one);
+      }
+    } else {
+      tryEl('p', 'try-say', [txt(out.say), txt(out.hint)].filter(Boolean).join(' ') || 'She cannot answer that.', box);
+      if (out.reason && out.reason !== 'error' && out.reason !== 'tables') tryEl('p', 'try-note', 'Reason: ' + txt(out.reason), box);
+      if (out.spec) tryCode('Her answer', out.spec, box);
+      if (out.sql) tryCode('SQL', out.sql, box);
+      if (arr(out.tables_left).length) tryEl('p', 'try-note', 'Left out: ' + arr(out.tables_left).map(txt).join(', '), box);
+    }
+    const kept = arr(out.tables_kept).map(txt);
+    const meta = [out.request_id ? 'request ' + txt(out.request_id).slice(0, 8) : '', typeof out.ms === 'number' ? Math.round(out.ms) + ' ms' : '', txt(out.model),
+      out.tables === 'pasted' ? 'your tables' + (kept.length ? ' (' + kept.join(', ') + ')' : '') : out.tables === 'sample' ? 'sample' : ''].filter(Boolean).join(' · ');
+    if (meta) tryEl('p', 'try-meta', meta, box);
+    tryLog.append(box);
+    tryScroll();
+  };
+  const TRY_BODY_MAX = 24 * 1024;   // the service's own ceiling, in bytes
+  // -> true when Daisy's reply was shown (the question box may then be emptied); every failure says why
+  const tryAsk = async (text, pasted) => {
+    const body = JSON.stringify(pasted ? { message: text, tables: pasted } : { message: text });
+    if (!window.crypto || !crypto.subtle || typeof TextEncoder !== 'function') { trySys('This browser cannot sign the request: Try it needs a secure (https) page.', true); return false; }
+    if (new TextEncoder().encode(body).length > TRY_BODY_MAX) { trySys('That is too long to send in one try: shorten the question or the pasted tables.', true); return false; }
+    const h = await tryHex(body);
+    let t;
+    try {
+      t = await tryFetch(TICKET_URL, { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'X-Akiki-Ticket': '1' }, body: JSON.stringify({ h }) });
+    } catch (e) { trySys('This site could not be reached for a ticket: check the connection, then press Send again.', true); return false; }
+    if (t.r.status === 401) { trySys('Your sign-in has run out: reload the page and sign in again.', true); return false; }
+    if (t.r.status === 503) { trySys(t.body && t.body.why === 'off' ? 'Try it is not switched on yet: the service’s address and key are not on this server.' : 'The sign-in could not give a ticket just now (status 503).', true); return false; }
+    if (t.r.status !== 200) { trySys(`The sign-in could not give a ticket for this question (status ${t.r.status}).`, true); return false; }
+    const tk = t.body;
+    if (!tk || tk.ok !== true || typeof tk.ticket !== 'string' || !tryServiceOk(tk.service)) { trySys('The sign-in answered, but not with a ticket.', true); return false; }
+    let s;
+    try {
+      s = await tryFetch(tk.service, { method: 'POST', mode: 'cors', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', headers: { 'Content-Type': 'application/json', 'X-Tryit-Ticket': tk.ticket }, body });
+    } catch (e) {
+      trySys(e && e.name === 'AbortError' ? `Daisy did not answer within ${TRY_WAIT / 1000} seconds: try again in a moment.` : 'Daisy’s service cannot be reached just now: she runs on our own machine, which may be off or offline.', true);
+      return false;
+    }
+    const st = s.r.status;
+    if (st === 401) { trySys('The service refused this request’s ticket (it may have run out on the way, or the service has just restarted): press Send again.', true); return false; }
+    if (st === 429) { trySys('Too many questions at once: wait a minute, then ask again.', true); return false; }
+    if (st === 413) { trySys('That is too long to send in one try.', true); return false; }
+    if (st === 400) { trySys('The service could not read that request.', true); return false; }
+    if (st === 503) { trySys('Daisy took too long over that one: try a shorter question.', true); return false; }
+    if (st >= 500) { trySys(`Daisy’s service had a fault of its own (status ${st}): the fault is on our side, not your connection.`, true); return false; }
+    if (st !== 200) { trySys(`Daisy’s service answered with status ${st}.`, true); return false; }
+    const out = s.body;
+    if (!out || typeof out !== 'object' || !out.verdict) { trySys('Daisy’s service answered, but not with an answer.', true); return false; }
+    try { tryShow(out); } catch (e) { trySys('Daisy answered, but her reply could not be drawn on this page.', true); return false; }
+    return true;
+  };
+  tryForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (tryBusy) return;
+    const text = tryText.value.trim(), pasted = tryPaste.value.trim();
+    if (!tryNow) { tryState(); return; }
+    if (!text) { tryText.focus(); return; }
+    tryEl('p', 'try-msg is-you', text, tryLog);
+    if (pasted) tryEl('p', 'try-msg is-you is-tables', 'with your pasted tables', tryLog);
+    tryScroll();
+    tryText.focus();    // before Send is disabled, so the focus is not dropped to the page
+    tryBusy = true;
+    tryState();
+    let shown = false;
+    try { shown = await tryAsk(text.slice(0, TRY_MAX), pasted ? pasted.slice(0, TRY_TABLES_MAX) : ''); }
+    catch (err) { trySys('Something in this page went wrong while asking: the question may not have reached Daisy.', true); }
+    finally {
+      tryBusy = false;
+      tryState();
+      if (shown && tryText.value.trim() === text) tryText.value = '';   // kept after a failure, so Send again sends it
+      if (tryWrap.classList.contains('is-open')) tryText.focus({ preventScroll: true });
+    }
+  });
+  tryState();
+  tryRefresh(chainOf());
 
   // ---- The filters, between the screens and the tiles: one chip per kind of tile, made from the
   // tiles' own tags (data-tags), and Ready for the tiles that have measured figures. Only kinds
