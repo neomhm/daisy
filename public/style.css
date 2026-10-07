@@ -1998,3 +1998,51 @@ html:has(> body.snap) { scroll-snap-type: none; scroll-padding-top: calc(37px + 
   .bp-icon { width: 24px; height: 24px; }
   .bp-fig { display: none; }
 }
+
+/* The sections, told apart at a glance (Laurent, 2026-10-07: "make sure that the separations between
+   sections (input, functions and output) is clear"): each of Inputs, Functions and Outputs is its own
+   panel, tinted with its role's colour (the badges' blue, amber, teal) and edged in it, under a heading
+   bar in that colour carrying the section's letter (I, Fn, O), with a gutter between the panels. The
+   add-ons (lenses, skills, brains, data) sit below in an area of their own, under a rule and a heading.
+   The text on the tints stays above 4.5:1 (muted ink on a 5% tint, white on each role colour). */
+.tray-col { --sc: var(--role-middle); }
+.tray-col[data-section="starters"] { --sc: var(--role-start); }
+.tray-col[data-section="outputs"] { --sc: var(--role-end); }
+.tray-cols { gap: 14px 12px; margin-top: 10px; }
+.tray-col {
+  padding: 0 4px 12px;
+  border: 1.5px solid color-mix(in srgb, var(--sc) 45%, #fff);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--sc) 5%, #fff);
+  transition: box-shadow .15s, background-color .15s;
+}
+.tray-col > .tray-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 -4px 12px;
+  padding: 7px 6px;
+  border-radius: 8px 8px 0 0;
+  background: var(--sc);
+  color: #fff;
+  letter-spacing: .06em;
+}
+.tray-col > .tray-head::before {   /* the section's letter, as on its tiles' badges */
+  content: attr(data-badge);
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  border: 1.5px solid #fff;
+  border-radius: 4px;
+  font: 700 10px/1 var(--mono);
+  letter-spacing: -.02em;
+  text-transform: none;
+}
+.tray-col .tray-slot .sq { background: #fff; }
+.tray-col .tray-grid { column-gap: 6px; }
+.tray-col .cap { color: #4d5661; }
+.tray-addons { margin-top: 20px; padding-top: 4px; border-top: 2px solid var(--border); }
+.tray-addons-head { margin: 10px 0 0; color: var(--fg); font: 700 12px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.tray-addons-head span { color: var(--fg-muted); font-weight: 400; letter-spacing: 0; text-transform: none; }

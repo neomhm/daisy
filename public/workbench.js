@@ -132,6 +132,7 @@
   };
   const sectionOf = d => (d.role === 'start' || d.role === 'both' ? 'starters' : d.role === 'middle' ? 'functions' : d.role === 'end' ? 'outputs'
     : d.role === 'lens' || d.gives === 'memory' ? 'lenses' : d.role === 'skill' || d.gives === 'skill' ? 'skills' : d.gives === 'brain' ? 'brains' : 'data');
+  const SEC_BADGE = { starters: 'I', functions: 'Fn', outputs: 'O' };   // each column's heading carries its letter
   const fillCap = (cap, d) => {
     cap.innerHTML = '<span></span>';   // the panel shows what a tile does; its name is in its tooltip and label
     cap.firstChild.textContent = d.words;   // no PLAN tag under the tile (Laurent, 2026-10-07: "no need")
@@ -163,12 +164,17 @@
     const cols = document.createElement('div');
     cols.className = 'tray-cols';
     scroll.append(cols);
+    // the add-ons (lenses, skills, brains, data) attach onto tiles: an area of their own, under the columns
+    const addons = document.createElement('div');
+    addons.className = 'tray-addons';
+    addons.innerHTML = `<p class="tray-addons-head">Add-ons <span>attach onto a tile</span></p>`;
     for (const g of DATA.sections) {
       const mine = DATA.tiles.filter(d => sectionOf(d) === g.id);
       if (!mine.length) continue;
       const head = document.createElement('h' + level);
       head.className = 'tray-head';
       head.dataset.section = g.id;
+      if (SEC_BADGE[g.id]) head.dataset.badge = SEC_BADGE[g.id];
       head.textContent = g.head;
       const box = document.createElement('div');
       box.className = 'tray-grid';
@@ -191,8 +197,9 @@
         col.dataset.section = g.id;
         col.append(head, box);
         cols.append(col);
-      } else scroll.append(head, box);
+      } else addons.append(head, box);
     }
+    if (addons.querySelector('.tray-grid')) scroll.append(addons);
     // The colours' key, on the field.
     const legend = document.createElement('div');
     legend.className = 'field-legend';   // the key is for the eye (each item aria-hidden), but for the team's help
