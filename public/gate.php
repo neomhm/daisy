@@ -26,10 +26,11 @@ ob_start();   // nothing printed by accident (a server warning, say) may stop th
    browsers are told apart. While the gate has one shared name and password the identity is
    "shared:<name>"; per-person accounts would set the person's own id in gate_identity_for() and
    nothing else changes. A cookie of the older form (exp.signature) still signs in and is given a
-   session id the next time a page is loaded. POST /gate.php?ticket gives a signed-in page ONE
-   ticket for ONE request to Daisy's try-it service (see tryit_ticket below); the secret that signs
-   tickets is never in this repository: it is the file /home/akiki/.akiki-tryit-secret, and the
-   service's address is /home/akiki/.akiki-tryit-url. Without both, Try it says it is not switched on. */
+   session id the next time a page is loaded. /gate.php?tryit=... carries the Workbench's Try it: the
+   page's question goes into a private spool with one ticket for it, and Daisy's worker on our own
+   machine fetches it and posts the answer back (see "TRY IT" below); the secret that signs tickets
+   and the worker's requests is never in this repository: it is the file /home/akiki/.akiki-tryit-secret.
+   Without it, Try it says it is not switched on. */
 
 const GATE_USER = 'Tul1p';
 const GATE_HASH = '$2y$13$n3k3Jytb7kIXmH5IjPkXvOGKar7A9HyTxeS9xl6kKA8lw3zZd.dsm';
@@ -167,56 +168,295 @@ function gate_saw() {
     . ', PHP ' . PHP_VERSION;
 }
 
-// ---- TRY IT: one ticket for one request to Daisy's service (the Workbench's "Try it").
-// The page asks POST /gate.php?ticket with the header X-Akiki-Ticket: 1 (a header of our own: another
-// site's page cannot send it without a CORS preflight, which this file never answers) and the body
-// {"h": "<sha256 hex of the exact request it will send to the service>"}. A signed-in browser gets
-// {"ok": true, "ticket", "rid", "exp", "service"}: the ticket is
-//   v1.SID.IDENTITY.RID.EXP.H.MAC   MAC = HMAC-SHA256(secret, "akiki-tryit|v1|SID|IDENTITY|RID|EXP|H")
-// with RID 128 random bits and EXP at most 60 s away; the service accepts it once, for that body
-// only, before EXP. The secret (64 hex) is the file .akiki-tryit-secret next to the site's folder,
-// never in this repository; the service's address is the file .akiki-tryit-url beside it.
+// ---- TRY IT (the Workbench's "Try it"), a PULL design (Laurent, 2026-10-08): nothing on our own
+// machine listens to the internet. Daisy's worker there asks THIS file for questions and posts the
+// answers back; the visitor's page and the worker never meet.
+//
+// THE PAGE (signed in; header X-Akiki-Ticket: 1, same origin; a header of our own that another site's
+// page cannot send without a CORS preflight, which this file never answers):
+//   POST /gate.php?tryit=ask   body: {"message": ..., "tables"?: ...} (the exact bytes are kept)
+//        -> {"ok": true, "rid"}  the question is in the spool, with a TICKET minted for it:
+//           v1.SID.IDENTITY.RID.EXP.H.MAC   MAC = HMAC-SHA256(secret, "akiki-tryit|v1|SID|IDENTITY|RID|EXP|H")
+//           SID the browser session (in the signed cookie), RID 128 random bits, EXP now + 60 s, H the
+//           sha256 of the body. The worker checks the ticket ITSELF and keeps its own limits.
+//   POST /gate.php?tryit=wait  body: {"rid"} -> {"done": false} while it waits (at most WAIT_S; one wait
+//        per session and a few in all at a time), or {"done": true, "status", "answer"} once (the
+//        answer file is deleted as it is read), only to the session that asked.
+// THE WORKER (no cookie; header X-Tryit-Worker: v1.TS.NONCE.MAC, MAC = HMAC-SHA256(secret,
+// "akiki-tryit-worker|v1|ACTION|TS|NONCE|sha256(body)"), TS within 60 s, each NONCE accepted once):
+//   POST /gate.php?tryit=poll    -> {"job": {"rid", "ticket", "body", "ip"}} or {"job": null} after at
+//                                   most POLL_S; every poll is the worker's heartbeat
+//   POST /gate.php?tryit=answer  body: {"rid", "status", "answer"} -> {"ok": true}
+// THE SPOOL: /home/akiki/.akiki-tryit-spool (0700, outside the site), one file per request, named only
+// from hex the server made: q.RID.SID (waiting), c.RID.SID (claimed by the worker, an atomic rename),
+// a.RID.SID (answered); ledgers of recent asks (s.SID per session, i.ADDR per address, g for all),
+// w.* wait locks, n/ the worker's nonces. Everything stale is swept on every call: nothing a visitor
+// typed stays more than two minutes (60 s waiting + 30 s claimed + 30 s answered). The secret is
+// /home/akiki/.akiki-tryit-secret (0600), never in this repository; without it Try it is off.
 const TRYIT_TTL = 60;
 const TRYIT_PAGE_ORIGINS = ['https://akiki.ai', 'https://www.akiki.ai'];
+const TRYIT_BODY_MAX = 24576;        // the page's request, as the worker's own ceiling
+const TRYIT_ANSWER_MAX = 131072;     // what the worker may post back
+const TRYIT_WAIT_S = 8;              // one page wait (a PHP process held; the page asks again)
+const TRYIT_WAITS_AT_ONCE = 4;       // page waits held at once, in all (the site's PHP processes are few)
+const TRYIT_POLL_S = 20;             // one worker poll (well under the 30 s limit and Cloudflare's 100 s)
+const TRYIT_AWAY_S = 45;             // no poll for this long: "Daisy is not reachable right now"
+const TRYIT_QUEUE_MAX = 30;          // questions waiting or being answered, in all
+const TRYIT_SPOOL_BYTES = 4194304;   // questions and answers, in all
+const TRYIT_SESSION_PER_MIN = 8;     // asks per browser session
+const TRYIT_ADDR_PER_MIN = 12;       // asks per client address (an IPv6 address counts by its /64)
+const TRYIT_ALL_PER_MIN = 60;        // asks from everybody together
+const TRYIT_MIN_LEFT = 15;           // a question whose ticket has less left than this is not handed out
+// Cloudflare's published ranges (https://www.cloudflare.com/ips-v4, ips-v6; 2026-10-08): only a request
+// that comes FROM one of them may name the visitor's address in CF-Connecting-IP.
+const TRYIT_CF = ['173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18', '108.162.192.0/18',
+  '190.93.240.0/20', '188.114.96.0/20', '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13', '104.24.0.0/14',
+  '172.64.0.0/13', '131.0.72.0/22', '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32', '2405:8100::/32',
+  '2a06:98c0::/29', '2c0f:f248::/32'];
 function tryit_out($status, $data) {
   http_response_code($status);
   header('Content-Type: application/json; charset=utf-8');
   header('Cache-Control: no-store');
   header('X-Content-Type-Options: nosniff');
-  echo json_encode($data);
+  if ($data !== null) echo json_encode($data);
 }
-function tryit_file($name, $rx, $private = false) {
-  $f = dirname(__DIR__) . '/' . $name;
-  if (!@is_file($f) || !@is_readable($f)) return null;
-  if ($private && (@fileperms($f) & 0077)) return null;   // the secret: readable by its owner only (chmod 600), as the service demands
-  $v = trim((string) @file_get_contents($f, false, null, 0, 512));
-  return preg_match($rx, $v) ? $v : null;
+function tryit_secret() {
+  $f = dirname(__DIR__) . '/.akiki-tryit-secret';
+  if (!@is_file($f) || !@is_readable($f) || (@fileperms($f) & 0077)) return null;   // readable by its owner only (chmod 600)
+  $v = trim((string) @file_get_contents($f, false, null, 0, 200));
+  return preg_match('/^[0-9a-f]{64}$/D', $v) ? $v : null;
 }
-function tryit_ticket($key) {
-  if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Allow: POST'); tryit_out(405, ['ok' => false]); return; }
+function tryit_spool() {
+  $d = dirname(__DIR__) . '/.akiki-tryit-spool';
+  foreach ([$d, "$d/n"] as $x) {
+    if (!@is_dir($x) && !@mkdir($x, 0700) && !@is_dir($x)) return null;
+    @chmod($x, 0700);
+  }
+  return $d;
+}
+function tryit_body($max) {
+  $len = isset($_SERVER['CONTENT_LENGTH']) ? (string) $_SERVER['CONTENT_LENGTH'] : '';
+  if (!preg_match('/^[0-9]{1,7}$/D', $len) || (int) $len < 1 || (int) $len > $max) return null;
+  $raw = (string) @file_get_contents('php://input', false, null, 0, $max + 1);
+  return strlen($raw) === (int) $len ? $raw : null;
+}
+// Files older than their life are removed. -> [questions waiting or claimed, bytes of q/c/a].
+function tryit_sweep($d) {
+  $now = time();
+  $life = ['q' => TRYIT_TTL, 'c' => 30, 'a' => 30, 's' => 60, 'i' => 60, 'g' => 60, 't' => 60, 'w' => 3600];
+  $n = 0; $bytes = 0;
+  foreach ((array) @scandir($d) as $f) {
+    if ($f === '.' || $f === '..' || $f === 'n' || $f === 'seen' || $f === 'lock' || strncmp($f, 'w.slot', 6) === 0) continue;
+    $p = "$d/$f";
+    $m = @filemtime($p);
+    $k = $f[0];
+    if ($m === false) continue;
+    if (!isset($life[$k]) || $now - $m > $life[$k]) { @unlink($p); continue; }
+    if ($k === 'q' || $k === 'c') $n++;
+    if ($k === 'q' || $k === 'c' || $k === 'a') $bytes += (int) @filesize($p);
+  }
+  foreach ((array) @scandir("$d/n") as $f) {
+    if ($f !== '.' && $f !== '..' && $now - (int) @filemtime("$d/n/$f") > 180) @unlink("$d/n/$f");
+  }
+  return [$n, $bytes];
+}
+function tryit_put($d, $name, $data) {   // written whole, then renamed into place
+  $tmp = "$d/t." . bin2hex(random_bytes(8));
+  if (@file_put_contents($tmp, $data, LOCK_EX) !== strlen($data)) { @unlink($tmp); return false; }
+  @chmod($tmp, 0600);
+  if (!@rename($tmp, "$d/$name")) { @unlink($tmp); return false; }
+  return true;
+}
+// A ledger of recent times (unix seconds, one per line): -> the ones younger than 60 s.
+function tryit_recent($d, $name, $now) {
+  return array_values(array_filter(explode("\n", (string) @file_get_contents("$d/$name")), function ($t) use ($now) {
+    return $t !== '' && ctype_digit($t) && $now - (int) $t < 60;
+  }));
+}
+function tryit_page_ok() {
   $origin = isset($_SERVER['HTTP_ORIGIN']) ? (string) $_SERVER['HTTP_ORIGIN'] : '';
   $site = isset($_SERVER['HTTP_SEC_FETCH_SITE']) ? (string) $_SERVER['HTTP_SEC_FETCH_SITE'] : '';
-  if (($origin !== '' && !in_array($origin, TRYIT_PAGE_ORIGINS, true)) || ($site !== '' && $site !== 'same-origin')
-      || !isset($_SERVER['HTTP_X_AKIKI_TICKET']) || $_SERVER['HTTP_X_AKIKI_TICKET'] !== '1') {
-    tryit_out(403, ['ok' => false]);
+  return !(($origin !== '' && !in_array($origin, TRYIT_PAGE_ORIGINS, true)) || ($site !== '' && $site !== 'same-origin')
+    || !isset($_SERVER['HTTP_X_AKIKI_TICKET']) || $_SERVER['HTTP_X_AKIKI_TICKET'] !== '1');
+}
+function tryit_in_cidr($ip, $cidr) {
+  list($net, $bits) = explode('/', $cidr);
+  $a = @inet_pton($ip); $b = @inet_pton($net);
+  if ($a === false || $b === false || strlen($a) !== strlen($b)) return false;
+  $bits = (int) $bits;
+  $whole = intdiv($bits, 8);
+  if (substr($a, 0, $whole) !== substr($b, 0, $whole)) return false;
+  if ($bits % 8 === 0) return true;
+  $mask = chr((0xff << (8 - $bits % 8)) & 0xff);
+  return (substr($a, $whole, 1) & $mask) === (substr($b, $whole, 1) & $mask);
+}
+// The visitor's address, canonical: CF-Connecting-IP only from Cloudflare itself (anyone reaching this
+// server directly would otherwise choose their own), an IPv6 address by its /64 (one visitor has 2^64).
+function tryit_client_ip() {
+  $peer = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+  $ip = $peer;
+  $cf = isset($_SERVER['HTTP_CF_CONNECTING_IP']) ? trim((string) $_SERVER['HTTP_CF_CONNECTING_IP']) : '';
+  if ($cf !== '' && filter_var($cf, FILTER_VALIDATE_IP)) {
+    foreach (TRYIT_CF as $c) { if (tryit_in_cidr($peer, $c)) { $ip = $cf; break; } }
+  }
+  $bin = @inet_pton($ip);
+  if ($bin === false) return 'unknown';
+  if (strlen($bin) === 16) return inet_ntop(substr($bin, 0, 8) . str_repeat("\0", 8)) . '/64';
+  return inet_ntop($bin);
+}
+function tryit_worker_ok($secret, $action, $raw, $d) {
+  $h = isset($_SERVER['HTTP_X_TRYIT_WORKER']) ? (string) $_SERVER['HTTP_X_TRYIT_WORKER'] : '';
+  if (!preg_match('/^v1\.([0-9]{10})\.([0-9a-f]{32})\.([0-9a-f]{64})$/D', $h, $m)) return false;
+  if (abs(time() - (int) $m[1]) > 60) return false;
+  $want = hash_hmac('sha256', "akiki-tryit-worker|v1|$action|{$m[1]}|{$m[2]}|" . hash('sha256', $raw), $secret);
+  if (!hash_equals($want, $m[3])) return false;
+  $fh = @fopen("$d/n/{$m[2]}", 'x');   // each nonce once: 'x' fails when the file exists
+  if ($fh === false) return false;
+  fclose($fh);
+  return true;
+}
+function tryit_route($key) {
+  $act = (string) $_GET['tryit'];
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Allow: POST'); tryit_out(405, ['ok' => false]); return; }
+  if (function_exists('set_time_limit')) @set_time_limit(TRYIT_POLL_S + 15);
+  $secret = tryit_secret();
+  $d = tryit_spool();
+  if ($act === 'poll' || $act === 'answer') {
+    $raw = tryit_body($act === 'answer' ? TRYIT_ANSWER_MAX : 1024);
+    if ($secret === null || $d === null || $raw === null || !tryit_worker_ok($secret, $act, $raw, $d)) { tryit_out(401, null); return; }
+    $act === 'poll' ? tryit_poll($d) : tryit_answer($d, $raw);
     return;
   }
+  if ($act !== 'ask' && $act !== 'wait') { tryit_out(404, ['ok' => false]); return; }
+  if (!tryit_page_ok()) { tryit_out(403, ['ok' => false]); return; }
   $read = gate_cookie_read($key);
   if ($read['state'] !== 'ok') { tryit_out(401, ['ok' => false, 'why' => 'signin']); return; }
   $sid = (string) gate_upgrade($read, $key);
   $ident = (string) $read['ident'];
   if (!preg_match('/^[0-9a-f]{32}$/D', $sid) || !preg_match('/^[a-z0-9_:-]{1,48}$/D', $ident)) { tryit_out(401, ['ok' => false, 'why' => 'signin']); return; }
-  $raw = (string) @file_get_contents('php://input', false, null, 0, 600);
-  $body = json_decode($raw, true);
-  $h = is_array($body) && isset($body['h']) && is_string($body['h']) ? $body['h'] : '';
-  if (!preg_match('/^[0-9a-f]{64}$/D', $h)) { tryit_out(400, ['ok' => false]); return; }
-  $secret = tryit_file('.akiki-tryit-secret', '/^[0-9a-f]{64}$/D', true);
-  $service = tryit_file('.akiki-tryit-url', '#^https://[a-z0-9.-]+(:[0-9]{2,5})?/[A-Za-z0-9/_.-]*$#D');
-  if ($secret === null || $service === null) { tryit_out(503, ['ok' => false, 'why' => 'off']); return; }
-  $rid = bin2hex(random_bytes(16));
-  $exp = (string) (time() + TRYIT_TTL);
-  $mac = hash_hmac('sha256', "akiki-tryit|v1|$sid|$ident|$rid|$exp|$h", $secret);
-  tryit_out(200, ['ok' => true, 'ticket' => "v1.$sid.$ident.$rid.$exp.$h.$mac", 'rid' => $rid, 'exp' => (int) $exp, 'service' => $service]);
+  if ($secret === null || $d === null) { tryit_out(503, ['ok' => false, 'why' => 'off']); return; }
+  $act === 'ask' ? tryit_ask($d, $secret, $sid, $ident) : tryit_wait($d, $sid);
+}
+function tryit_away($d) {
+  $m = @filemtime("$d/seen");
+  return $m === false || time() - $m > TRYIT_AWAY_S;
+}
+function tryit_ask($d, $secret, $sid, $ident) {
+  $raw = tryit_body(TRYIT_BODY_MAX);
+  if ($raw === null) { tryit_out(413, ['ok' => false]); return; }
+  $j = json_decode($raw, true);
+  if (!is_array($j) || !isset($j['message']) || !is_string($j['message'])) { tryit_out(400, ['ok' => false]); return; }
+  $lock = @fopen("$d/lock", 'c');
+  if ($lock === false || !flock($lock, LOCK_EX)) { tryit_out(503, ['ok' => false, 'why' => 'busy']); return; }
+  try {
+    clearstatcache();
+    list($n, $bytes) = tryit_sweep($d);    // swept first, whatever comes next
+    if (tryit_away($d)) { tryit_out(503, ['ok' => false, 'why' => 'away']); return; }
+    // what this session left behind when its page gave up: an unread answer, a question not yet taken
+    foreach ((array) glob("$d/[qa].*.$sid") as $old) { @unlink($old); }
+    if (glob("$d/c.*.$sid")) { tryit_out(429, ['ok' => false, 'why' => 'one']); return; }   // one being answered right now
+    clearstatcache();
+    list($n, $bytes) = tryit_sweep($d);
+    if ($n >= TRYIT_QUEUE_MAX || $bytes + strlen($raw) > TRYIT_SPOOL_BYTES) { tryit_out(503, ['ok' => false, 'why' => 'busy']); return; }
+    $now = time();
+    $addr = substr(hash('sha256', 'akiki-tryit-addr|' . tryit_client_ip() . '|' . $secret), 0, 32);
+    $ls = tryit_recent($d, "s.$sid", $now); $li = tryit_recent($d, "i.$addr", $now); $lg = tryit_recent($d, 'g', $now);
+    if (count($lg) >= TRYIT_ALL_PER_MIN) { tryit_out(503, ['ok' => false, 'why' => 'busy']); return; }
+    if (count($ls) >= TRYIT_SESSION_PER_MIN || count($li) >= TRYIT_ADDR_PER_MIN) { tryit_out(429, ['ok' => false, 'why' => 'rate']); return; }
+    $rid = bin2hex(random_bytes(16));
+    $exp = (string) ($now + TRYIT_TTL);
+    $h = hash('sha256', $raw);
+    $mac = hash_hmac('sha256', "akiki-tryit|v1|$sid|$ident|$rid|$exp|$h", $secret);
+    $job = json_encode(['rid' => $rid, 'ticket' => "v1.$sid.$ident.$rid.$exp.$h.$mac", 'body' => $raw, 'ip' => tryit_client_ip()]);
+    $ls[] = $li[] = $lg[] = (string) $now;
+    if ($job === false || !tryit_put($d, "q.$rid.$sid", $job) || !tryit_put($d, "s.$sid", implode("\n", $ls))
+        || !tryit_put($d, "i.$addr", implode("\n", $li)) || !tryit_put($d, 'g', implode("\n", $lg))) { tryit_out(503, ['ok' => false, 'why' => 'busy']); return; }
+    tryit_out(200, ['ok' => true, 'rid' => $rid]);
+  } finally {
+    flock($lock, LOCK_UN);
+    fclose($lock);
+  }
+}
+function tryit_wait($d, $sid) {
+  $raw = tryit_body(200);
+  $j = $raw === null ? null : json_decode($raw, true);
+  $rid = is_array($j) && isset($j['rid']) && is_string($j['rid']) ? $j['rid'] : '';
+  if (!preg_match('/^[0-9a-f]{32}$/D', $rid)) { tryit_out(400, ['ok' => false]); return; }
+  tryit_sweep($d);   // swept here too, whether Daisy's machine is there or not: nothing typed outlives its time
+  // one wait per session, and a few in all: each holds one of the site's few PHP processes
+  $mine = @fopen("$d/w.$sid", 'c');
+  if ($mine === false || !flock($mine, LOCK_EX | LOCK_NB)) { tryit_out(429, ['ok' => false, 'why' => 'waiting']); return; }
+  @touch("$d/w.$sid");   // in use: not swept
+  $slot = null;
+  for ($i = 0; $i < TRYIT_WAITS_AT_ONCE && $slot === null; $i++) {
+    $s = @fopen("$d/w.slot$i", 'c');
+    if ($s !== false && flock($s, LOCK_EX | LOCK_NB)) $slot = $s; elseif ($s !== false) fclose($s);
+  }
+  $end = microtime(true) + ($slot === null ? 0 : TRYIT_WAIT_S);   // no slot free: answer at once, the page asks again
+  $out = ['done' => false];
+  do {
+    clearstatcache();
+    $a = "$d/a.$rid.$sid";
+    if (is_file($a)) {
+      $got = (string) @file_get_contents($a, false, null, 0, TRYIT_ANSWER_MAX + 1);
+      @unlink($a);
+      $ans = json_decode($got, true);
+      $out = is_array($ans) ? ['done' => true, 'status' => (int) $ans['status'], 'answer' => isset($ans['answer']) ? $ans['answer'] : null]
+                            : ['done' => true, 'status' => 500, 'answer' => null];
+      break;
+    }
+    if (!is_file("$d/q.$rid.$sid") && !is_file("$d/c.$rid.$sid")) {
+      clearstatcache();
+      if (is_file($a)) continue;   // the answer landed between the two looks (it is written before the claim goes)
+      $out = ['done' => true, 'status' => 410, 'answer' => null];   // expired, or never this session's
+      break;
+    }
+    if (tryit_away($d)) { $out = ['done' => true, 'status' => 503, 'why' => 'away', 'answer' => null]; break; }
+    if (microtime(true) >= $end) break;
+    usleep(250000);
+  } while (true);
+  if ($slot !== null) { flock($slot, LOCK_UN); fclose($slot); }
+  flock($mine, LOCK_UN);
+  fclose($mine);
+  tryit_out(200, $out);
+}
+function tryit_beat($d) {   // the worker's heartbeat: "Daisy is not reachable" when it is older than TRYIT_AWAY_S
+  @touch("$d/seen");
+}
+function tryit_poll($d) {
+  tryit_beat($d);
+  $end = microtime(true) + TRYIT_POLL_S;
+  do {
+    clearstatcache();
+    tryit_sweep($d);
+    $qs = (array) glob("$d/q.*");
+    usort($qs, function ($x, $y) { return (int) @filemtime($x) - (int) @filemtime($y); });
+    foreach ($qs as $q) {
+      if (!preg_match('#/q\.([0-9a-f]{32})\.([0-9a-f]{32})$#D', $q, $m)) continue;
+      $c = "$d/c.{$m[1]}.{$m[2]}";
+      if (!@rename($q, $c)) continue;   // another poll claimed it first: rename is atomic
+      @touch($c);
+      $job = json_decode((string) @file_get_contents($c), true);
+      $exp = is_array($job) && isset($job['ticket']) && is_string($job['ticket']) ? (int) (explode('.', $job['ticket'])[4] ?? 0) : 0;
+      if ($exp - time() < TRYIT_MIN_LEFT) { @unlink($c); continue; }   // too late to answer in time: dropped, the page says so
+      tryit_out(200, ['job' => $job]);
+      return;
+    }
+    tryit_beat($d);
+    usleep(300000);
+  } while (microtime(true) < $end);
+  tryit_out(200, ['job' => null]);
+}
+function tryit_answer($d, $raw) {
+  $j = json_decode($raw, true);
+  $rid = is_array($j) && isset($j['rid']) && is_string($j['rid']) ? $j['rid'] : '';
+  if (!preg_match('/^[0-9a-f]{32}$/D', $rid) || !isset($j['status']) || !is_int($j['status'])) { tryit_out(400, ['ok' => false]); return; }
+  $cs = (array) glob("$d/c.$rid.*");
+  if (count($cs) !== 1 || !preg_match('#/c\.[0-9a-f]{32}\.([0-9a-f]{32})$#D', $cs[0], $m)) { tryit_out(404, ['ok' => false]); return; }
+  $data = json_encode(['status' => $j['status'], 'answer' => isset($j['answer']) && is_array($j['answer']) ? $j['answer'] : null]);
+  if ($data === false || !tryit_put($d, "a.$rid.{$m[1]}", $data)) { tryit_out(503, ['ok' => false]); return; }
+  @unlink($cs[0]);
+  tryit_out(200, ['ok' => true]);
 }
 
 header('X-Robots-Tag: noindex, nofollow');
@@ -229,8 +469,8 @@ if ($key === null) {
   exit;
 }
 
-if (isset($_GET['ticket'])) {
-  tryit_ticket($key);
+if (isset($_GET['tryit']) && is_string($_GET['tryit'])) {
+  tryit_route($key);
   exit;
 }
 if (isset($_GET['signout'])) {

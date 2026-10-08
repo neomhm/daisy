@@ -2346,12 +2346,14 @@
   // ---- Try it (Laurent, 2026-10-08): on a chain that passes TesT, Chat window -> Daisy -> Text output,
   // the Try it key opens a chat screen (the Text output) in the panel. What is typed goes to Daisy as it
   // is; her spec, the SQL code makes of it (and the rows, on the built-in sample), or her refusal or her
-  // question back, are shown under it. Daisy runs on our own machine, not in the page: for EACH question
-  // the page first asks the sign-in (POST /gate.php?ticket, with the sha256 of the exact request) for a
-  // ticket naming this browser's session, who signed in and a new random request id, good for 60 s and
-  // for that request only; the service checks it and answers once. Everything shown is put in as text
+  // question back, are shown under it. Daisy runs on our own machine, not in the page, and that machine
+  // listens to nobody (a PULL design, Laurent 2026-10-08): the page hands the question to this site
+  // (POST /gate.php?tryit=ask), which files it with a ticket naming this browser's session, who signed in
+  // and a new random request id, good for 60 s and for that question only; Daisy's worker fetches it,
+  // checks the ticket itself, answers once and posts the answer back; the page waits for it
+  // (POST /gate.php?tryit=wait, asked again until it comes). Everything shown is put in as text
   // (textContent), never as markup. The status of each answer is read before its body. ----
-  const TICKET_URL = '/gate.php?ticket';
+  const ASK_URL = '/gate.php?tryit=ask', WAIT_URL = '/gate.php?tryit=wait', TRY_PATIENCE = 75000;
   const TRY_SAMPLES = ['top 3 clients by revenue', 'clients in Lyon', 'how many no-shows per month?', 'which services take longer than an hour?', 'cancel all bookings for tomorrow'];
   const TRY_MAX = 600, TRY_TABLES_MAX = 16000, TRY_WAIT = 30000;
   const keyTry = (() => {
@@ -2413,7 +2415,7 @@
     tryWrap.querySelector('.try-tables').textContent = tryTablesSay();
     if (!tryGreeted) {
       tryGreeted = true;
-      trySys('You are trying Daisy 1.4 for real. What you type goes to her as it is; she answers with a spec, code turns it into SQL and runs it read-only on the sample, whose today is 26 Sep 2026. When she does not know, she says so; when unsure, she asks back. What you type is not kept: each request is logged by its id, time and size only.');
+      trySys('You are trying Daisy 1.4 for real. What you type goes to her as it is; she answers with a spec, code turns it into SQL and runs it read-only on the sample, whose today is 26 Sep 2026. When she does not know, she says so; when unsure, she asks back. What you type is held only until Daisy has answered (two minutes at most) and is never logged: each request is logged by its id, time and size only.');
     }
     setTimeout(() => {
       if (phone.matches) tryWrap.scrollIntoView({ block: 'start', behavior: still.matches ? 'auto' : 'smooth' });   // the panel is under the field on a phone
@@ -2439,9 +2441,6 @@
   tryWrap.querySelector('.try-close').addEventListener('click', () => { openTry(false); keyTry.focus(); });
   tryWrap.addEventListener('keydown', e => { if (e.key === 'Escape' && !e.isComposing) { openTry(false); keyTry.focus(); } });
   tryText.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); tryForm.requestSubmit ? tryForm.requestSubmit() : trySend.click(); } });
-  const tryHex = async str => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)))].map(x => x.toString(16).padStart(2, '0')).join('');
-  const LOCAL_PAGE = location.protocol === 'http:' && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);   // a test on this machine only
-  const tryServiceOk = u => typeof u === 'string' && (/^https:\/\/[a-z0-9.-]+(:\d{2,5})?\/[A-Za-z0-9/_.-]*$/.test(u) || (LOCAL_PAGE && /^http:\/\/127\.0\.0\.1(:\d{2,5})?\/[A-Za-z0-9/_.-]*$/.test(u)));
   // One request: the status first, then the body, both inside the same 30 s (a reply whose headers arrive
   // and whose body never does must not keep the page busy); redirects are refused, so the ticket and the
   // question go to the address that was checked and nowhere else (review 2026-10-08). -> { r, body }
@@ -2514,40 +2513,51 @@
     tryScroll();
   };
   const TRY_BODY_MAX = 24 * 1024;   // the service's own ceiling, in bytes
-  // -> true when Daisy's reply was shown (the question box may then be emptied); every failure says why
+  // -> true when Daisy's reply was shown (the question box may then be emptied); every failure says why,
+  // and "Daisy is not reachable" (her machine has not asked for work lately) is not a server fault
+  const SAME = { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'X-Akiki-Ticket': '1' } };
+  const tryAway = 'Daisy is not reachable right now: the machine she runs on has not asked for questions lately. Try again in a few minutes.';
   const tryAsk = async (text, pasted) => {
     const body = JSON.stringify(pasted ? { message: text, tables: pasted } : { message: text });
-    if (!window.crypto || !crypto.subtle || typeof TextEncoder !== 'function') { trySys('This browser cannot sign the request: Try it needs a secure (https) page.', true); return false; }
-    if (new TextEncoder().encode(body).length > TRY_BODY_MAX) { trySys('That is too long to send in one try: shorten the question or the pasted tables.', true); return false; }
-    const h = await tryHex(body);
-    let t;
-    try {
-      t = await tryFetch(TICKET_URL, { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'X-Akiki-Ticket': '1' }, body: JSON.stringify({ h }) });
-    } catch (e) { trySys('This site could not be reached for a ticket: check the connection, then press Send again.', true); return false; }
-    if (t.r.status === 401) { trySys('Your sign-in has run out: reload the page and sign in again.', true); return false; }
-    if (t.r.status === 503) { trySys(t.body && t.body.why === 'off' ? 'Try it is not switched on yet: the service’s address and key are not on this server.' : 'The sign-in could not give a ticket just now (status 503).', true); return false; }
-    if (t.r.status !== 200) { trySys(`The sign-in could not give a ticket for this question (status ${t.r.status}).`, true); return false; }
-    const tk = t.body;
-    if (!tk || tk.ok !== true || typeof tk.ticket !== 'string' || !tryServiceOk(tk.service)) { trySys('The sign-in answered, but not with a ticket.', true); return false; }
-    let s;
-    try {
-      s = await tryFetch(tk.service, { method: 'POST', mode: 'cors', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', headers: { 'Content-Type': 'application/json', 'X-Tryit-Ticket': tk.ticket }, body });
-    } catch (e) {
-      trySys(e && e.name === 'AbortError' ? `Daisy did not answer within ${TRY_WAIT / 1000} seconds: try again in a moment.` : 'Daisy’s service cannot be reached just now: she runs on our own machine, which may be off or offline.', true);
-      return false;
+    if (typeof TextEncoder === 'function' && new TextEncoder().encode(body).length > TRY_BODY_MAX) { trySys('That is too long to send in one try: shorten the question or the pasted tables.', true); return false; }
+    let a;
+    try { a = await tryFetch(ASK_URL, { ...SAME, body }); }
+    catch (e) { trySys('This site could not be reached: check the connection, then press Send again.', true); return false; }
+    const why = a.body && a.body.why;
+    if (a.r.status === 401) { trySys('Your sign-in has run out: reload the page and sign in again.', true); return false; }
+    if (a.r.status === 503 && why === 'off') { trySys('Try it is not switched on yet: the key Daisy\u2019s machine and this site share is not on this server.', true); return false; }
+    if (a.r.status === 503 && why === 'away') { trySys(tryAway, true); return false; }
+    if (a.r.status === 503 && why === 'busy') { trySys('Too many questions are waiting just now: try again in a minute.', true); return false; }
+    if (a.r.status === 429) { trySys(why === 'one' ? 'Your last question is still being answered: wait for it, then ask the next.' : 'Too many questions at once: wait a minute, then ask again.', true); return false; }
+    if (a.r.status === 413) { trySys('That is too long to send in one try.', true); return false; }
+    if (a.r.status >= 500) { trySys(`This site had a fault of its own (status ${a.r.status}): the fault is on our side, not your connection.`, true); return false; }
+    if (a.r.status !== 200 || !a.body || a.body.ok !== true || typeof a.body.rid !== 'string' || !/^[0-9a-f]{32}$/.test(a.body.rid)) { trySys(`This site could not take the question (status ${a.r.status}).`, true); return false; }
+    const rid = a.body.rid, until = Date.now() + TRY_PATIENCE;
+    for (;;) {
+      if (Date.now() > until) { trySys('Daisy did not answer in time: she may be busy. Ask again in a moment.', true); return false; }
+      let w;
+      const t0 = Date.now();
+      try { w = await tryFetch(WAIT_URL, { ...SAME, body: JSON.stringify({ rid }) }); }
+      catch (e) { trySys(e && e.name === 'AbortError' ? 'This site stopped answering while we waited for Daisy: check the connection, then ask again.' : 'The connection to this site was lost while waiting for Daisy: check it, then ask again.', true); return false; }
+      if (w.r.status === 401) { trySys('Your sign-in has run out: reload the page and sign in again.', true); return false; }
+      const busyWait = w.r.status === 429 && w.body && w.body.why === 'waiting';   // another wait of this session is open (another tab): wait our turn
+      if (!busyWait && (w.r.status !== 200 || !w.body || typeof w.body !== 'object' || typeof w.body.done !== 'boolean')) { trySys(`This site had a fault of its own while waiting (status ${w.r.status}): the fault is on our side, not your connection.`, true); return false; }
+      // never a busy loop: a wait that comes back fast without the answer is followed by a pause
+      if (busyWait || w.body.done !== true) { if (Date.now() - t0 < 1500) await new Promise(r => setTimeout(r, 1500)); continue; }
+      const st = w.body.status, out = w.body.answer;
+      if (st === 503 && w.body.why === 'away') { trySys(tryAway, true); return false; }
+      if (st === 410) { trySys('The question was not picked up in time: Daisy may be busy or her machine just restarted. Ask again.', true); return false; }
+      if (st === 401) { trySys('Daisy\u2019s machine refused this question\u2019s ticket (it may have run out while waiting, or her machine has just restarted): press Send again.', true); return false; }
+      if (st === 429) { trySys('Too many questions at once: wait a minute, then ask again.', true); return false; }
+      if (st === 413) { trySys('That is too long to send in one try.', true); return false; }
+      if (st === 400) { trySys('Daisy\u2019s machine could not read that request.', true); return false; }
+      if (st === 503) { trySys('Daisy took too long over that one: try a shorter question.', true); return false; }
+      if (typeof st === 'number' && st >= 500) { trySys(`Daisy\u2019s machine had a fault of its own (status ${st}): the fault is on our side, not your connection.`, true); return false; }
+      if (st !== 200 || !out || typeof out !== 'object' || !out.verdict) { trySys('Daisy\u2019s machine answered, but not with an answer.', true); return false; }
+      if (out.request_id != null && out.request_id !== rid) { trySys('This site handed back an answer to another question: it was not shown.', true); return false; }
+      try { tryShow(out); } catch (e) { trySys('Daisy answered, but her reply could not be drawn on this page.', true); return false; }
+      return true;
     }
-    const st = s.r.status;
-    if (st === 401) { trySys('The service refused this request’s ticket (it may have run out on the way, or the service has just restarted): press Send again.', true); return false; }
-    if (st === 429) { trySys('Too many questions at once: wait a minute, then ask again.', true); return false; }
-    if (st === 413) { trySys('That is too long to send in one try.', true); return false; }
-    if (st === 400) { trySys('The service could not read that request.', true); return false; }
-    if (st === 503) { trySys('Daisy took too long over that one: try a shorter question.', true); return false; }
-    if (st >= 500) { trySys(`Daisy’s service had a fault of its own (status ${st}): the fault is on our side, not your connection.`, true); return false; }
-    if (st !== 200) { trySys(`Daisy’s service answered with status ${st}.`, true); return false; }
-    const out = s.body;
-    if (!out || typeof out !== 'object' || !out.verdict) { trySys('Daisy’s service answered, but not with an answer.', true); return false; }
-    try { tryShow(out); } catch (e) { trySys('Daisy answered, but her reply could not be drawn on this page.', true); return false; }
-    return true;
   };
   tryForm.addEventListener('submit', async e => {
     e.preventDefault();
